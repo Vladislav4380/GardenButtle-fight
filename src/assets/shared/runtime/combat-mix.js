@@ -137,14 +137,6 @@ function drawMixedFighter(f) {
   g.save();
   g.translate(f.x, f.y);
   g.scale(mixedFlip(f), 1);
-  // Team ring under the feet: blue for the player, red for the opponent.
-  g.fillStyle = f.team ? "#ff4b3055" : "#48aaff55";
-  g.strokeStyle = f.team ? "#ff5b37" : "#5ab8ff";
-  g.lineWidth = 2;
-  g.beginPath();
-  g.ellipse(0, 3, baseScale() * 260 * (p.scale || 1), baseScale() * 65 * (p.scale || 1), 0, 0, 7);
-  g.fill();
-  g.stroke();
   if (f.hit) g.filter = "brightness(2.1)";
   if (f.character === "carrot" && f.cast > 0) {
     const phase = Math.sin((1 - f.cast / 0.42) * Math.PI);
