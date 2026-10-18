@@ -201,10 +201,50 @@ function chooseCombatTarget(f) {
 function inAttackRange(f, t) {
   return t && t.hp > 0 && attackDistance(f, t) <= f.stats.attackRange * rangeMultiplier() * combatUnit() + 0.1;
 }
+// Playable box: fighters keep a margin from the screen frame so nobody is squeezed against it.
+function fieldBounds(f) {
+  const r = combatRadius(f),
+    m = 22 * combatUnit();
+  return {
+    left: r + m,
+    right: W - r - m,
+    top: Math.max(r, baseScale() * 1150 + 10) + m * 0.5,
+    bottom: H - Math.max(12, r) - m,
+  };
+}
 function clampFighter(f) {
-  const r = combatRadius(f);
-  f.x = Math.max(r, Math.min(W - r, f.x));
-  f.y = Math.max(Math.max(r, baseScale() * 1150 + 10), Math.min(H - Math.max(12, r), f.y));
+  const b = fieldBounds(f);
+  f.x = Math.max(b.left, Math.min(b.right, f.x));
+  f.y = Math.max(b.top, Math.min(b.bottom, f.y));
+}
+// Steering away from the frame: zero in the open field, growing to 1 at the boundary.
+function wallPush(f) {
+  const b = fieldBounds(f),
+    zone = 60 * combatUnit(),
+    k = (gap) => Math.max(0, 1 - gap / zone);
+  return { x: k(f.x - b.left) - k(b.right - f.x), y: k(f.y - b.top) - k(b.bottom - f.y) };
+}
+// A fighter near the frame with an enemy in contact sidesteps along the wall toward open ground.
+function escapeDirection(f) {
+  const wall = wallPush(f);
+  if (Math.hypot(wall.x, wall.y) < 0.35) return null;
+  const close = alive(1 - f.team).filter((q) => Math.hypot(q.x - f.x, q.y - f.y) < combatRadius(f) + combatRadius(q) + 14 * combatUnit());
+  if (!close.length) return null;
+  let ax = 0,
+    ay = 0;
+  for (const q of close) {
+    const d = Math.max(0.001, Math.hypot(f.x - q.x, f.y - q.y));
+    ax += (f.x - q.x) / d;
+    ay += (f.y - q.y) / d;
+  }
+  // Two perpendiculars to the press; take the one that leads more toward the field centre.
+  const cx = W / 2 - f.x,
+    cy = (fieldBounds(f).top + fieldBounds(f).bottom) / 2 - f.y,
+    side = -ay * cx + ax * cy >= 0 ? 1 : -1,
+    ex = -ay * side + wall.x,
+    ey = ax * side + wall.y,
+    len = Math.hypot(ex, ey) || 1;
+  return { x: ex / len, y: ey / len };
 }
 function resetCombatStats() {
   for (const f of F) {
@@ -757,6 +797,21 @@ function stepCombat(dt) {
       ny = ly / len;
       move = true;
     }
+    const wall = wallPush(f);
+    if (move && (wall.x || wall.y)) {
+      const wx = nx + wall.x * 1.6,
+        wy = ny + wall.y * 1.6,
+        len = Math.hypot(wx, wy) || 1;
+      nx = wx / len;
+      ny = wy / len;
+    }
+    const escape = f.cast > 0 ? null : escapeDirection(f);
+    if (escape) {
+      nx = escape.x;
+      ny = escape.y;
+      move = true;
+      retreat = true;
+    }
     if (f.cast > 0) move = false;
     if (move) {
       f.vx = nx * f.stats.moveSpeed * speedMultiplier() * unit;
@@ -954,19 +1009,21 @@ function drawTargetLines() {
       d = Math.hypot(dx, dy),
       rf = combatRadius(f),
       rt = combatRadius(t) + 6;
-    if (d < rf + rt + 8) continue;
+    if (d < 1) continue;
+    // Fighters in contact still get a short arrow at the target's feet.
     const ux = dx / d,
       uy = dy / d,
-      x0 = f.x + ux * rf,
-      y0 = f.y + uy * rf,
       x1 = t.x - ux * rt,
       y1 = t.y - uy * rt,
+      short = d < rf + rt + 30,
+      sx = short ? x1 - ux * 26 : f.x + ux * rf,
+      sy = short ? y1 - uy * 26 : f.y + uy * rf,
       col = f.team ? "255,75,48" : "72,170,255";
     g.setLineDash([]);
     g.strokeStyle = "rgba(0,0,0,0.35)";
     g.lineWidth = 7;
     g.beginPath();
-    g.moveTo(x0, y0);
+    g.moveTo(sx, sy);
     g.lineTo(x1, y1);
     g.stroke();
     g.strokeStyle = `rgba(${col},0.95)`;
@@ -975,7 +1032,7 @@ function drawTargetLines() {
     g.setLineDash([9, 6]);
     g.lineDashOffset = -performance.now() / 40;
     g.beginPath();
-    g.moveTo(x0, y0);
+    g.moveTo(sx, sy);
     g.lineTo(x1, y1);
     g.stroke();
     g.setLineDash([]);
