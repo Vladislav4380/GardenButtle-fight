@@ -31,7 +31,12 @@ function engageSlotDirection(f, t, d, range) {
     sy = t.y + row * 2.2 * combatRadius(f) - f.y,
     sd = Math.hypot(sx, sy),
     tolerance = (f.stats.preferredRange > 0 ? 8 : 3) * unit;
-  if (sd <= tolerance) return { move: false };
+  // Settle once close and only set off again when the slot drifts clearly away, so pushes from neighbours do not cause twitching.
+  if (f.settledTarget !== t) f.slotSettled = false;
+  f.settledTarget = t;
+  if (sd <= tolerance) f.slotSettled = true;
+  else if (sd > tolerance * 4) f.slotSettled = false;
+  if (f.slotSettled) return { move: false };
   // Moving away from the target counts as a retreat, so the fighter keeps facing it.
   return { move: true, x: sx / sd, y: sy / sd, retreat: sx * (t.x - f.x) + sy * (t.y - f.y) < 0 };
 }
@@ -935,7 +940,13 @@ function stepCombat(dt) {
       nx = wx / len;
       ny = wy / len;
     }
-    const escape = f.cast > 0 ? null : escapeDirection(f);
+    // Once a pinned fighter starts sidestepping it commits to that direction for a moment instead of re-deciding every frame.
+    f.escapeT = Math.max(0, (f.escapeT || 0) - dt);
+    let escape = f.cast > 0 ? null : f.escapeT > 0 ? f.escapeDir : escapeDirection(f);
+    if (escape && f.escapeT <= 0) {
+      f.escapeDir = escape;
+      f.escapeT = 0.5;
+    }
     if (escape) {
       nx = escape.x;
       ny = escape.y;
@@ -1297,6 +1308,8 @@ document.querySelector("#restartMotion").onclick = () => {
     f.target = null;
     f.slotTarget = null;
     f.lock = 0;
+    f.slotSettled = false;
+    f.escapeT = 0;
     f.attackEngaged = false;
     f.attackTarget = null;
     f.alignmentTarget = null;
