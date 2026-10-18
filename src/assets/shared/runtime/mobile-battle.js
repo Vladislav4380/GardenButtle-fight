@@ -947,12 +947,10 @@ function stepCombat(dt) {
       f.vx = nx * f.stats.moveSpeed * speedMultiplier() * unit;
       f.vy = ny * f.stats.moveSpeed * speedMultiplier() * unit;
       f.retreating = retreat;
-      const lookX = retreat || f.aligning ? dx / d : nx,
-        lookY = retreat || f.aligning ? dy / d : ny;
-      if (Math.abs(lookX) > 0.001 || !f.aligning) turnToward(f, lookX, lookY, dt);
-      else turnToward(f, -f.alignSide, lookY, dt);
     }
-    if (!move) turnToward(f, dx, dy, dt);
+    // In combat a fighter always looks at its target, also while stepping sideways or back; only the dash looks where it runs.
+    if (Math.abs(dx) > 0.001 || !f.aligning) turnToward(f, dx, dy, dt);
+    else turnToward(f, -f.alignSide, dy, dt);
     const engagement = !f.aligning && inAttackRange(f, t);
     if (engagement && (!f.attackEngaged || f.attackTarget !== t)) f.cool = Math.max(f.cool, attackReactionDelay(f));
     f.attackEngaged = engagement;
