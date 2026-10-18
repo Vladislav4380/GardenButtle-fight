@@ -1,42 +1,3 @@
-// Cache a thin alpha-silhouette outline at display size; original PNGs stay intact.
-const enemyOutlineCache = new WeakMap();
-function drawEnemyOutline(image, x, y, width, height) {
-  const key = width.toFixed(2) + "x" + height.toFixed(2);
-  let cache = enemyOutlineCache.get(image);
-  if (!cache) {
-    cache = new Map();
-    enemyOutlineCache.set(image, cache);
-  }
-  let outline = cache.get(key);
-  const pad = 4;
-  if (!outline) {
-    const mask = document.createElement("canvas");
-    mask.width = Math.ceil(width) + pad * 2;
-    mask.height = Math.ceil(height) + pad * 2;
-    const m = mask.getContext("2d");
-    m.drawImage(image, pad, pad, width, height);
-    m.globalCompositeOperation = "source-in";
-    m.fillStyle = "#ff5b37";
-    m.fillRect(0, 0, mask.width, mask.height);
-    outline = document.createElement("canvas");
-    outline.width = mask.width;
-    outline.height = mask.height;
-    const o = outline.getContext("2d");
-    for (let i = 0; i < 12; i++) {
-      const angle = (i * Math.PI) / 6;
-      o.drawImage(mask, Math.cos(angle) * 1.6, Math.sin(angle) * 1.6);
-    }
-    o.globalCompositeOperation = "destination-out";
-    o.drawImage(mask, 0, 0);
-    if (cache.size >= 8) cache.clear();
-    cache.set(key, outline);
-  }
-  g.save();
-  g.filter = "none";
-  g.drawImage(outline, x - pad, y - pad);
-  g.restore();
-}
-
 // Opponents are recoloured once per frame image: warm body hues (red/orange) turn purple,
 // greens and neutrals stay as they are. No separate enemy files are needed.
 const ENEMY_HUE = 280;
@@ -144,7 +105,6 @@ function drawMixedFighter(f) {
     g.rotate(phase * 0.04);
   }
   if (!f.moving && f.cast <= 0) g.scale(1, 1 + 0.004 * Math.sin((performance.now() / 1000) * 2 + f.lane));
-  if (f.team === 1) drawEnemyOutline(image, -p.anchor.x * z, -p.anchor.y * z, Math.max(p.canvas.width, image.naturalWidth) * z, p.canvas.height * z);
   g.drawImage(f.team === 1 ? enemyTint(image) : image, -p.anchor.x * z, -p.anchor.y * z, Math.max(p.canvas.width, image.naturalWidth) * z, p.canvas.height * z);
   g.restore();
   // Health bars are drawn by the battle scene so they can avoid overlapping.
