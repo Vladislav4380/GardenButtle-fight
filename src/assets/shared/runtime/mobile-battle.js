@@ -379,18 +379,21 @@ let W = 0,
   shieldOwners = [null, null],
   deathEffects = [],
   battleEnding = false;
+// Team size: 3 by default, ?team=5 in the address tries 5 on 5.
+const TEAM_SIZE = Math.min(5, Math.max(1, +((globalThis.location?.search || "").match(/[?&]team=(\d)/) || [])[1] || 3));
+const LANES = Array.from({ length: TEAM_SIZE }, (_, i) => i);
 const F = [];
-for (let i = 0; i < 3; i++) {
+for (let i = 0; i < TEAM_SIZE; i++) {
   F.push({ team: 0, lane: i, hp: 100, max: 100, cool: 0, state: "idle", hit: 0, cast: 0 });
   F.push({ team: 1, lane: i, hp: 100, max: 100, cool: 0, state: "idle", hit: 0, cast: 0 });
 }
 // Round, rating and the player's lineup survive page reloads; storage may be unavailable.
 const PROGRESS_KEY = "gardenbattle.progress";
 function loadProgress() {
-  const base = { round: 1, rating: 1000, lineup: ["pepper", "tomato", "carrot"] };
+  const base = { round: 1, rating: 1000, lineup: LANES.map((i) => ["pepper", "tomato", "carrot"][i % 3]) };
   try {
     const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY) || "{}");
-    const lineup = Array.isArray(saved.lineup) && saved.lineup.length === 3 && saved.lineup.every((id) => COMBAT_SPECS[id]) ? saved.lineup : base.lineup;
+    const lineup = Array.isArray(saved.lineup) && saved.lineup.length === TEAM_SIZE && saved.lineup.every((id) => COMBAT_SPECS[id]) ? saved.lineup : base.lineup;
     return { ...base, ...saved, lineup };
   } catch {
     return base;
@@ -404,7 +407,7 @@ function saveProgress() {
 const progress = loadProgress();
 let enemyRating = progress.rating;
 function randomLineup() {
-  return Array.from({ length: 3 }, () => ["pepper", "tomato", "carrot"][Math.floor(Math.random() * 3)]);
+  return Array.from({ length: TEAM_SIZE }, () => ["pepper", "tomato", "carrot"][Math.floor(Math.random() * 3)]);
 }
 // The tuning panel is for development: shown only with ?debug in the address.
 const motionSettings = document.querySelector(".motion-settings");
@@ -430,17 +433,19 @@ function resize() {
 // The opponent forms up by role: tank in front, shooter behind, fast fighter between.
 const ENEMY_DEPTH = { tomato: 0.12, carrot: 0.4, pepper: 0.85 };
 function place() {
+  // Lanes share the same span whatever the team size.
+  const step = (k) => (TEAM_SIZE > 1 ? (k * 2) / (TEAM_SIZE - 1) : 1);
   for (const f of F) {
     const depth = f.team ? ENEMY_DEPTH[f.character] + (Math.random() - 0.5) * 0.12 : 0;
     if (layout === "mobile-vertical") {
-      f.x = W * (0.2 + f.lane * 0.3);
+      f.x = W * (0.2 + step(0.3) * f.lane);
       f.y = f.team === 0 ? H * 0.4 : H * (0.68 + depth * 0.24);
     } else if (layout === "mobile-horizontal") {
       f.x = f.team === 0 ? W * 0.22 : W * (0.58 + depth * 0.32);
-      f.y = H * (0.36 + f.lane * 0.29);
+      f.y = H * (0.36 + step(0.29) * f.lane);
     } else {
       f.x = f.team ? W * (0.58 + depth * 0.32) : W * 0.24;
-      f.y = H * (0.34 + f.lane * 0.27) + (f.team ? 8 : -8);
+      f.y = H * (0.34 + step(0.27) * f.lane) + (f.team ? 8 : -8);
     }
   }
 }
@@ -476,6 +481,10 @@ function burst(x, y, col = "rgba(255,122,26,A)") {
   }
 }
 function baseScale() {
+  // Five fighters per side need smaller figures to fit the same field.
+  return (TEAM_SIZE > 3 ? 0.8 : 1) * baseScaleFull();
+}
+function baseScaleFull() {
   return layout === "mobile-horizontal"
     ? 0.85 * Math.min((W * 0.18) / 1100, (H * 0.25) / 1100)
     : layout === "mobile-vertical"
@@ -541,7 +550,7 @@ function hurt(f, d, src) {
   sync();
 }
 function teamHealth(team) {
-  return F.filter((f) => f.team === team).reduce((s, f) => s + Math.max(0, f.hp) / f.max, 0) / 3;
+  return F.filter((f) => f.team === team).reduce((s, f) => s + Math.max(0, f.hp) / f.max, 0) / TEAM_SIZE;
 }
 function laneFighter(lane) {
   return F.find((f) => f.team === 0 && f.lane === lane);
@@ -634,7 +643,9 @@ function enemyAct() {
 function renderSkillBar() {
   const bar = document.querySelector(".skills");
   if (!bar) return;
-  bar.innerHTML = [0, 1, 2]
+  bar.classList.toggle("n5", TEAM_SIZE > 3);
+  bar.style.gridTemplateColumns = "repeat(" + TEAM_SIZE + ",1fr)";
+  bar.innerHTML = LANES
     .map((lane) => {
       const f = laneFighter(lane),
         skill = FIGHTER_SKILLS[f.character];
@@ -727,7 +738,7 @@ function showBattleResult() {
   document.querySelector("#battleResultText").textContent = win ? "Вы победили" : loss ? "Вы проиграли" : "Ничья";
   const reason = timeout ? "Время вышло. " : "";
   document.querySelector("#battleResultDetail").textContent =
-    (win ? "★".repeat(stars) + "☆".repeat(3 - stars) + " (★ — выживший боец) " : "") +
+    (win ? "★".repeat(stars) + "☆".repeat(TEAM_SIZE - stars) + " (★ — выживший боец) " : "") +
     reason +
     (timeout ? (win ? "У вашего отряда осталось больше здоровья" : loss ? "У соперника осталось больше здоровья" : "Здоровья у отрядов поровну") : win ? "Отряд противника побеждён" : loss ? "Ваш отряд побеждён" : "Оба отряда побеждены") +
     ` · рейтинг ${delta >= 0 ? "+" : ""}${delta}`;
@@ -776,7 +787,7 @@ function battleHint(outcome, foes) {
     top = foes[0],
     share = Math.round((100 * (top.dealt || 0)) / total),
     mine = F.filter((f) => f.team === 0).map((f) => f.character);
-  if (outcome === "win") return alive(0).length < 3 ? "Совет: победа без потерь даёт 3 звезды и больше рейтинга." : "Чистая победа!";
+  if (outcome === "win") return alive(0).length < TEAM_SIZE ? "Совет: победа без потерь даёт " + TEAM_SIZE + (TEAM_SIZE > 4 ? " звёзд" : " звезды") + " и больше рейтинга." : "Чистая победа!";
   if (!playerSkills) return "Совет: вы не нажали ни одного умения — с ними побед в разы больше.";
   if (time <= 0) return "Совет: в финале урон ×3 — сберегите бойцов к последним 15 секундам.";
   if (top.character === "carrot")
