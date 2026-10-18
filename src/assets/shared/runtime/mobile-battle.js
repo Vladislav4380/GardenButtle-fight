@@ -156,7 +156,7 @@ const COMBAT_SPECS = {
   tomato: {
     role: "Страж",
     max: 900,
-    power: 24,
+    power: 28,
     defense: 10,
     attackInterval: 1.15,
     moveSpeed: 38,
@@ -181,8 +181,8 @@ const COMBAT_SPECS = {
   },
   carrot: {
     role: "Быстрый боец",
-    max: 540,
-    power: 36,
+    max: 580,
+    power: 37,
     defense: 6,
     attackInterval: 0.8,
     moveSpeed: 78,
@@ -838,6 +838,7 @@ function planDash(f, dt) {
   }
   if (attackDistance(f, t) <= f.stats.attackRange * rangeMultiplier() * combatUnit() + 0.1) {
     f.dash = null;
+    f.target = t;
     f.cast = 0.42;
     f.cool = nextAttackInterval(f);
     hurt(t, Math.max(1, Math.round(f.stats.power * 1.8 - t.stats.defense)), f);
@@ -882,12 +883,9 @@ function stepCombat(dt) {
   for (const f of F) {
     if (f.hp <= 0) continue;
     if (f.dash && planDash(f, dt)) continue;
-    // Keep the chosen target through an attack and for a short while after, so fighters do not jitter between targets.
-    f.lock = Math.max(0, (f.lock || 0) - dt);
-    const keep = f.target && f.target.hp > 0 && (f.lock > 0 || f.cast > 0 || f.pendingFire || f.melee);
-    const t = keep ? f.target : chooseCombatTarget(f);
+    // Once engaged, a fighter keeps its target until it falls; only a skill (carrot dash) can switch it.
+    const t = f.target && f.target.hp > 0 ? f.target : chooseCombatTarget(f);
     if (!t) continue;
-    if (t !== f.target) f.lock = f.character === "pepper" ? 1.5 : 0.6;
     f.target = t;
     const dx = t.x - f.x,
       dy = t.y - f.y,
