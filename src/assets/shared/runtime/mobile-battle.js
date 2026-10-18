@@ -410,6 +410,8 @@ function randomLineup() {
   return Array.from({ length: TEAM_SIZE }, () => ["pepper", "tomato", "carrot"][Math.floor(Math.random() * 3)]);
 }
 // The tuning panel is for development: shown only with ?debug in the address.
+const setupHint = document.querySelector("#positionHint");
+if (setupHint) setupHint.textContent = "Перетащите бойца. Значок у ног врага — кого ваш боец атакует первым";
 const motionSettings = document.querySelector(".motion-settings");
 if (motionSettings && !/debug/.test(globalThis.location?.search || "")) motionSettings.hidden = true;
 // The player picks their own lineup before the battle; the opponent's is random and visible during setup.
@@ -1112,6 +1114,7 @@ function render() {
   g.globalCompositeOperation = "source-over";
   for (const s of shots) if (s.kind === "tomato") drawTomatoShot(s);
   drawHealthBars();
+  if (!battleStarted) drawTargetPreview();
   for (const p of floaters) {
     g.globalAlpha = Math.min(1, Math.max(0, p.t / 0.8));
     g.fillStyle = p.color || "#ff472c";
@@ -1169,6 +1172,45 @@ function drawShields() {
   }
 }
 // Health bars without names; bars that would overlap are stacked upward.
+// Before the battle each enemy shows small portrait badges at its feet of the player's fighters that will attack it first,
+// so moving a fighter visibly changes who fights whom. The selected fighter's badge is highlighted.
+function drawTargetPreview() {
+  const r = Math.max(9, Math.min(14, baseScale() * 160)),
+    badges = new Map();
+  for (const f of F) {
+    if (f.team !== 0 || f.hp <= 0) continue;
+    const t = chooseCombatTarget(f);
+    if (!t) continue;
+    if (!badges.has(t)) badges.set(t, []);
+    badges.get(t).push(f);
+  }
+  for (const [t, list] of badges) {
+    const top = t.y + r + 6;
+    list.forEach((f, i) => {
+      const x = t.x + (i - (list.length - 1) / 2) * (r * 2 + 3),
+        on = f === selectedFighter,
+        image = mixedSprites[f.character]?.["idle/front"]?.[0];
+      g.save();
+      g.beginPath();
+      g.arc(x, top, on ? r * 1.25 : r, 0, 7);
+      g.fillStyle = "#0b1710e6";
+      g.fill();
+      g.clip();
+      if (image?.complete && image.naturalWidth) {
+        // Head and chest of the idle frame, taken around the profile anchor.
+        const a = characterProfiles[f.character].anchor,
+          k = on ? r * 1.25 : r;
+        g.drawImage(image, a.x - 400, 170, 800, 800, x - k, top - k, k * 2, k * 2);
+      }
+      g.restore();
+      g.strokeStyle = on ? "#ffe167" : "#9fd0ff";
+      g.lineWidth = on ? 2.5 : 1.5;
+      g.beginPath();
+      g.arc(x, top, on ? r * 1.25 : r, 0, 7);
+      g.stroke();
+    });
+  }
+}
 function drawHealthBars() {
   const w = Math.max(24, Math.min(44, baseScale() * 540)),
     placed = [];
