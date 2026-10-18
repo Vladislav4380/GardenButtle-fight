@@ -1,0 +1,47 @@
+<ion-content fullscreen class="route-page">
+  <main class="route-shell">
+    <header class="route-header">
+      <button type="button" aria-label="Назад к движению" (click)="goBack()">‹</button>
+      <div>
+        <span>Тренировочный полигон</span>
+        <h1>Смена траектории</h1>
+      </div>
+      <b>↓ ↙ ↓</b>
+    </header>
+
+    <section class="route-arena" aria-label="Помидор идёт прямо и периодически смещается влево">
+      <div class="arena-grid" aria-hidden="true"></div>
+      <svg class="route-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="72,5 72,25 55,32 55,52 38,59 38,80 23,86 23,96" />
+      </svg>
+      <span class="marker start">START</span>
+      <span class="marker finish">FINISH</span>
+
+      <div
+        class="traveller"
+        [class.front-left]="displayMode() === 'front-left'"
+        [class.turning]="displayMode() === 'turn-left' || displayMode() === 'turn-front'"
+        [style.left.%]="x()"
+        [style.top.%]="y()"
+      >
+        <img
+          [src]="currentFrame()"
+          alt="Помидор идёт по сложной траектории"
+          draggable="false"
+        />
+        <span class="ground-shadow" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="speed-picker">
+        <label for="route-speed">Скорость</label>
+        <input id="route-speed" type="range" min="0.05" max="1.5" step="0.05" [value]="speed()" (input)="setSpeedFromInput($event)" />
+        <output for="route-speed">{{ speed().toFixed(2) }}×</output>
+      </div>
+      <button class="play-button" type="button" (click)="play()">
+        {{ isWalking() ? 'ИДЁТ…' : 'ПОВТОРИТЬ МАРШРУТ' }}
+      </button>
+    </section>
+  </main>
+</ion-content>

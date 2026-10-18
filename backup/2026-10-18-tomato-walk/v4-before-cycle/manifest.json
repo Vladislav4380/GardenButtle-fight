@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "tomato",
+  "canvas": {
+    "width": 1024,
+    "height": 1536
+  },
+  "anchor": {
+    "x": 677,
+    "y": 1360
+  },
+  "visualHeight": 1150,
+  "strideLength": 1000,
+  "views": [
+    "front",
+    "back"
+  ],
+  "states": {
+    "idle": {
+      "frameCount": 1,
+      "files": [
+        "idle.png"
+      ]
+    },
+    "walk": {
+      "frameCount": 4,
+      "files": [
+        "walk-a.png",
+        "walk-pass.png",
+        "walk-b.png",
+        "walk-pass.png"
+      ]
+    },
+    "attack": {
+      "frameCount": 1,
+      "files": [
+        "cast.png"
+      ]
+    }
+  },
+  "sockets": {
+    "front": {
+      "idle": [
+        100,
+        425
+      ],
+      "attack": [
+        100,
+        425
+      ]
+    },
+    "back": {
+      "idle": [
+        895,
+        850
+      ],
+      "attack": [
+        895,
+        850
+      ]
+    }
+  },
+  "sources": {
+    "front/idle": "Scenario: tomato base (left-facing)",
+    "front/cast": "Scenario shout pose, no effect",
+    "front/walk-a": "source/walk/frames-5-8/frame-02.png (Scenario, mannequin sheet 5-8)",
+    "front/walk-b": "source/walk/frames-5-8/frame-04.png (Scenario, mannequin sheet 5-8)",
+    "back/idle": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-01.png",
+    "back/cast": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-07.png",
+    "back/walk-a": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-04.png",
+    "back/walk-b": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-16.png",
+    "front/walk-pass": "source/walk/frames-passing/frame-01.png (Scenario; legs shortened to match stride frames)",
+    "back/walk-pass": "copy of back/idle.png (no back passing pose yet)"
+  },
+  "notes": [
+    "front set regenerated in new style; back view still old, shifted +165px to match anchor.x 677",
+    "walk cycle: walk-a, walk-pass, walk-b, walk-pass; scenario sources and prompts in source/walk (ignored by check)",
+    "strideLength 1000: 4 walk frames, so each frame lasts as long as pepper's (2 frames at 500); all walk frames normalised to the same visible height",
+    "walk frames scaled to identical head width (410px), not identical height"
+  ]
+}

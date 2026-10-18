@@ -1,0 +1,23 @@
+ЗАГРУЗИТЬ: ничего нового не загружать. Писать в тот же чат ChatGPT, где была сделана картинка с 6 кадрами (sheet-walk-shoot-chatgpt-v3).
+
+ПРОМПТ:
+Edit the previous image. Keep the top row (frames 1-4, walking) exactly as it is, pixel for pixel. Redraw only the bottom row: two shooting frames, same tomato character, same costume, same scale, same head size as in the top row, facing left, white background, no effects, no muzzle flash, no smoke, no bullets.
+
+Use the diameter of the round shield as the unit of measure (1 S = shield diameter).
+
+Frame 5 - AIM (braced stance, clearly different from walking):
+- Feet planted wide: distance between the boot centres = 1.0 S. Both soles flat on the ground, both knees bent, body lowered by about 0.15 S compared to the walking frames.
+- Gun arm fully straight, pointing horizontally to the left at eye level. The gun barrel is exactly horizontal (0 degrees).
+- Muzzle of the gun is 1.3 S in front of the face (to the left of the head).
+- Shield pulled tight against the chest, covering the belly, not swinging.
+- Torso leans forward 5 degrees, toward the target. Eyes squinted, looking along the barrel.
+
+Frame 6 - RECOIL (a short jolt just after the shot, not a new pose):
+- Feet in exactly the same place as in frame 5, same 1.0 S apart, same knee bend.
+- Torso and head tilted backward by 10 degrees (no more), away from the target.
+- Gun arm still pointing forward to the left and still almost straight; the elbow bends slightly, so the gun moves 0.25 S back toward the body.
+- Gun barrel tilted up by only 15 degrees above horizontal. The muzzle must stay BELOW the top of the head. Do NOT raise the gun over the head.
+- Shield stays on the chest, it may shift 0.1 S, not more.
+- Face: eyes briefly shut or squinting from the kick.
+
+Frames 5 and 6 must look like two consecutive moments of the same shot: if you overlay them, the boots coincide exactly, only the upper body and gun move.

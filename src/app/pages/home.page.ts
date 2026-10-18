@@ -1,0 +1,8 @@
+import { Component } from '@angular/core';import { RouterLink } from '@angular/router';import { SCENES } from '../data/scenes';
+@Component({standalone:true,imports:[RouterLink],template:`
+<main><header><small>GARDEN BATTLE FIGHT</small><h1>Выберите бой</h1><p>Перцы, помидоры, морковь, трёхмерные арены и тактические эксперименты.</p><div class="summary">{{scenes.length}} сцен · один проект · без игрового сервера</div></header>
+<section class="grid">@for(scene of scenes;track scene.id){<a class="card" [routerLink]="'/'+scene.path"><span>{{scene.group}}</span><h2>{{scene.title}}</h2><p>{{scene.description}}</p><b>Открыть →</b></a>}</section></main>`,styles:[`
+:host{overflow:auto;background:radial-gradient(circle at 10% 0,#2a5235,transparent 40%),#09140e}main{max-width:1180px;margin:auto;padding:48px 22px}small{letter-spacing:.2em;color:#9aeaab;font-weight:800}h1{font-size:clamp(38px,6vw,64px);margin:18px 0 12px}header p{color:#b4c5b8;font-size:17px}.summary{padding:14px 0;color:#c9e4b8;border-bottom:1px solid #37523e;margin-bottom:24px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}.card{display:flex;flex-direction:column;min-height:225px;border:1px solid #395e45;border-radius:20px;padding:23px;background:linear-gradient(140deg,#1b3725,#102019);text-decoration:none;color:#edf7ec}.card:hover{border-color:#9bd96b;background:#244931}.card span{color:#a7d895;font-size:11px;text-transform:uppercase;letter-spacing:.1em}.card h2{font-size:23px;margin:17px 0 8px}.card p{color:#a9bdaf;line-height:1.5;font-size:14px}.card b{margin-top:auto;color:#bef085;padding-top:12px}@media(max-width:500px){main{padding:30px 14px}.grid{grid-template-columns:1fr}.card{min-height:185px}}
+`]})
+export class HomePage { scenes=SCENES; }
+

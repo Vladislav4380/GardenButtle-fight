@@ -1,0 +1,27 @@
+<ion-content fullscreen class="fight-page">
+  <main class="fight-scene" aria-label="Демонстрационный бой">
+    <section class="phaser-frame">
+      <div #phaserHost class="phaser-host"></div>
+      <div class="fight-help">Клик по полю — движение · Клик по врагу — атака</div>
+
+      @if (result(); as fightResult) {
+        <div class="fight-result" role="dialog" aria-modal="true" aria-labelledby="fight-result-title">
+          <strong id="fight-result-title">{{ fightResult === 'victory' ? 'Победа!' : 'Поражение' }}</strong>
+          <span>{{ fightResult === 'victory' ? 'Противник повержен' : 'Ваш боец повержен' }}</span>
+
+          @if (reward(); as battleReward) {
+            <div class="battle-reward">
+              <b>+{{ battleReward.coinsGranted }} 🪙</b>
+              <small>Баланс: {{ battleReward.coinBalance }}</small>
+            </div>
+          } @else if (rewardNotice()) {
+            <p class="reward-notice">{{ rewardNotice() }}</p>
+          }
+
+          <button type="button" (click)="restartBattle()">Повторить бой</button>
+          <button class="secondary-button" type="button" (click)="goToGarden()">Каталог боёв</button>
+        </div>
+      }
+    </section>
+  </main>
+</ion-content>

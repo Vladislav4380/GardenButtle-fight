@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "id": "carrot",
+  "canvas": {
+    "width": 1024,
+    "height": 1536
+  },
+  "anchor": {
+    "x": 512,
+    "y": 1360
+  },
+  "visualHeight": 1150,
+  "scale": 1.15,
+  "strideLength": 420,
+  "views": [
+    "front",
+    "back"
+  ],
+  "states": {
+    "idle": {
+      "frameCount": 1,
+      "files": [
+        "idle.png"
+      ]
+    },
+    "walk": {
+      "frameCount": 4,
+      "files": [
+        "walk-a.png",
+        "walk-pass.png",
+        "walk-b.png",
+        "walk-pass-2.png"
+      ]
+    },
+    "attack": {
+      "frameCount": 2,
+      "files": [
+        "cast.png",
+        "cast-b.png"
+      ]
+    }
+  },
+  "sockets": {
+    "front": {
+      "idle": [
+        720,
+        850
+      ],
+      "attack": [
+        1376,
+        943
+      ]
+    },
+    "back": {
+      "idle": [
+        730,
+        850
+      ],
+      "attack": [
+        1327,
+        776
+      ]
+    }
+  },
+  "sources": {
+    "front/idle": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-carrot-front-right-v7/frame-04.png",
+    "front/cast": "Scenario GPT Image 2 attack sheet 20261012, left panel (wind-up)",
+    "front/walk-a": "source/walk/frames-walk-v1/frame-01.png (ChatGPT, ref-walk.png + prompt-walk.txt)",
+    "front/walk-b": "source/walk/frames-walk-v1/frame-03.png (ChatGPT, ref-walk.png + prompt-walk.txt)",
+    "back/idle": "C:/Users/user/.codex/visualizations/2026/10/10/01a12694-a08e-7683-83fa-c10bcbf59fbc/carrot-directions-render/back/frame-01.png",
+    "back/cast": "Scenario GPT Image 2 back attack sheet 20261012, left panel (wind-up)",
+    "back/walk-a": "C:/Users/user/.codex/visualizations/2026/10/10/01a12694-a08e-7683-83fa-c10bcbf59fbc/carrot-directions-render/back/frame-08.png",
+    "back/walk-b": "C:/Users/user/.codex/visualizations/2026/10/10/01a12694-a08e-7683-83fa-c10bcbf59fbc/carrot-directions-render/back/frame-22.png",
+    "front/cast-b": "Scenario GPT Image 2 attack sheet 20261012, right panel (thrust)",
+    "back/cast-b": "Scenario GPT Image 2 back attack sheet 20261012, right panel (thrust)",
+    "front/walk-pass": "source/walk/frames-walk-v1/frame-02.png (ChatGPT, ref-walk.png + prompt-walk.txt)",
+    "front/walk-pass-2": "source/walk/frames-walk-v1/frame-04.png (ChatGPT, ref-walk.png + prompt-walk.txt)",
+    "back/walk-pass": "copy of back/idle.png",
+    "back/walk-pass-2": "copy of back/idle.png"
+  },
+  "notes": [
+    "Back poses use the previously prepared equipped-model render.",
+    "Attack frames (front and back): cast.png = wind-up, cast-b.png = thrust; canvas widened to the right (anchor unchanged)."
+  ]
+}

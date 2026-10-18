@@ -1,0 +1,18 @@
+{
+  "characterFileCount": 9,
+  "pngPerCharacter": 8,
+  "structure": [
+    "manifest.json",
+    "sprites/front/idle.png",
+    "sprites/front/cast.png",
+    "sprites/front/walk-a.png",
+    "sprites/front/walk-b.png",
+    "sprites/back/idle.png",
+    "sprites/back/cast.png",
+    "sprites/back/walk-a.png",
+    "sprites/back/walk-b.png"
+  ],
+  "backup": "C:\\Users\\user\\.codex\\visualizations\\2026\\10\\10\\01a12694-a08e-7683-83fa-c10bcbf59fbc\\resource-cleanup-backup-20261012",
+  "oldProjectsUnchanged": true,
+  "modelOwnership": "Only models referenced by 3D scenes live under assets/scenes/3d"
+}

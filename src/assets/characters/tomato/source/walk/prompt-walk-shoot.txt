@@ -1,0 +1,18 @@
+The uploaded image is a reference sheet. On the far left, behind the gray vertical line, is the finished character: a tomato warrior with a green leafy cape, brown leather armor and boots, a tomato blaster gun in his right hand and a round red shield on his left arm. To the right of the line are gray mannequins in two rows: the top row shows four walk poses, the bottom row shows two shooting poses.
+
+Create a sprite sheet on a plain pure white background with exactly six frames in two rows: four frames in the top row and two frames in the bottom row, placed at the left of the bottom row. Every frame shows the same tomato warrior at exactly the same size and scale: the head is the same size in every frame, the body has the same proportions, and the boots are the same size.
+
+TOP ROW, walk cycle. He walks with very short, tight steps, almost shuffling, like a soldier advancing slowly with his weapon ready. The feet always stay under his body: in the step frames the front heel is only half a boot length ahead of the back toe, and the gap between the feet is never wider than his head. Knees slightly bent. No lunge, no wide stride.
+Frame 1: tiny step. His right leg, the one closer to the viewer, is slightly forward with the heel down; his left leg is slightly behind on its toes. Body at its lowest. The gun is pulled back toward his chest and tilted slightly down; the shield is pushed forward.
+Frame 2: passing. He stands on his right leg; his left knee lifts and the left foot passes beside the right ankle, just off the ground. Body at its highest. Gun and shield halfway.
+Frame 3: tiny step with the other leg. His left leg, the one farther from the viewer, is slightly forward with the heel down; his right leg is slightly behind on its toes. Body at its lowest. The gun is pushed forward and tilted slightly up; the shield is pulled back toward his hip.
+Frame 4: passing again. He stands on his left leg; his right knee lifts and the right foot passes beside the left ankle, just off the ground. Body at its highest. Gun and shield halfway.
+In every walk frame the cape flaps to a different position and the leaves on his head bounce slightly.
+
+BOTTOM ROW, shooting.
+Frame 5, aim: he stands firmly with feet planted slightly apart and knees bent, body leaning slightly forward. His gun arm is fully extended straight forward at eye level, the blaster held level and pointing straight ahead. The shield is raised in front of his chest for cover. His face is focused, one eye narrowed.
+Frame 6, recoil: same planted feet. The shot has just fired: his body leans back, the gun arm is thrown up and back by the kick, the blaster muzzle tilted upward. The shield arm swings out slightly for balance. The cape is blown backward. Do not draw the muzzle flash, the projectile or any effects; only the body pose shows the recoil.
+
+The mannequins show the leg positions: the red leg is his near leg, the blue leg is his far leg, and the dark gray bar is the gun. These colors are only a guide. Draw the character with his own colors, armor, boots, cape, gun and shield.
+
+Keep the same camera angle as the character on the left in all six frames: three-quarter view facing left toward the viewer, with both eyes visible. Keep the same face, art style and lighting. The characters in each row stand on the same horizontal ground line, evenly spaced, fully visible and not cropped, including the gun. Do not draw the mannequins, the gray lines, numbers, text or shadows.

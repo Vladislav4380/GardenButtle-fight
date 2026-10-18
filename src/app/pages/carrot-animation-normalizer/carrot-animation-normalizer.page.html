@@ -1,0 +1,14 @@
+<ion-content [fullscreen]="true">
+  <main>
+    <header><div><small>CARROT · ANIMATION NORMALIZER</small><h1>Проверка одного персонажа</h1></div><b>{{ status() }}</b></header>
+    <section #viewport class="viewport"></section>
+    <nav>
+      <button [class.active]="active()==='idle'" (click)="play('idle')">Idle</button>
+      <button [class.active]="active()==='walk'" (click)="play('walk')">Walk</button>
+      <button [class.active]="active()==='attack'" (click)="play('attack')">Attack</button>
+      <button class="missing" (click)="showMissingDamage()">Damage</button>
+      <button [class.active]="active()==='death'" (click)="play('death')">Death</button>
+    </nav>
+    <footer><span>Одна модель: <code>carrot-walk.glb</code></span><span>Экипировка прикреплена отдельно</span></footer>
+  </main>
+</ion-content>

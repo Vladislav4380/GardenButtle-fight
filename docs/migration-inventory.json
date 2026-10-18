@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "updatedAt": "2026-10-12",
+  "sceneCount": 18,
+  "characterContract": {
+    "filesPerCharacter": 9,
+    "pngPerCharacter": 8,
+    "canvas": [
+      1024,
+      1536
+    ],
+    "poses": {
+      "idle": 1,
+      "walk": 2,
+      "attack": 1
+    },
+    "views": [
+      "front",
+      "back"
+    ]
+  },
+  "characterResources": [
+    "characters/pepper/sprites/front/idle.png",
+    "characters/pepper/sprites/front/walk-a.png",
+    "characters/pepper/sprites/front/walk-b.png",
+    "characters/pepper/sprites/front/cast.png",
+    "characters/pepper/sprites/back/idle.png",
+    "characters/pepper/sprites/back/walk-a.png",
+    "characters/pepper/sprites/back/walk-b.png",
+    "characters/pepper/sprites/back/cast.png",
+    "characters/tomato/sprites/front/idle.png",
+    "characters/tomato/sprites/front/walk-a.png",
+    "characters/tomato/sprites/front/walk-b.png",
+    "characters/tomato/sprites/front/cast.png",
+    "characters/tomato/sprites/back/idle.png",
+    "characters/tomato/sprites/back/walk-a.png",
+    "characters/tomato/sprites/back/walk-b.png",
+    "characters/tomato/sprites/back/cast.png",
+    "characters/carrot/sprites/front/idle.png",
+    "characters/carrot/sprites/front/walk-a.png",
+    "characters/carrot/sprites/front/walk-b.png",
+    "characters/carrot/sprites/front/cast.png",
+    "characters/carrot/sprites/back/idle.png",
+    "characters/carrot/sprites/back/walk-a.png",
+    "characters/carrot/sprites/back/walk-b.png",
+    "characters/carrot/sprites/back/cast.png"
+  ],
+  "modelResources": [
+    "scenes/3d/carrot/bodyFronRefVideo.glb",
+    "scenes/3d/carrot/carrot-body-cape-rigged.glb",
+    "scenes/3d/carrot/carrot-body.glb",
+    "scenes/3d/carrot/carrot-combat-blender-v1.glb",
+    "scenes/3d/carrot/carrot-died.glb",
+    "scenes/3d/carrot/carrot-idle.glb",
+    "scenes/3d/carrot/carrot-ludo-walk.glb",
+    "scenes/3d/carrot/carrot-master-combat-walk-v1.glb",
+    "scenes/3d/carrot/carrot-master-combat-walk-v2.glb",
+    "scenes/3d/carrot/carrot-walk.glb",
+    "scenes/3d/carrot/combat-attack.glb",
+    "scenes/3d/carrot/combat-walk.glb",
+    "scenes/3d/carrot/shield-source.glb",
+    "scenes/3d/carrot/shield.glb",
+    "scenes/3d/carrot/spear-source.glb",
+    "scenes/3d/carrot/spear.glb",
+    "scenes/3d/tomato/tomato-rigged-equipment-fixed.glb"
+  ]
+}

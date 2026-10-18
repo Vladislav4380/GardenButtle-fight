@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "id": "pepper",
+  "canvas": {
+    "width": 1024,
+    "height": 1536
+  },
+  "anchor": {
+    "x": 512,
+    "y": 1360
+  },
+  "visualHeight": 1150,
+  "strideLength": 480,
+  "views": [
+    "front",
+    "back"
+  ],
+  "states": {
+    "idle": {
+      "frameCount": 1,
+      "files": [
+        "idle.png"
+      ]
+    },
+    "walk": {
+      "frameCount": 2,
+      "files": [
+        "walk-a.png",
+        "walk-b.png"
+      ]
+    },
+    "attack": {
+      "frameCount": 1,
+      "files": [
+        "cast.png"
+      ]
+    }
+  },
+  "sockets": {
+    "front": {
+      "idle": [
+        848.5510204081631,
+        801.4285714285714
+      ],
+      "attack": [
+        872.6818181818182,
+        733.6776859504132
+      ]
+    },
+    "back": {
+      "idle": [
+        884.2342264477095,
+        838.1763180639585
+      ],
+      "attack": [
+        916.5201371036846,
+        442.56212510711225
+      ]
+    }
+  },
+  "sources": {
+    "front/idle": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/combat-idle-front-v001.png",
+    "front/cast": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/cast.png",
+    "front/walk-a": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/walkA.png",
+    "front/walk-b": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/walkB.png",
+    "back/idle": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/combat-idle-back-v001.png",
+    "back/cast": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/back-cast.png",
+    "back/walk-a": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/back-walkA.png",
+    "back/walk-b": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/back-walkB.png"
+  },
+  "notes": []
+}
+

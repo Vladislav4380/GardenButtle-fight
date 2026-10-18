@@ -1,0 +1,7 @@
+The uploaded image is a reference sheet. On the far left, behind the gray vertical line, is the finished character: a red bell pepper warrior in red and gold armor with a red cape. To the right of the line are four gray mannequin figures showing four poses of a walk cycle, in order from left to right.
+
+Create a sprite sheet with exactly four frames in one horizontal row, on a plain pure white background. In each frame draw the same red bell pepper warrior from the left of the reference, posed exactly like the mannequin in the same position: the same body tilt, the same leg positions, the same leg in front, the same knee bends, the same foot placement and the same arm swing.
+
+The mannequin's leg colors only show which leg is which: the red leg is the character's near leg, closer to the viewer; the blue leg is the far leg. The light pink stroke is the near arm. Draw the character with its own colors, armor, boots, gloves and cape. Do not copy the mannequin's gray body, its red and blue legs or its pink arm.
+
+Keep the same camera angle as the character on the left: three-quarter view facing right, with both eyes visible. Keep the same size, proportions, face, art style and lighting in all four frames. All four characters stand on the same horizontal ground line, evenly spaced, fully visible and not cropped. Do not draw the mannequins, the gray line, numbers, text or shadows.

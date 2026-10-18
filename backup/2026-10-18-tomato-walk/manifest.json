@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "tomato",
+  "canvas": {
+    "width": 1024,
+    "height": 1536
+  },
+  "anchor": {
+    "x": 677,
+    "y": 1360
+  },
+  "visualHeight": 1150,
+  "strideLength": 500,
+  "views": [
+    "front",
+    "back"
+  ],
+  "states": {
+    "idle": {
+      "frameCount": 1,
+      "files": [
+        "idle.png"
+      ]
+    },
+    "walk": {
+      "frameCount": 2,
+      "files": [
+        "walk-a.png",
+        "walk-b.png"
+      ]
+    },
+    "attack": {
+      "frameCount": 1,
+      "files": [
+        "cast.png"
+      ]
+    }
+  },
+  "sockets": {
+    "front": {
+      "idle": [
+        100,
+        425
+      ],
+      "attack": [
+        100,
+        425
+      ]
+    },
+    "back": {
+      "idle": [
+        895,
+        850
+      ],
+      "attack": [
+        895,
+        850
+      ]
+    }
+  },
+  "sources": {
+    "front/idle": "Scenario: tomato base (left-facing)",
+    "front/cast": "Scenario shout pose, no effect",
+    "front/walk-a": "Scenario moove-1 (stride)",
+    "front/walk-b": "same as idle (both planted); step feel from code bob",
+    "back/idle": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-01.png",
+    "back/cast": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-07.png",
+    "back/walk-a": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-04.png",
+    "back/walk-b": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-16.png"
+  },
+  "notes": [
+    "front set regenerated in new style; back view still old, shifted +165px to match anchor.x 677"
+  ]
+}

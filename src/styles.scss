@@ -1,0 +1,7 @@
+@import '@ionic/angular/css/core.css';
+@import '@ionic/angular/css/normalize.css';
+@import '@ionic/angular/css/structure.css';
+@import '@ionic/angular/css/typography.css';
+@import '@ionic/angular/css/display.css';
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#09140e;color:#edf5ee;font-family:system-ui,sans-serif}gbf-root{display:block;height:100%}router-outlet+*{display:block;height:100%}button,a{-webkit-tap-highlight-color:transparent}ion-content{--background:#09140e}button{cursor:pointer}
+

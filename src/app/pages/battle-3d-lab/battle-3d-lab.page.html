@@ -1,0 +1,37 @@
+<ion-content [fullscreen]="true">
+  <main class="lab">
+    <header>
+      <div><small>GARDEN BATTLE · 3D LAB</small><h1>{{ title }}</h1></div>
+      <div class="actions">
+        <button (click)="start()" [disabled]="!ready()">Старт</button>
+        <button (click)="togglePause()" [disabled]="!ready()">{{ paused() ? 'Продолжить' : 'Пауза' }}</button>
+        <button (click)="reset()" [disabled]="!ready()">Сбросить</button>
+      </div>
+    </header>
+    <div class="workspace" [class.has-settings]="teamSize===3">
+      <section #viewport class="viewport"></section>
+      @if(teamSize===3){
+        <aside class="settings">
+          <div class="score"><b>{{ teamAlive('red') }}</b><span>Верхняя команда</span><i>VS</i><span>Нижняя команда</span><b>{{ teamAlive('blue') }}</b></div>
+          <div class="speed"><span>Скорость боя</span>@for(x of [1,2,4];track x){<button [class.active]="speed===x" (click)="speed=x">{{x}}×</button>}</div>
+          @for(team of ['red','blue'];track team){
+            <section class="team-settings"><h2>{{team==='red'?'Верхняя команда':'Нижняя команда'}}</h2>
+              @for(f of fighters;track f.team+'-'+f.lane){@if(f.team===team){
+                <details><summary>Морковь {{f.lane+2}} <span>{{f.hp.toFixed(0)}} / {{f.maxHp}} HP · {{f.state}}</span></summary>
+                  <div class="fields">
+                    <label>Макс. HP<input type="number" min="1" [value]="f.maxHp" (change)="setStat(f,'maxHp',$any($event.target).value)"></label>
+                    <label>Атака<input type="number" min="0" [value]="f.attackPower" (change)="setStat(f,'attackPower',$any($event.target).value)"></label>
+                    <label>Защита<input type="number" min="0" [value]="f.defense" (change)="setStat(f,'defense',$any($event.target).value)"></label>
+                    <label>Дальность<input type="number" min="0.3" step="0.1" [value]="f.attackRange" (change)="setStat(f,'attackRange',$any($event.target).value)"></label>
+                    <label>Интервал, с<input type="number" min="0.2" step="0.1" [value]="f.attackInterval" (change)="setStat(f,'attackInterval',$any($event.target).value)"></label>
+                    <label>Скорость<input type="number" min="0" step="0.1" [value]="f.moveSpeed" (change)="setStat(f,'moveSpeed',$any($event.target).value)"></label>
+                  </div>
+                </details>
+              }}</section>
+          }
+        </aside>
+      }
+    </div>
+    <footer><span>{{ status() }}</span><b>Одна сцена · камера 3/4 · {{ fighters.length }} бойцов</b></footer>
+  </main>
+</ion-content>

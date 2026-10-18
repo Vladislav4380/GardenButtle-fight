@@ -1,0 +1,7 @@
+<ion-content [fullscreen]="true"><main class="page">
+  <header><button (click)="goBack()">‹</button><div><small>UTHANA · 2 GLB</small><h1>Ходьба и атака</h1></div></header>
+  <section #viewport class="viewport"></section><p>{{status()}} · сейчас: {{phase()}}</p>
+  <div class="parts"><button [class.active]="selected==='walk'" (click)="select('walk')">Ходьба</button><button [class.active]="selected==='attack'" (click)="select('attack')">Атака</button><button [class.active]="selected==='sequence'" (click)="select('sequence')">Ходьба → атака</button></div>
+  <label>Скорость <input type="range" min=".2" max="1.5" step=".05" [(ngModel)]="speed"><b>{{speed.toFixed(2)}}×</b></label>
+  <button class="play" (click)="toggle()">{{playing() ? 'Пауза' : 'Продолжить'}}</button>
+</main></ion-content>

@@ -1,0 +1,473 @@
+<main class="lab-shell">
+  <section class="arena-panel">
+    <header class="lab-header">
+      <div>
+        <p class="eyebrow">{{ t('subtitle') }}</p>
+        <h1>{{ t('title') }}</h1>
+      </div>
+      <div class="head-actions">
+        <div class="lang">
+          <button [class.active]="lang === 'ua'" (click)="lang = 'ua'">UA</button
+          ><button [class.active]="lang === 'en'" (click)="lang = 'en'">EN</button>
+        </div>
+        <span [class]="'status-pill ' + battle.status"><i></i>{{ statusText() }}</span>
+      </div>
+    </header>
+    <div class="battle-meta">
+      <span>{{ teamAlive('blue') }} {{ t('blue') }}</span
+      ><b>{{ (battle.time / 1000).toFixed(1) }}s</b
+      ><span>{{ teamAlive('red') }} {{ t('red') }}</span>
+    </div>
+    <div
+      class="arena-stage"
+      [class.portrait]="orientation === 'portrait'"
+      [class.landscape]="orientation === 'landscape'"
+    >
+      <div
+        #arena
+        class="arena"
+        [class.portrait]="orientation === 'portrait'"
+        (pointermove)="moveHeroDrag($event, arena)"
+        (pointerup)="endHeroDrag($event)"
+        (pointercancel)="endHeroDrag($event)"
+      >
+        <span class="team-label blue">{{ t('blue') }} · {{ teamCount('blue') }}</span
+        ><span class="team-label red">{{ t('red') }} · {{ teamCount('red') }}</span>
+        <div class="midline"></div>
+        <div class="center-mark">VS</div>
+        @if (battle.status !== 'running') {
+          <span class="drag-hint">↔ {{ t('dragHint') }}</span>
+        }
+        @for (a of battle.attacks; track a.id) {
+          <i class="attack-line" [ngStyle]="attackStyle(a)"></i
+          ><b class="damage-pop" [ngStyle]="damageStyle(a)">−{{ a.damage }}</b>
+        }
+        @for (h of battle.heroes; track h.id) {
+          <button
+            class="hero"
+            [class.blue-hero]="h.team === 'blue'"
+            [class.red-hero]="h.team === 'red'"
+            [class.shape-guardian]="h.type === 'Guardian'"
+            [class.shape-brawler]="h.type === 'Brawler'"
+            [class.shape-sniper]="h.type === 'Sniper'"
+            [class.shape-assassin]="h.type === 'Assassin'"
+            [class.shape-hunter]="h.type === 'Hunter'"
+            [class.selected]="selectedId === h.id"
+            [class.dead]="h.hp <= 0"
+            [class.dragging]="isDragging(h)"
+            [style.left.%]="heroLeft(h)"
+            [style.top.%]="heroTop(h)"
+            [style.width.px]="h.radius * 2"
+            [style.height.px]="h.radius * 2"
+            (pointerdown)="startHeroDrag($event, h, arena)"
+            (click)="selectHero(h, $event)"
+          >
+            <i class="hp-track"><i [style.width.%]="(h.hp / h.maxHp) * 100"></i></i
+            ><span>{{ h.name }}</span
+            ><b>{{ h.hp.toFixed(0) }}</b>
+          </button>
+        }
+      </div>
+    </div>
+    <div class="transport">
+      <button class="primary" (click)="start()"><span>▶</span>{{ t('start') }}</button
+      ><button (click)="pause()"><span>Ⅱ</span>{{ t('pause') }}</button
+      ><button (click)="reset()"><span>↺</span>{{ t('reset') }}</button>
+      <div class="speed">
+        @for (x of [1, 2, 4]; track x) {
+          <button [class.active]="speed === x" (click)="speed = x">{{ x }}×</button>
+        }
+      </div>
+      <button class="mobile-lab" (click)="toggleLab()" [attr.aria-label]="t('setup')">⚙</button>
+    </div>
+    <div
+      class="mobile-inspector"
+      [class.swiping]="inspectorSwiping"
+      [style.--sheet-drag]="inspectorSwipeOffset + 'px'"
+    >
+      <ng-container [ngTemplateOutlet]="inspector"></ng-container>
+    </div>
+  </section>
+  <aside
+    class="lab-panel"
+    [class.open]="labOpen"
+    [class.lab-swiping]="labSwiping"
+    [style.--lab-sheet-drag]="labSwipeOffset + 'px'"
+  >
+    <div class="panel-scroll">
+      <div
+        class="lab-sheet-grabber"
+        (pointerdown)="startLabSwipe($event)"
+        (pointermove)="moveLabSwipe($event)"
+        (pointerup)="endLabSwipe($event)"
+        (pointercancel)="endLabSwipe($event)"
+        aria-label="Swipe down to close"
+      >
+        <i></i>
+      </div>
+      <p class="eyebrow">{{ t('configuration') }}</p>
+      <h2>{{ t('setup') }}</h2>
+      <p class="intro">{{ t('intro') }}</p>
+      <div class="orientation-setting">
+        <span>{{ t('fieldOrientation') }}</span>
+        <div class="orientation-buttons">
+          <button
+            [class.active]="orientation === 'portrait'"
+            (click)="setOrientation('portrait')"
+          >
+            ▯ {{ t('portrait') }}
+          </button>
+          <button
+            [class.active]="orientation === 'landscape'"
+            (click)="setOrientation('landscape')"
+          >
+            ▭ {{ t('landscape') }}
+          </button>
+        </div>
+      </div>
+      <ng-container
+        *ngTemplateOutlet="teamEditor; context: { team: 'blue', items: blue }"
+      ></ng-container
+      ><ng-container
+        *ngTemplateOutlet="teamEditor; context: { team: 'red', items: red }"
+      ></ng-container>
+      <div class="batch-buttons">
+        <button (click)="run(10)">{{ t('run10') }}</button
+        ><button (click)="run(100)">{{ t('run100') }}</button>
+      </div>
+      <section class="tactic-builder">
+        <div class="section-title">
+          <b>＋ {{ t('tacticLibrary') }}</b>
+        </div>
+        <label
+          ><span>{{ t('tacticName') }}</span
+          ><input [(ngModel)]="tacticDraft.name" placeholder="kite_and_focus"
+        /></label>
+        <div class="builder-grid">
+          <label
+            ><span>{{ t('targetRule') }}</span
+            ><select [(ngModel)]="tacticDraft.targetMode">
+              @for (mode of targetModes(); track mode) {
+                <option [value]="mode">{{ targetModeLabel(mode) }}</option>
+              }
+            </select></label
+          >
+          <label
+            ><span>{{ t('movementRule') }}</span
+            ><select [(ngModel)]="tacticDraft.movementMode">
+              @for (mode of movementModes(); track mode) {
+                <option [value]="mode">{{ movementModeLabel(mode) }}</option>
+              }
+            </select></label
+          >
+          <label
+            ><span>{{ t('preferredRange') }}</span
+            ><input type="number" min="0" [(ngModel)]="tacticDraft.preferredRange"
+          /></label>
+          <label
+            ><span>{{ t('minimumRange') }}</span
+            ><input type="number" min="0" [(ngModel)]="tacticDraft.minimumEffectiveRange"
+          /></label>
+          <label
+            ><span>{{ t('retargetInterval') }}</span
+            ><input type="number" min="50" step="50" [(ngModel)]="tacticDraft.retargetInterval"
+          /></label>
+          <label
+            ><span>{{ t('retargetThreshold') }}</span
+            ><input type="number" min="0" step="0.05" [(ngModel)]="tacticDraft.retargetThreshold"
+          /></label>
+        </div>
+        <button class="add-tactic" (click)="addTactic()">{{ t('addTactic') }}</button>
+        @if (tacticNotice) {
+          <p class="tactic-notice" [class.error]="tacticNoticeError">{{ tacticNotice }}</p>
+        }
+        @if (customTactics.length) {
+          <div class="custom-tactic-list">
+            <span>{{ t('customTacticsLabel') }}</span>
+            @for (tactic of customTactics; track tactic.id) {
+              <div>
+                <b>{{ tactic.name }}</b
+                ><code
+                  >{{ targetModeLabel(tactic.targetMode) }} ·
+                  {{ movementModeLabel(tactic.movementMode) }}</code
+                >
+              </div>
+            }
+          </div>
+        }
+      </section>
+      @if (stats) {
+        <section class="results">
+          <div class="section-title">
+            <b>◉ {{ t('results') }} · {{ stats.runs }}</b>
+          </div>
+          <div class="result-cards">
+            <div>
+              <span>{{ t('blueWins') }}</span
+              ><b class="blue-text">{{ stats.blueWins }}</b>
+            </div>
+            <div>
+              <span>{{ t('redWins') }}</span
+              ><b class="red-text">{{ stats.redWins }}</b>
+            </div>
+            <div>
+              <span>{{ t('draws') }}</span
+              ><b>{{ stats.draws }}</b>
+            </div>
+          </div>
+          <div class="averages">
+            <span
+              >{{ t('duration') }} <b>{{ (stats.avgDuration / 1000).toFixed(1) }}s</b></span
+            ><span
+              >{{ t('remaining') }} <b>{{ stats.avgRemainingHp.toFixed(0) }}</b></span
+            >
+          </div>
+          <button class="download-stats" (click)="downloadStats()">⇩ {{ t('downloadStats') }}</button>
+          <div class="type-table">
+            <div class="tr head">
+              <span>{{ t('type') }}</span
+              ><span>{{ t('damage') }}</span
+              ><span>{{ t('life') }}</span
+              ><span>{{ t('kills') }}</span
+              ><span>{{ t('switches') }}</span>
+            </div>
+            @for (entry of entries(); track entry[0]) {
+              <div class="tr">
+                <b>{{ statsTypeLabel(entry[0]) }}</b
+                ><span>{{ (entry[1].damage / entry[1].count).toFixed(0) }}</span
+                ><span>{{ (entry[1].lifetime / entry[1].count / 1000).toFixed(1) }}s</span
+                ><span>{{ (entry[1].kills / entry[1].count).toFixed(1) }}</span
+                ><span>{{ (entry[1].switches / entry[1].count).toFixed(1) }}</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+      <div class="desktop-inspector">
+        <p class="eyebrow">{{ t('inspector') }}</p>
+        <ng-container [ngTemplateOutlet]="inspector"></ng-container>
+      </div>
+    </div>
+  </aside>
+</main>
+<ng-template #teamEditor let-team="team" let-items="items"
+  ><section class="team-editor">
+    <div class="section-title">
+      <span class="dot" [class.blue]="team === 'blue'" [class.red]="team === 'red'"></span
+      ><b>{{ teamLabel(team) }} · {{ t('team') }}</b
+      ><em>{{ items.length }}</em>
+    </div>
+    <div class="size-row">
+      <span>{{ t('size') }}</span>
+      <div class="stepper">
+        <button (click)="resizeTeam(team, -1)">−</button><b>{{ items.length }}</b
+        ><button (click)="resizeTeam(team, 1)">+</button>
+      </div>
+    </div>
+    <div class="roster">
+      @for (type of items; track $index) {
+        <label
+          ><span>{{ ($index + 1).toString().padStart(2, '0') }}</span
+          ><select [ngModel]="type" (ngModelChange)="setTeam(team, $index, $event)">
+            @for (option of heroTypes; track option) {
+              <option [value]="option">{{ heroTypeLabel(option) }}</option>
+            }
+          </select></label
+        >
+      }
+    </div>
+  </section></ng-template
+>
+<ng-template #inspector>
+  @if (selectedHero; as h) {
+    <div class="inspector">
+      <div
+        class="sheet-grabber"
+        (pointerdown)="startInspectorSwipe($event)"
+        (pointermove)="moveInspectorSwipe($event)"
+        (pointerup)="endInspectorSwipe($event)"
+        (pointercancel)="endInspectorSwipe($event)"
+        aria-label="Swipe down to close"
+      >
+        <i></i>
+      </div>
+      <div class="inspector-head">
+        <span class="unit-token" [class.blue]="h.team === 'blue'" [class.red]="h.team === 'red'">{{
+          h.name
+        }}</span>
+        <div>
+          <p>{{ heroTypeLabel(h.type).toUpperCase() }} / {{ roleLabel(h.role).toUpperCase() }}</p>
+          <h3>{{ h.id }}</h3>
+        </div>
+        <em>{{ stateLabel(h.state) }}</em>
+      </div>
+      <p class="edit-hint">{{ t('editHint') }}</p>
+      <div class="edit-grid">
+        <label
+          ><span>{{ t('maxHp') }}</span
+          ><input
+            type="number"
+            min="1"
+            [ngModel]="h.maxHp"
+            (ngModelChange)="editStat(h, 'maxHp', $event)" /></label
+        ><label
+          ><span>{{ t('hp') }}</span
+          ><input
+            type="number"
+            min="0"
+            [max]="h.maxHp"
+            [ngModel]="h.hp"
+            (ngModelChange)="editStat(h, 'hp', $event)" /></label
+        ><label
+          ><span>{{ t('attack') }}</span
+          ><input
+            type="number"
+            min="0"
+            [ngModel]="h.attackPower"
+            (ngModelChange)="editStat(h, 'attackPower', $event)" /></label
+        ><label
+          ><span>{{ t('defense') }}</span
+          ><input
+            type="number"
+            min="0"
+            [ngModel]="h.defense"
+            (ngModelChange)="editStat(h, 'defense', $event)" /></label
+        ><label
+          ><span>{{ t('attackRange') }}</span
+          ><input
+            type="number"
+            min="0"
+            [ngModel]="h.attackRange"
+            (ngModelChange)="editStat(h, 'attackRange', $event)" /></label
+        ><label
+          ><span>{{ t('preferredRange') }}</span
+          ><input
+            type="number"
+            min="0"
+            [ngModel]="h.preferredRange"
+            (ngModelChange)="editStat(h, 'preferredRange', $event)" /></label
+        ><label
+          ><span>{{ t('minimumRange') }}</span
+          ><input
+            type="number"
+            min="0"
+            [ngModel]="h.minimumEffectiveRange"
+            (ngModelChange)="editStat(h, 'minimumEffectiveRange', $event)" /></label
+        ><label
+          ><span>{{ t('interval') }}</span
+          ><input
+            type="number"
+            min="50"
+            step="50"
+            [ngModel]="h.attackInterval"
+            (ngModelChange)="editStat(h, 'attackInterval', $event)" /></label
+        ><label
+          ><span>{{ t('speed') }}</span
+          ><input
+            type="number"
+            min="0"
+            [ngModel]="h.moveSpeed"
+            (ngModelChange)="editStat(h, 'moveSpeed', $event)" /></label
+        ><label
+          ><span>{{ t('mass') }}</span
+          ><input
+            type="number"
+            min="0.1"
+            step="0.1"
+            [ngModel]="h.mass"
+            (ngModelChange)="editStat(h, 'mass', $event)" /></label
+        ><label
+          ><span>{{ t('retargetInterval') }}</span
+          ><input
+            type="number"
+            min="50"
+            step="50"
+            [ngModel]="h.retargetInterval"
+            (ngModelChange)="editStat(h, 'retargetInterval', $event)" /></label
+        ><label
+          ><span>{{ t('retargetThreshold') }}</span
+          ><input
+            type="number"
+            min="0"
+            max="5"
+            step="0.05"
+            [ngModel]="h.retargetThreshold"
+            (ngModelChange)="editStat(h, 'retargetThreshold', $event)"
+        /></label>
+      </div>
+      <div class="stat-grid">
+        <div>
+          <span>{{ t('role') }}</span
+          ><b>{{ roleLabel(h.role) }}</b>
+        </div>
+        <div>
+          <span>{{ t('tactic') }}</span>
+          <select
+            class="tactic-select"
+            [ngModel]="h.tactic"
+            (ngModelChange)="applyTactic(h, $event)"
+          >
+            @for (option of tacticOptions(); track option.id) {
+              <option [value]="option.id">{{ tacticName(option) }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <span>{{ t('target') }}</span
+          ><b>{{ targetOf(h)?.name || '—' }}</b>
+        </div>
+        <div>
+          <span>{{ t('score') }}</span
+          ><b>{{ h.targetScore.toFixed(1) }}</b>
+        </div>
+        <div>
+          <span>{{ t('distance') }}</span
+          ><b>{{ distanceTo(h) }}</b>
+        </div>
+        <div>
+          <span>{{ t('state') }}</span><b>{{ stateLabel(h.state) }}</b>
+        </div>
+        <div>
+          <span>{{ t('currentSpeed') }}</span><b>{{ currentSpeedOf(h) }}</b>
+        </div>
+        <div>
+          <span>{{ t('momentum') }}</span><b>{{ momentumOf(h) }}</b>
+        </div>
+      </div>
+      <section class="tactic-explainer">
+        <header>
+          <span>{{ t('tacticHow') }}</span>
+          <b>{{ currentTacticName(h) }}</b>
+        </header>
+        <p>{{ tacticInfo(h).summary }}</p>
+        <dl>
+          <div>
+            <dt>{{ t('targetRule') }}</dt>
+            <dd>{{ tacticInfo(h).target }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('movementRule') }}</dt>
+            <dd>{{ tacticInfo(h).movement }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('retargetRule') }}</dt>
+            <dd>{{ tacticInfo(h).retarget }}</dd>
+          </div>
+        </dl>
+      </section>
+      <div class="reason">
+        <b>◎</b>
+        <div>
+          <span>{{ t('reason') }}</span
+          ><strong>{{ targetReasonLabel(h.targetReason) }}</strong>
+        </div>
+      </div>
+      <button class="restore" (click)="restoreHero(h)">↺ {{ t('restore') }}</button>
+    </div>
+  } @else {
+    <div class="empty-inspector">
+      <b>◎</b><strong>{{ t('select') }}</strong
+      ><span>{{ t('selectHint') }}</span>
+    </div>
+  }
+</ng-template>

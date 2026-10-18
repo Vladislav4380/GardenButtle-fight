@@ -1,0 +1,27 @@
+<ion-content fullscreen class="rig-page">
+  <main class="rig-shell">
+    <header>
+      <button type="button" aria-label="Назад" (click)="goBack()">‹</button>
+      <div><small>Редактор позы</small><h1>Поза персонажа</h1></div>
+    </header>
+
+    <section #viewport class="viewport" aria-label="3D-просмотр модели"></section>
+    <p class="status">{{ status() }}</p>
+
+    <section class="pose-toolbar">
+      <p>Нажмите на кисть, локоть, стопу или колено и потяните в нужное место — соседние суставы согнутся автоматически.</p>
+      <div class="camera-buttons">
+        <button type="button" (click)="setCamera('front')">СПЕРЕДИ</button>
+        <button type="button" (click)="setCamera('side')">СБОКУ</button>
+        <button type="button" (click)="setCamera('top')">СВЕРХУ</button>
+      </div>
+      <div class="pose-actions">
+        <button type="button" (click)="togglePlay()">{{ playing() ? 'ПАУЗА' : 'ПРОДОЛЖИТЬ' }}</button>
+        <button type="button" (click)="resetPose()">СБРОСИТЬ ПОЗУ</button>
+        <button type="button" class="copy-calibration" (click)="copyCalibration()">СКОПИРОВАТЬ НАСТРОЙКИ</button>
+      </div>
+      @if (calibrationStatus()) { <pre class="calibration-status">{{ calibrationStatus() }}</pre> }
+      <small>Длины костей сохраняются: суставы сгибаются, но не растягиваются. Перетаскивание пустого места вращает камеру.</small>
+    </section>
+  </main>
+</ion-content>

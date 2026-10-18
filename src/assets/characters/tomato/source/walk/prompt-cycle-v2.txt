@@ -1,0 +1,16 @@
+The uploaded image is a reference sheet. On the far left, behind the gray vertical line, is the finished character: a tomato warrior with a green leafy cape, brown leather armor and boots, a tomato blaster gun in his right hand and a round red shield on his left arm. To the right of the line are four gray mannequins showing one full walk cycle, in order from left to right.
+
+Create a sprite sheet with exactly four frames in one horizontal row, on a plain pure white background. All four frames show the same tomato warrior, drawn at exactly the same size and scale: the head is the same size in every frame, the body has the same proportions, and the boots are the same size.
+
+He walks with short, compact, careful steps, like a soldier advancing with his weapon ready. The stride is small: in the step frames the front heel is only about one boot length ahead of the back toe, the knees stay slightly bent and the feet stay under his body. Never a wide lunge.
+
+Frame 1: a short step. His right leg, the one closer to the viewer, is a little forward with the heel touching the ground; his left leg is a little behind, resting on its toes. His body is at its lowest point.
+Frame 2: the legs pass each other. He stands on his right leg under his body; his left knee is lifted a little and the left foot passes beside the right ankle, just off the ground. His body is at its highest point.
+Frame 3: a short step with the other leg. His left leg, the one farther from the viewer, is a little forward with the heel touching the ground; his right leg is a little behind, resting on its toes. His body is at its lowest point.
+Frame 4: the legs pass each other again. He stands on his left leg under his body; his right knee is lifted a little and the right foot passes beside the left ankle, just off the ground. His body is at its highest point.
+
+The gear moves with every step. The gun arm swings: in frame 1 the gun is pulled back toward his chest and tilted slightly down, in frame 3 it is pushed forward and tilted slightly up, and in frames 2 and 4 it is in between. The shield arm swings the opposite way: in frame 1 the shield is pushed forward, in frame 3 it is pulled back toward his hip, and in frames 2 and 4 it is in between. The shield also tilts a little with each step. The cape flaps behind him, swinging to a different position in every frame. The leaves on top of his head bounce slightly.
+
+The mannequins show which leg is in front: the red leg is his near leg, the blue leg is his far leg. These colors are only a guide; follow the shorter stride described above rather than the mannequins' stride width. Draw the character with his own colors, armor, boots, cape, gun and shield.
+
+Keep the same camera angle as the character on the left: three-quarter view facing left toward the viewer, with both eyes visible. Keep the same face, art style and lighting in all four frames. All four characters stand on the same horizontal ground line, evenly spaced, fully visible and not cropped, including the gun. Do not draw the mannequins, the gray line, numbers, text or shadows.

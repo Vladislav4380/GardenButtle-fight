@@ -1,0 +1,13 @@
+:host { --ink:#f5ead0; --muted:#aab9a6; }
+ion-content { --background:#0c1710; color:var(--ink); }
+.page { width:min(1120px,100%); min-height:100%; margin:auto; padding:14px; background:#102016; }
+header { display:flex; align-items:center; gap:12px; margin-bottom:10px; } header button { width:42px; height:42px; border:1px solid #536246; border-radius:10px; color:#ffe58b; background:#26351f; font-size:24px; } header div { flex:1; } small { color:#9eac94; font-weight:800; letter-spacing:1px; } h1 { margin:2px 0 0; font:700 24px Georgia,serif; } header .export { font-size:11px; font-weight:900; }
+.viewport { height:min(72vh,760px); min-height:520px; overflow:hidden; border:1px solid #304933; border-radius:14px; } .status { margin:8px 2px; color:var(--muted); font-size:12px; }
+.play-toggle { width:100%; min-height:44px; margin:8px 0; border:1px solid #d7bc57; border-radius:9px; color:#172010; background:#e6c95e; font-weight:900; }
+
+@media (max-width: 700px) { .viewport { height:62vh; min-height:420px; } }
+.panel { margin-top:12px; padding:13px; border:1px solid #304633; border-radius:13px; background:#17281c; } h2 { margin:0 0 10px; font-size:15px; } select { width:100%; padding:9px; border:1px solid #51634b; border-radius:8px; color:var(--ink); background:#213323; }
+.grid { display:grid; gap:8px; margin-top:10px; } label { display:grid; grid-template-columns:54px 1fr 48px; align-items:center; gap:8px; color:#c8d1bd; font-size:11px; font-weight:800; } label b { text-align:right; color:#ffe286; font-size:10px; } input { width:100%; accent-color:#e8c957; }
+.tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .tabs button,.secondary,.download { min-height:38px; border:1px solid #536448; border-radius:9px; color:#d6dfcb; background:#243522; font-weight:900; } .tabs button.active { color:#ffe383; border-color:#d7bc57; background:#4a4122; } .secondary { width:100%; margin-top:11px; } .download { width:100%; min-height:48px; margin:14px 0 24px; color:#172010; border-color:#f0d46e; background:#e6c95e; }
+.glb-download { margin-top:-10px; color:#d6dfcb; border-color:#536448; background:#243522; }
+button:disabled { opacity:.45; }

@@ -1,0 +1,31 @@
+<ion-content [fullscreen]="true">
+  <main class="page">
+    <header><button (click)="goBack()">‹</button><div><small>GLB ASSEMBLER</small><h1>Сборка персонажа</h1></div><button class="export" [disabled]="!ready()" (click)="exportGlb()">GLB</button></header>
+    <section #viewport class="viewport"></section>
+    <button class="play-toggle" type="button" (click)="togglePlay()">{{ playing() ? 'ПАУЗА' : 'ПРОДОЛЖИТЬ' }}</button>
+    <p class="status">{{ status() }}</p>
+    <section class="panel">
+      <h2>Поза рук</h2>
+      <select [(ngModel)]="selectedBone" (change)="selectBone()">@for (bone of armBones; track bone) { <option [value]="bone">{{ bone }}</option> }</select>
+      <div class="grid">
+        <label>RX <input type="range" min="-120" max="120" step="1" [(ngModel)]="boneRx" (input)="applyBone()"><b>{{boneRx}}°</b></label>
+        <label>RY <input type="range" min="-120" max="120" step="1" [(ngModel)]="boneRy" (input)="applyBone()"><b>{{boneRy}}°</b></label>
+        <label>RZ <input type="range" min="-120" max="120" step="1" [(ngModel)]="boneRz" (input)="applyBone()"><b>{{boneRz}}°</b></label>
+      </div><button class="secondary" (click)="resetBone()">Сбросить кость</button>
+    </section>
+    <section class="panel">
+      <h2>Снаряжение</h2><div class="tabs"><button [class.active]="selectedItem==='spear'" (click)="selectedItem='spear'">Копьё</button><button [class.active]="selectedItem==='shield'" (click)="selectedItem='shield'">Щит</button></div>
+      <div class="grid">
+        <label>X <input type="range" min="-5" max="5" step=".01" [(ngModel)]="item.x" (input)="applyItem()"><b>{{item.x}}</b></label>
+        <label>Y <input type="range" min="-25" max="25" step=".01" [(ngModel)]="item.y" (input)="applyItem()"><b>{{item.y}}</b></label>
+        <label>Z <input type="range" min="-5" max="5" step=".01" [(ngModel)]="item.z" (input)="applyItem()"><b>{{item.z}}</b></label>
+        <label>RX <input type="range" min="-180" max="180" step="1" [(ngModel)]="item.rx" (input)="applyItem()"><b>{{item.rx}}°</b></label>
+        <label>RY <input type="range" min="-180" max="180" step="1" [(ngModel)]="item.ry" (input)="applyItem()"><b>{{item.ry}}°</b></label>
+        <label>RZ <input type="range" min="-180" max="180" step="1" [(ngModel)]="item.rz" (input)="applyItem()"><b>{{item.rz}}°</b></label>
+        <label>Размер <input type="range" min=".3" max="1.8" step=".05" [(ngModel)]="item.scale" (input)="applyItem()"><b>{{item.scale}}</b></label>
+      </div><button class="secondary" (click)="resetItem()">Сбросить предмет</button>
+    </section>
+    <button class="download" [disabled]="!ready()" (click)="downloadParameters()">Скачать параметры</button>
+    <button class="download glb-download" [disabled]="!ready()" (click)="exportGlb()">Скачать единый carrot-combat.glb</button>
+  </main>
+</ion-content>

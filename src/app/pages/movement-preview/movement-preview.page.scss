@@ -1,0 +1,369 @@
+:host { display: block; }
+
+.movement-page {
+  --background: #0d160d;
+  color: #fff3cf;
+}
+
+button { color: inherit; font: inherit; }
+
+.movement-shell {
+  display: grid;
+  grid-template-rows: auto minmax(410px, 1fr) auto;
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #101a12;
+}
+
+.movement-header {
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: max(14px, env(safe-area-inset-top)) 16px 13px;
+  border-bottom: 1px solid rgb(239 210 125 / 18%);
+  background: rgb(10 18 11 / 94%);
+}
+
+.movement-header span {
+  color: #9eb38d;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.movement-header h1 {
+  margin: 2px 0 0;
+  font: 700 23px/1 Georgia, serif;
+}
+
+.movement-header b {
+  padding: 7px 10px;
+  border: 1px solid rgb(239 210 125 / 28%);
+  border-radius: 999px;
+  color: #e8cf84;
+  font-size: 11px;
+  background: rgb(91 75 33 / 36%);
+}
+
+.back-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgb(239 210 125 / 28%);
+  border-radius: 12px;
+  font-size: 33px;
+  line-height: 30px;
+  background: #263623;
+}
+
+.arena {
+  position: relative;
+  min-height: 410px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 70% 24%, rgb(154 188 92 / 26%), transparent 27%),
+    linear-gradient(180deg, #2b452c, #142218 78%);
+}
+
+.arena::after {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 80px rgb(4 10 5 / 58%);
+  content: '';
+  pointer-events: none;
+}
+
+.arena-grid {
+  position: absolute;
+  inset: -20%;
+  opacity: 0.17;
+  background-image:
+    linear-gradient(27deg, transparent 49.5%, #d7c981 50%, transparent 50.5%),
+    linear-gradient(153deg, transparent 49.5%, #d7c981 50%, transparent 50.5%);
+  background-size: 78px 45px;
+  transform: perspective(260px) rotateX(57deg) scale(1.5);
+  transform-origin: 50% 35%;
+}
+
+.path {
+  position: absolute;
+  top: 22%;
+  right: 8%;
+  width: 78%;
+  height: 18%;
+  border-bottom: 3px dashed rgb(246 213 101 / 45%);
+  transform: rotate(8deg);
+  transform-origin: right center;
+}
+
+.path-arrow {
+  position: absolute;
+  bottom: -23px;
+  left: -10px;
+  color: #f2cf68;
+  font-size: 32px;
+  transform: rotate(-8deg);
+}
+
+.traveller {
+  --walk-duration: 12000ms;
+  position: absolute;
+  z-index: 3;
+  top: 7%;
+  right: -1%;
+  width: 210px;
+  height: 270px;
+  transform-origin: 50% 78%;
+  backface-visibility: hidden;
+  will-change: top, right, scale;
+}
+
+.traveller.is-walking {
+  animation: travel var(--walk-duration) linear forwards;
+}
+
+.traveller img {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 28%));
+  backface-visibility: hidden;
+  user-select: none;
+}
+
+/* The source sequences have different transparent margins. Keep the
+   characters themselves at one visual size and anchor scaling at the feet. */
+.arena.character-tomato-diagonal .traveller img {
+  transform: scale(1.03);
+  transform-origin: 50% 89%;
+}
+
+.arena.direction-front-right .traveller img {
+  transform: scale(1.03);
+  transform-origin: 50% 88%;
+}
+
+.arena.direction-front .traveller img {
+  transform: scale(0.97);
+  transform-origin: 50% 92%;
+}
+
+.ground-shadow {
+  position: absolute;
+  z-index: 1;
+  bottom: 63px;
+  left: 50%;
+  width: 76px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgb(4 8 4 / 45%);
+  filter: blur(3px);
+  transform: translateX(-50%);
+}
+
+.start-marker,
+.finish-marker {
+  position: absolute;
+  z-index: 2;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #aabb9f;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  background: rgb(7 14 8 / 58%);
+}
+
+.start-marker { top: 16%; right: 8%; }
+.finish-marker { bottom: 48%; left: 8%; }
+
+.arena.direction-front-right .path {
+  top: 18%;
+  right: auto;
+  left: 8%;
+  height: 42%;
+  transform: rotate(22deg);
+  transform-origin: left center;
+}
+
+.arena.direction-front-right .path-arrow {
+  right: -10px;
+  bottom: -23px;
+  left: auto;
+  transform: rotate(-22deg);
+}
+
+.arena.direction-front-right .traveller {
+  right: auto;
+  left: -1%;
+}
+
+.arena.direction-front-right .traveller.is-walking {
+  animation-name: travel-right;
+}
+
+.arena.direction-front-right .start-marker {
+  right: auto;
+  left: 8%;
+}
+
+.arena.direction-front-right .finish-marker {
+  right: 8%;
+  bottom: 18%;
+  left: auto;
+}
+
+.arena.direction-front .path {
+  top: 8%;
+  right: auto;
+  left: 50%;
+  width: 0;
+  height: 72%;
+  border-bottom: 0;
+  border-left: 3px dashed rgb(246 213 101 / 45%);
+  transform: none;
+}
+
+.arena.direction-front .path-arrow {
+  right: auto;
+  bottom: -22px;
+  left: -17px;
+  transform: none;
+}
+
+.arena.direction-front .traveller {
+  top: -7%;
+  right: auto;
+  left: calc(50% - 105px);
+  will-change: top, scale;
+}
+
+.arena.direction-front .traveller.is-walking {
+  animation-name: travel-front;
+}
+
+.arena.direction-front .start-marker {
+  top: 5%;
+  right: 8%;
+}
+
+.arena.direction-front .finish-marker {
+  right: 8%;
+  bottom: 7%;
+  left: auto;
+}
+
+.controls {
+  z-index: 5;
+  display: grid;
+  gap: 12px;
+  padding: 14px 14px max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgb(239 210 125 / 15%);
+  background: #101a12;
+}
+
+.character-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.character-picker button {
+  padding: 8px 12px;
+  border: 1px solid #354a31;
+  border-radius: 10px;
+  color: #aebca5;
+  font-weight: 800;
+  background: #1c2b1d;
+}
+
+.character-picker button.active {
+  border-color: #e9c75c;
+  color: #ffe48b;
+  background: #504522;
+}
+
+.speed-picker {
+  display: grid;
+  grid-template-columns: auto 1fr 50px;
+  align-items: center;
+  gap: 10px;
+  color: #aebca5;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.speed-picker input {
+  width: 100%;
+  accent-color: #e9c75c;
+}
+
+.speed-picker output {
+  padding: 5px 7px;
+  border: 1px solid #59693c;
+  border-radius: 8px;
+  color: #ffe48b;
+  text-align: center;
+  background: #504522;
+}
+
+.move-button {
+  display: grid;
+  gap: 2px;
+  min-height: 54px;
+  padding: 8px 18px;
+  border: 2px solid #f1d06e;
+  border-radius: 15px;
+  color: #fff3bd;
+  background: linear-gradient(180deg, #518a35, #2c5928);
+  box-shadow: 0 5px 0 #183a1b, 0 10px 24px rgb(0 0 0 / 25%);
+}
+
+.move-button strong { font-weight: 900; letter-spacing: 0.04em; }
+.move-button small { color: #c8dfb7; font-size: 9px; }
+
+.route-button {
+  min-height: 42px;
+  border: 1px solid #59693c;
+  border-radius: 12px;
+  color: #d8e5cc;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  background: #263a25;
+}
+
+@keyframes travel {
+  0% { top: 7%; right: -1%; scale: 0.9; }
+  45% { scale: 0.91; }
+  100% { top: 19%; right: 49%; scale: 0.92; }
+}
+
+@keyframes travel-right {
+  0% { top: 7%; left: -1%; scale: 0.9; }
+  45% { scale: 0.95; }
+  100% { top: 45%; left: 49%; scale: 1; }
+}
+
+@keyframes travel-front {
+  0% { top: -7%; scale: 0.78; }
+  45% { scale: 0.91; }
+  100% { top: 49%; scale: 1.06; }
+}
+
+@media (max-height: 650px) {
+  .movement-shell { grid-template-rows: auto minmax(310px, 1fr) auto; }
+  .arena { min-height: 310px; }
+  .traveller { width: 175px; height: 225px; }
+  .ground-shadow { bottom: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .traveller.is-walking { animation-duration: 1ms; }
+}

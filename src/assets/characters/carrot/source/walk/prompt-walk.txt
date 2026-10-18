@@ -1,0 +1,17 @@
+ЗАГРУЗИТЬ: ref-walk.png (D:\HomeProjects\GardenButtle-fight\src\assets\characters\carrot\source\walk\ref-walk.png). Новый чат ChatGPT.
+
+ПРОМПТ:
+The uploaded image is a reference sheet. On the left of the gray vertical line is my game character: an angry carrot warrior with a green leafy top, green cape, leaf skirt, brown boots, a spear and a round wooden shield with a carrot emblem, held exactly as in the reference. On the right are 4 simple mannequins showing leg positions only. Red = near leg (closer to the viewer), blue = far leg.
+
+Draw a new image: the same carrot character 4 times in one row, left to right, frames 1-4, one frame per mannequin, copying the leg positions of the mannequins exactly. This is a 4-frame walk cycle. The character walks to the RIGHT, three-quarter view exactly as in the reference picture, both eyes visible. White background, no shadows on the ground, no text, no numbers, no mannequins in the result.
+
+Use the diameter of the round shield as the unit of measure (1 S = shield diameter).
+
+Frame 1 - contact step: near leg forward (to the right), far leg back. Distance between the two boot heels = 0.8 S, not more. Both soles touch the ground, front heel down, back foot on its toes.
+Frame 2 - passing: near leg straight under the body, carrying the weight; far leg passes beside it with the knee bent, its boot lifted off the ground by 0.15 S, not more. The lifted boot stays BELOW the knee of the standing leg. No high knee raise, no kick backward.
+Frame 3 - contact step: mirror of frame 1. Far leg forward, near leg back, heel distance 0.8 S.
+Frame 4 - passing: mirror of frame 2. Far leg straight carrying the weight, near leg passes beside it, boot lifted 0.15 S, not more.
+
+Upper body in all 4 frames: the same as in the reference. Spear held horizontally at belly height, tip pointing right, the spear moves forward and back by no more than 0.2 S between frames. The shield stays in front of the chest, swinging by no more than 0.1 S. Cape sways slightly behind.
+
+Size: the character must be exactly the same size in all 4 frames. The shield has the same diameter in every frame, the carrot head has the same width in every frame, and the total height (top of the leaves to the soles) differs by no more than 3% between frames. All 4 figures stand on one common ground line. Leave clear white space between the figures, they must not touch or overlap.

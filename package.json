@@ -1,0 +1,35 @@
+{
+  "name": "garden-buttle-fight",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "ng serve --host 127.0.0.1 --port 4210",
+    "build": "ng build",
+    "check": "node tools/check-assets.mjs",
+    "test:mobile-mechanics": "node tools/build-figure-physics.cjs && node tools/test-mobile-mechanics.cjs",
+    "prestart": "node tools/build-figure-physics.cjs",
+    "prebuild": "node tools/build-figure-physics.cjs"
+  },
+  "dependencies": {
+    "@angular/animations": "20.3.25",
+    "@angular/common": "20.3.25",
+    "@angular/compiler": "20.3.25",
+    "@angular/core": "20.3.25",
+    "@angular/forms": "20.3.25",
+    "@angular/platform-browser": "20.3.25",
+    "@angular/router": "20.3.25",
+    "@ionic/angular": "^8.0.0",
+    "phaser": "^4.2.0",
+    "three": "^0.186.0",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.6.0",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "20.3.28",
+    "@angular/cli": "20.3.28",
+    "@angular/compiler-cli": "20.3.25",
+    "@types/three": "^0.185.4",
+    "typescript": "~5.8.0"
+  }
+}

@@ -1,0 +1,11 @@
+The uploaded image is a reference sheet. On the left, behind the gray vertical line, is the finished character: a tomato warrior with a green leafy cape, brown leather armor and boots, a tomato blaster gun in his right hand and a round red shield on his left arm. To the right of the line are two gray mannequins showing the "passing" moment of a walk cycle: the moment in the middle of a step when the legs pass each other under the body.
+
+Create a sprite sheet with exactly two frames side by side, on a plain pure white background. Both frames show the same tomato warrior from the reference in the passing pose of a walk:
+
+Frame 1 (left): his weight is on his left leg, which stands straight and vertical directly under his body. His right leg is lifted and bent at the knee, passing beside the standing leg, with the right foot raised a little off the ground just behind the left ankle. His feet are close together, not spread apart.
+
+Frame 2 (right): the mirror of frame 1. His weight is on his right leg, which stands straight and vertical directly under his body. His left leg is lifted and bent at the knee, passing beside the standing leg, with the left foot raised a little off the ground just behind the right ankle. His feet are close together, not spread apart.
+
+In both frames neither leg is stepped forward and there is no wide stride: seen from the side, the two legs nearly overlap. His body is at its highest point of the step, upright. The gun arm and the shield arm are in the middle of their swing, close to the body, with the gun pointing forward and slightly down. The red leg on the mannequin is the near leg and the blue leg is the far leg; these colors are only a guide. Draw the character with his own colors, armor, boots, cape, gun and shield.
+
+Keep the same camera angle as the character on the left: three-quarter view facing left toward the viewer, with both eyes visible. Keep the same size, proportions, face, art style and lighting in both frames. Both characters stand on the same horizontal ground line, fully visible and not cropped. Do not draw the mannequins, the gray line, numbers, text or shadows.

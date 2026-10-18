@@ -1,0 +1,56 @@
+<ion-content fullscreen class="attack-page">
+  <main class="attack-shell">
+    <header class="attack-header">
+      <button class="back-button" type="button" aria-label="Вернуться к бою" (click)="goBack()">‹</button>
+      <div>
+        <span class="eyebrow">Тренировочный полигон</span>
+        <h1>Атака томата</h1>
+      </div>
+      <span class="camera-badge">3/4 · 60°</span>
+    </header>
+
+    <section class="arena" aria-label="Предпросмотр атаки">
+      <div class="arena-grid" aria-hidden="true"></div>
+      <div class="attacker-ring" aria-hidden="true"></div>
+
+      <div [class]="'fighter direction-' + direction()" [class.is-playing]="isPlaying()">
+        <img [src]="currentFrame()" alt="Томат выполняет атаку" draggable="false" />
+        @if (showMuzzleFlash()) {
+          <span class="muzzle-flash" aria-hidden="true"></span>
+        }
+      </div>
+
+      <div class="target" [class]="'target ' + currentDirection().targetClass" aria-hidden="true">
+        <span class="target-pulse"></span>
+        <span class="target-core">✦</span>
+      </div>
+
+      <div class="direction-caption">
+        <span>{{ currentDirection().shortLabel }}</span>
+        {{ currentDirection().label }}
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Управление анимацией">
+      <div class="direction-picker">
+        @for (option of directions; track option.id) {
+          <button
+            type="button"
+            [class.active]="direction() === option.id"
+            [attr.aria-label]="option.label"
+            [attr.aria-pressed]="direction() === option.id"
+            (click)="selectDirection(option.id)"
+          >
+            <b>{{ option.shortLabel }}</b>
+            <small>{{ option.label }}</small>
+          </button>
+        }
+      </div>
+
+      <button class="attack-button" type="button" (click)="playAttack()">
+        <span>{{ isPlaying() ? 'АТАКА!' : 'ПОВТОРИТЬ АТАКУ' }}</span>
+        <small>15 ключевых кадров · 12 FPS</small>
+      </button>
+    </section>
+  </main>
+</ion-content>

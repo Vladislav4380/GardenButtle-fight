@@ -1,0 +1,49 @@
+<ion-content fullscreen class="circle-page">
+  <main class="circle-shell">
+    <header class="circle-header">
+      <button type="button" aria-label="Назад к движению" (click)="goBack()">‹</button>
+      <div>
+        <span>Тренировочный полигон</span>
+        <h1>Восьмигранная траектория</h1>
+      </div>
+      <b>{{ clockwise() ? '↻' : '↺' }}</b>
+    </header>
+
+    <section #arena class="circle-arena" aria-label="Помидор движется по восьмигранной траектории">
+      <div class="arena-grid" aria-hidden="true"></div>
+      <svg class="orbit-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <polygon points="30,0 70,0 100,23 100,77 70,100 30,100 0,77 0,23" />
+      </svg>
+      <div class="center-marker" aria-hidden="true">8 НАПРАВЛЕНИЙ</div>
+
+      <div
+        class="traveller"
+        [style.left.%]="x()"
+        [style.top.%]="y()"
+        [style.--direction-scale]="directionScale()"
+      >
+        <img [src]="currentFrame()" [alt]="'Помидор идёт ' + directionLabel()" draggable="false" />
+        <span class="ground-shadow" aria-hidden="true"></span>
+      </div>
+
+      <output class="direction-badge">{{ directionLabel() }}</output>
+    </section>
+
+    <section class="controls" aria-label="Управление круговым движением">
+      <div class="direction-picker">
+        <button type="button" [class.active]="clockwise()" (click)="setClockwise(true)">ПО ЧАСОВОЙ ↻</button>
+        <button type="button" [class.active]="!clockwise()" (click)="setClockwise(false)">ПРОТИВ ↺</button>
+      </div>
+
+      <div class="speed-picker">
+        <label for="circle-speed">Скорость</label>
+        <input id="circle-speed" type="range" min="0.25" max="1.5" step="0.05" [value]="speed()" (input)="setSpeedFromInput($event)" />
+        <output for="circle-speed">{{ speed().toFixed(2) }}×</output>
+      </div>
+
+      <button class="play-button" type="button" (click)="togglePlay()">
+        {{ isWalking() ? 'ПАУЗА' : 'ЗАПУСТИТЬ' }}
+      </button>
+    </section>
+  </main>
+</ion-content>

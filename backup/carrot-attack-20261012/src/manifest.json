@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "carrot",
+  "canvas": {
+    "width": 1024,
+    "height": 1536
+  },
+  "anchor": {
+    "x": 512,
+    "y": 1360
+  },
+  "visualHeight": 1150,
+  "strideLength": 500,
+  "views": [
+    "front",
+    "back"
+  ],
+  "states": {
+    "idle": {
+      "frameCount": 1,
+      "files": [
+        "idle.png"
+      ]
+    },
+    "walk": {
+      "frameCount": 2,
+      "files": [
+        "walk-a.png",
+        "walk-b.png"
+      ]
+    },
+    "attack": {
+      "frameCount": 1,
+      "files": [
+        "cast.png"
+      ]
+    }
+  },
+  "sockets": {
+    "front": {
+      "idle": [
+        720,
+        850
+      ],
+      "attack": [
+        720,
+        850
+      ]
+    },
+    "back": {
+      "idle": [
+        730,
+        850
+      ],
+      "attack": [
+        730,
+        850
+      ]
+    }
+  },
+  "sources": {
+    "front/idle": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-carrot-front-right-v7/frame-04.png",
+    "front/cast": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-carrot-front-right-v7/frame-20.png",
+    "front/walk-a": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-carrot-front-right-v7/frame-01.png",
+    "front/walk-b": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-carrot-front-right-v7/frame-15.png",
+    "back/idle": "C:/Users/user/.codex/visualizations/2026/10/10/01a12694-a08e-7683-83fa-c10bcbf59fbc/carrot-directions-render/back/frame-01.png",
+    "back/cast": "C:/Users/user/.codex/visualizations/2026/10/10/01a12694-a08e-7683-83fa-c10bcbf59fbc/carrot-directions-render/back/frame-15.png",
+    "back/walk-a": "C:/Users/user/.codex/visualizations/2026/10/10/01a12694-a08e-7683-83fa-c10bcbf59fbc/carrot-directions-render/back/frame-08.png",
+    "back/walk-b": "C:/Users/user/.codex/visualizations/2026/10/10/01a12694-a08e-7683-83fa-c10bcbf59fbc/carrot-directions-render/back/frame-22.png"
+  },
+  "notes": [
+    "Back poses use the previously prepared equipped-model render."
+  ]
+}

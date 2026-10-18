@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "tomato",
+  "canvas": {
+    "width": 1024,
+    "height": 1536
+  },
+  "anchor": {
+    "x": 512,
+    "y": 1360
+  },
+  "visualHeight": 1150,
+  "strideLength": 500,
+  "views": [
+    "front",
+    "back"
+  ],
+  "states": {
+    "idle": {
+      "frameCount": 1,
+      "files": [
+        "idle.png"
+      ]
+    },
+    "walk": {
+      "frameCount": 2,
+      "files": [
+        "walk-a.png",
+        "walk-b.png"
+      ]
+    },
+    "attack": {
+      "frameCount": 1,
+      "files": [
+        "cast.png"
+      ]
+    }
+  },
+  "sockets": {
+    "front": {
+      "idle": [
+        720,
+        850
+      ],
+      "attack": [
+        720,
+        850
+      ]
+    },
+    "back": {
+      "idle": [
+        730,
+        850
+      ],
+      "attack": [
+        730,
+        850
+      ]
+    }
+  },
+  "sources": {
+    "front/idle": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/attack-tomato-front-v1/frame-01.png",
+    "front/cast": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/attack-tomato-front-v1/frame-03.png",
+    "front/walk-a": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-front-v1/frame-01.png",
+    "front/walk-b": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-front-v1/frame-16.png",
+    "back/idle": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-01.png",
+    "back/cast": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-07.png",
+    "back/walk-a": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-04.png",
+    "back/walk-b": "D:/HomeProjects/GardenBattle/src/frontend/src/assets/fight/move-tomato-circle-v1/move/back/frame-16.png"
+  },
+  "notes": []
+}
