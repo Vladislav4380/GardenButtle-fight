@@ -7,15 +7,33 @@ function nextAttackInterval(f) {
 }
 
 // Front-only sprites need a readable horizontal angle before engaging.
-// Melee fighters close in on a slot level with the target, so duels read as face to face.
-function meleeSlotDirection(f, t, d, range) {
+// The side a fighter takes next to its target is chosen once per target, so pairs never swap places mid-duel.
+function slotSide(f, t, unit) {
+  if (f.slotTarget !== t) {
+    f.slotTarget = t;
+    f.slotSide = Math.abs(f.x - t.x) > 0.5 * unit ? Math.sign(f.x - t.x) : f.team ? 1 : -1;
+  }
+  return f.slotSide;
+}
+// Every fighter near its target takes a slot level with it on its own side, at its preferred distance,
+// so duels read as face to face instead of diagonal piles.
+function engageSlotDirection(f, t, d, range) {
   const unit = combatUnit();
-  if (f.stats.preferredRange !== 0 || d >= range + combatRadius(f) + combatRadius(t) + 60 * unit) return null;
-  const side = Math.sign(f.x - t.x) || (f.team ? 1 : -1),
-    sx = t.x + side * (combatRadius(f) + combatRadius(t) + 2 * unit) - f.x,
-    sy = t.y - f.y,
-    sd = Math.hypot(sx, sy);
-  return sd > 3 * unit ? { move: true, x: sx / sd, y: sy / sd } : { move: false };
+  if (d >= range + combatRadius(f) + combatRadius(t) + 60 * unit) return null;
+  // A shooter caught too close backs straight off first; the slot only fine-tunes position afterwards.
+  if (f.stats.preferredRange > 0 && attackDistance(f, t) < Math.min(f.stats.preferredRange * rangeMultiplier() * unit, range) - 8 * unit) return null;
+  const gap = f.stats.preferredRange > 0 ? Math.min(f.stats.preferredRange * rangeMultiplier() * unit, range) : 2 * unit,
+    side = slotSide(f, t, unit),
+    // Allies on the same side of the same target spread into rows above and below it.
+    mates = F.filter((q) => q.hp > 0 && q.team === f.team && q.target === t && q.slotTarget === t && q.slotSide === side),
+    row = [0, 1, -1, 2][Math.max(0, mates.indexOf(f))] || 0,
+    sx = t.x + side * (combatRadius(f) + combatRadius(t) + gap) - f.x,
+    sy = t.y + row * 2.2 * combatRadius(f) - f.y,
+    sd = Math.hypot(sx, sy),
+    tolerance = (f.stats.preferredRange > 0 ? 8 : 3) * unit;
+  if (sd <= tolerance) return { move: false };
+  // Moving away from the target counts as a retreat, so the fighter keeps facing it.
+  return { move: true, x: sx / sd, y: sy / sd, retreat: sx * (t.x - f.x) + sy * (t.y - f.y) < 0 };
 }
 function lateralAlignment(f, t, dx, dy, d) {
   const unit = combatUnit();
@@ -150,8 +168,8 @@ const COMBAT_SPECS = {
   },
   pepper: {
     role: "Стрелок",
-    max: 640,
-    power: 41,
+    max: 570,
+    power: 37,
     defense: 6,
     attackInterval: 0.95,
     moveSpeed: 55,
@@ -163,8 +181,8 @@ const COMBAT_SPECS = {
   },
   carrot: {
     role: "Быстрый боец",
-    max: 500,
-    power: 34,
+    max: 540,
+    power: 36,
     defense: 6,
     attackInterval: 0.8,
     moveSpeed: 78,
@@ -849,9 +867,10 @@ function stepCombat(dt) {
       ny = ly / len;
       move = true;
     }
-    const slot = meleeSlotDirection(f, t, d, range);
+    const slot = engageSlotDirection(f, t, d, range);
     if (slot) {
       move = slot.move;
+      retreat = !!slot.retreat;
       if (move) {
         nx = slot.x;
         ny = slot.y;
@@ -1183,6 +1202,7 @@ document.querySelector("#restartMotion").onclick = () => {
     f.taken = 0;
     f.livedFor = null;
     f.target = null;
+    f.slotTarget = null;
     f.lock = 0;
     f.attackEngaged = false;
     f.attackTarget = null;

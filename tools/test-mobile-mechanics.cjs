@@ -23,7 +23,7 @@ function context(layout='mobile-horizontal'){
 }
 for(const axis of ['x','y']){
  const {run}=context();
- run('lateralAlignment=()=>0;meleeSlotDirection=()=>null'); // Isolate involuntary push from intentional sidestepping and slot approach.
+ run('lateralAlignment=()=>0;engageSlotDirection=()=>null'); // Isolate involuntary push from intentional sidestepping and slot approach.
  run(`for(const f of F)f.hp=0;globalThis.light=F[0];globalThis.heavy=F[1];light.character='carrot';heavy.character='tomato';light.stats={...COMBAT_SPECS.carrot};heavy.stats={...COMBAT_SPECS.tomato,preferredRange:0,minimumRange:0};light.hp=heavy.hp=100;light.cool=heavy.cool=10;light.x=heavy.x=W*.5;light.y=heavy.y=H*.6;globalThis.contactGap=combatRadius(light)+combatRadius(heavy)+2*combatUnit()`);
  if(axis==='x')run('heavy.x=light.x+contactGap;light.facing=1;light.back=false');
  else run('heavy.y=light.y-contactGap;light.facing=1;light.back=true');
