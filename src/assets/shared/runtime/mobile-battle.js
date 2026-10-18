@@ -210,6 +210,22 @@ const FIGHTER_SKILLS = {
   tomato: { name: "Щит отряда", cost: 4 },
 };
 const FIGHTER_NAMES = { pepper: "Перец", tomato: "Помидор", carrot: "Морковь" };
+// Team strategy, chosen before the battle. The battle itself is automatic: the strategy decides targets,
+// whether the team waits or advances, and when each skill fires.
+const STRATEGIES = {
+  defense: { name: "Защита", text: "ждём врага на месте; кто стоит, получает на 45% меньше урона. Все бьют ближнего к помидору, морковь охраняет стрелков." },
+  attack: { name: "Атака", text: "все бьют самого слабого врага по очереди и сразу тратят умения, но в атаке получают на 15% больше урона." },
+  hunt: { name: "Охота", text: "морковь на 30% быстрее и сразу рвётся к стрелкам, перцы бьют её цель, помидор прикрывает рывок щитом." },
+};
+const STRATEGY_IDS = Object.keys(STRATEGIES);
+// Tuning of the strategy bonuses (checked by simulation).
+const STRATEGY_TUNE = { digIn: 0.55, huntSpeed: 1.3, huntDashCost: 3, reckless: 1.15 };
+function skillCost(f) {
+  return f.character === "carrot" && strategy[f.team] === "hunt" ? STRATEGY_TUNE.huntDashCost : FIGHTER_SKILLS[f.character].cost;
+}
+function moveBonus(f) {
+  return f.character === "carrot" && strategy[f.team] === "hunt" ? STRATEGY_TUNE.huntSpeed : 1;
+}
 const BATTLE_TIME = 60,
   SHIELD_TIME = 5,
   FINAL_TIME = 15,
@@ -238,6 +254,55 @@ function chooseCombatTarget(f) {
     if (f.character === "pepper" && q.hp !== best.hp) return q.hp > best.hp ? q : best;
     return Math.hypot(q.x - f.x, q.y - f.y) < Math.hypot(best.x - f.x, best.y - f.y) ? q : best;
   }, null);
+}
+function nearestTo(from, foes) {
+  return foes.reduce((b, q) => (!b || Math.hypot(q.x - from.x, q.y - from.y) < Math.hypot(b.x - from.x, b.y - from.y) ? q : b), null);
+}
+function longestRange(f, foes) {
+  return foes.reduce(
+    (b, q) => (!b || q.stats.attackRange > b.stats.attackRange || (q.stats.attackRange === b.stats.attackRange && attackDistance(f, q) < attackDistance(f, b)) ? q : b),
+    null,
+  );
+}
+// An enemy that has reached one of our shooters (used by the defence).
+function threatToShooters(team) {
+  const shooters = alive(team).filter((q) => q.character === "pepper"),
+    unit = combatUnit();
+  let best = null,
+    bestGap = 60 * unit;
+  for (const q of alive(1 - team))
+    for (const s of shooters) {
+      const gap = attackDistance(q, s);
+      if (gap < bestGap) {
+        best = q;
+        bestGap = gap;
+      }
+    }
+  return best;
+}
+// First target under the team strategy; afterwards the fighter keeps it until it falls.
+function strategyTarget(f) {
+  const foes = alive(1 - f.team),
+    mates = alive(f.team),
+    plan = strategy[f.team];
+  if (!foes.length) return null;
+  if (plan === "attack") return foes.reduce((b, q) => (!b || q.hp < b.hp || (q.hp === b.hp && attackDistance(f, q) < attackDistance(f, b)) ? q : b), null);
+  if (plan === "hunt") {
+    if (f.character === "carrot") return longestRange(f, foes);
+    if (f.character === "pepper") {
+      const lead = mates.find((q) => q.character === "carrot" && q.target && q.target.hp > 0);
+      return lead ? lead.target : longestRange(f, foes);
+    }
+  }
+  if (plan === "defense") {
+    const tank = mates.find((q) => q.character === "tomato"),
+      shooter = mates.find((q) => q.character === "pepper");
+    // Everyone but the guarding carrot hits whoever comes closest to the front.
+    const front = tank || mates.reduce((b, q) => (!b || Math.abs(q.x - W / 2) < Math.abs(b.x - W / 2) ? q : b), null);
+    if (f.character === "carrot" && shooter) return nearestTo(shooter, foes);
+    return nearestTo(front, foes);
+  }
+  return chooseCombatTarget(f);
 }
 function inAttackRange(f, t) {
   return t && t.hp > 0 && attackDistance(f, t) <= f.stats.attackRange * rangeMultiplier() * combatUnit() + 0.1;
@@ -377,7 +442,8 @@ let W = 0,
   last = performance.now(),
   energy = 2,
   enemyEnergy = 2,
-  enemyThink = 2,
+  skillThink = [0.5, 0.5],
+  engaged = [false, false],
   time = BATTLE_TIME,
   auto = false,
   rate = 1,
@@ -416,17 +482,21 @@ function saveProgress() {
 }
 const progress = loadProgress();
 let enemyRating = progress.rating;
+const strategy = [STRATEGIES[progress.strategy] ? progress.strategy : "defense", "attack"];
+function randomStrategy() {
+  return STRATEGY_IDS[Math.floor(Math.random() * STRATEGY_IDS.length)];
+}
 function randomLineup() {
   return Array.from({ length: TEAM_SIZE }, () => ["pepper", "tomato", "carrot"][Math.floor(Math.random() * 3)]);
 }
 // The tuning panel is for development: shown only with ?debug in the address.
 const setupHint = document.querySelector("#positionHint");
-if (setupHint) setupHint.textContent = "Перетащите бойца. Значок у ног врага — кого ваш боец атакует первым";
 const motionSettings = document.querySelector(".motion-settings");
 if (motionSettings && !/debug/.test(globalThis.location?.search || "")) motionSettings.hidden = true;
 // The player picks their own lineup before the battle; the opponent's is random and visible during setup.
 function assignTeamCharacters() {
   const enemy = randomLineup();
+  strategy[1] = randomStrategy();
   for (const f of F) f.character = f.team ? enemy[f.lane] : progress.lineup[f.lane];
   enemyRating = Math.max(100, progress.rating + Math.round((Math.random() - 0.5) * 80));
   resetCombatStats();
@@ -558,6 +628,10 @@ function hurt(f, d, src) {
     applyDamage(owner, Math.floor(d / 4), src);
     d -= Math.floor(d / 2);
   }
+  // Defence digs in: a fighter that has stood still for half a second takes less damage.
+  if (strategy[f.team] === "defense" && (f.stillFor || 0) >= 0.5) d = Math.max(1, Math.round(d * STRATEGY_TUNE.digIn));
+  // Attack goes in without cover: its fighters take more damage.
+  if (strategy[f.team] === "attack") d = Math.round(d * STRATEGY_TUNE.reckless);
   applyDamage(f, d, src);
   sync();
 }
@@ -576,19 +650,60 @@ function sync() {
     const f = laneFighter(+x.dataset.lane);
     if (!f) return;
     x.classList.toggle("dead", battleStarted && f.hp <= 0);
-    x.disabled = battleStarted && (!auto || f.hp <= 0 || energy < FIGHTER_SKILLS[f.character].cost || (f.character === "tomato" && shields[f.team] > 0));
+    x.disabled = battleStarted && f.hp <= 0;
+    x.classList.toggle("ready", battleStarted && energy >= skillCost(f));
   });
 }
 // Skills spend energy only when they can act.
 function skillTarget(f) {
-  const foes = alive(1 - f.team);
+  const foes = alive(1 - f.team),
+    plan = strategy[f.team];
   if (f.hp <= 0 || !foes.length) return null;
-  if (f.character === "carrot")
-    return foes.reduce((best, q) =>
-      !best || q.stats.attackRange > best.stats.attackRange || (q.stats.attackRange === best.stats.attackRange && attackDistance(f, q) < attackDistance(f, best)) ? q : best,
-    null);
+  if (f.character === "carrot") {
+    if (plan === "attack") return strategyTarget(f);
+    if (plan === "defense") return threatToShooters(f.team) || ((f.team ? enemyEnergy : energy) >= 8 ? longestRange(f, foes) : null);
+    return longestRange(f, foes);
+  }
   if (f.character === "tomato") return shields[f.team] > 0 ? null : f;
-  return chooseCombatTarget(f);
+  return f.target && f.target.hp > 0 ? f.target : strategyTarget(f);
+}
+// When a skill is worth its energy under the team strategy.
+function wantsSkill(f) {
+  const plan = strategy[f.team],
+    foes = alive(1 - f.team),
+    mates = alive(f.team),
+    final = time < FINAL_TIME,
+    unit = combatUnit();
+  if (f.character === "tomato") {
+    if (shields[f.team] > 0) return false;
+    const hurt = (k) => mates.filter((q) => q !== f && q.hp < q.max * k).length;
+    if (plan === "attack") return final || hurt(0.6) >= 2;
+    if (plan === "hunt") return mates.some((q) => q.character === "carrot" && q.dash) || hurt(0.5) >= 1;
+    return hurt(0.8) >= 1 || foes.some((q) => mates.some((m) => attackDistance(q, m) < 20 * unit));
+  }
+  const t = skillTarget(f);
+  if (!t) return false;
+  if (f.character === "carrot") return plan !== "hunt" || t.stats.preferredRange > 0 || foes.length === 1;
+  const crowd = foes.filter((q) => q !== t && Math.hypot(q.x - t.x, q.y - t.y) <= 90 * unit).length;
+  return plan !== "defense" || crowd >= 1 || final || (f.team ? enemyEnergy : energy) >= 8;
+}
+// Each team spends its energy by itself, in the strategy's priority order; the player does not press anything.
+const SKILL_ORDER = { defense: ["tomato", "pepper", "carrot"], attack: ["pepper", "carrot", "tomato"], hunt: ["carrot", "pepper", "tomato"] };
+function teamSkills(team) {
+  const order = SKILL_ORDER[strategy[team]],
+    own = alive(team).sort((a, b) => order.indexOf(a.character) - order.indexOf(b.character));
+  for (const f of own) {
+    const cost = skillCost(f);
+    if ((team ? enemyEnergy : energy) < cost || f.dash || !wantsSkill(f)) continue;
+    if (useFighterSkill(f)) {
+      if (team) enemyEnergy -= cost;
+      else {
+        energy -= cost;
+        playerSkills++;
+      }
+    }
+    return;
+  }
 }
 function useFighterSkill(f) {
   const t = skillTarget(f);
@@ -629,28 +744,7 @@ function act(lane) {
     updateHeader();
     return;
   }
-  if (!auto || !f) return;
-  const cost = FIGHTER_SKILLS[f.character].cost;
-  if (energy < cost) return;
-  if (useFighterSkill(f)) {
-    energy -= cost;
-    playerSkills++;
-  }
-  sync();
-}
-function enemyAct() {
-  const own = alive(1).sort(() => Math.random() - 0.5),
-    foes = alive(0);
-  for (const f of own) {
-    const cost = FIGHTER_SKILLS[f.character].cost;
-    if (enemyEnergy < cost) continue;
-    const wants =
-      f.character === "tomato" ? alive(1).some((q) => q.hp < q.max * 0.7) : f.character === "carrot" ? foes.some((q) => q.stats.attackRange > 50) : true;
-    if (wants && useFighterSkill(f)) {
-      enemyEnergy -= cost;
-      return;
-    }
-  }
+  // In battle the skills fire by themselves under the chosen strategy.
 }
 function renderSkillBar() {
   const bar = document.querySelector(".skills");
@@ -661,11 +755,50 @@ function renderSkillBar() {
     .map((lane) => {
       const f = laneFighter(lane),
         skill = FIGHTER_SKILLS[f.character];
-      return `<button class="skill skill-${f.character}" data-lane="${lane}"><span class="cost">${skill.cost}</span><img src="/assets/characters/${f.character}/sprites/front/idle.png" alt=""><strong>${FIGHTER_NAMES[f.character]}<em>${battleStarted ? skill.name : COMBAT_SPECS[f.character].role + " · сменить ↻"}</em></strong></button>`;
+      return `<button class="skill skill-${f.character}" data-lane="${lane}"><span class="cost">${skillCost(f)}</span><img src="/assets/characters/${f.character}/sprites/front/idle.png" alt=""><strong>${FIGHTER_NAMES[f.character]}<em>${battleStarted ? skill.name : COMBAT_SPECS[f.character].role + " · сменить ↻"}</em></strong></button>`;
     })
     .join("");
   document.querySelectorAll(".skill").forEach((x) => (x.onclick = () => act(+x.dataset.lane)));
   sync();
+}
+// Strategy picker: before the battle it takes the energy panel's place; its description and the
+// opponent's strategy go into the setup hint at the bottom of the field.
+const strategyCss =
+  "#strategyBar{display:flex;gap:4px;height:42px;align-items:stretch}" +
+  "#strategyBar button{flex:1;min-width:0;padding:0 4px;border-radius:10px;border:1px solid #936c15;background:#1a140a;color:#ffe9b0;font:800 11px system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}" +
+  "#strategyBar button.on{background:linear-gradient(#ffc83b,#c87b06);color:#241300}" +
+  ".position-hint b{color:#d9b8ff}" +
+  ".skill.ready{box-shadow:inset 0 0 0 2px #4fe1ff,0 0 10px #26cfff88}";
+if (typeof document.createElement === "function" && document.head) {
+  const strategyStyle = document.createElement("style");
+  strategyStyle.textContent = strategyCss;
+  document.head.appendChild(strategyStyle);
+}
+function renderStrategyBar() {
+  const actions = document.querySelector(".actions"),
+    energyBox = document.querySelector(".energy");
+  if (!actions || !energyBox || typeof document.createElement !== "function") return;
+  let bar = document.querySelector("#strategyBar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "strategyBar";
+    actions.insertBefore(bar, energyBox);
+  }
+  bar.hidden = battleStarted;
+  bar.style.display = battleStarted ? "none" : "";
+  energyBox.style.display = battleStarted ? "" : "none";
+  if (battleStarted) return;
+  bar.innerHTML = STRATEGY_IDS.map((id) => `<button data-id="${id}" class="${id === strategy[0] ? "on" : ""}">${STRATEGIES[id].name}</button>`).join("");
+  bar.querySelectorAll("button").forEach(
+    (b) =>
+      (b.onclick = () => {
+        strategy[0] = b.dataset.id;
+        progress.strategy = strategy[0];
+        saveProgress();
+        renderStrategyBar();
+      }),
+  );
+  if (setupHint) setupHint.innerHTML = `<b>Соперник: ${STRATEGIES[strategy[1]].name}.</b> ${STRATEGIES[strategy[0]].name}: ${STRATEGIES[strategy[0]].text} Значок у ног врага — кого боец атакует первым.`;
 }
 function updateHeader() {
   const small = document.querySelector(".round small");
@@ -691,11 +824,12 @@ document.querySelector("#auto").onclick = () => {
   auto = !auto;
   if (auto && !battleStarted) {
     battleStarted = true;
-    lastSetup = { rating: enemyRating, fighters: F.map((f) => ({ character: f.character, x: f.x, y: f.y })) };
+    lastSetup = { rating: enemyRating, strategy: strategy[1], fighters: F.map((f) => ({ character: f.character, x: f.x, y: f.y })) };
     selectedFighter = null;
     positionDrag = null;
     document.querySelector("#positionHint").hidden = true;
     renderSkillBar();
+    renderStrategyBar();
   }
   for (const f of F) f.moving = false;
   document.querySelector("#auto").classList.toggle("active", auto);
@@ -800,13 +934,12 @@ function battleHint(outcome, foes) {
     share = Math.round((100 * (top.dealt || 0)) / total),
     mine = F.filter((f) => f.team === 0).map((f) => f.character);
   if (outcome === "win") return alive(0).length < TEAM_SIZE ? "Совет: победа без потерь даёт " + TEAM_SIZE + (TEAM_SIZE > 4 ? " звёзд" : " звезды") + " и больше рейтинга." : "Чистая победа!";
-  if (!playerSkills) return "Совет: вы не нажали ни одного умения — с ними побед в разы больше.";
-  if (time <= 0) return "Совет: в финале урон ×3 — сберегите бойцов к последним 15 секундам.";
+  const name = (id) => "«" + STRATEGIES[id].name + "»";
   if (top.character === "carrot")
-    return `Их морковь нанесла ${share}% урона. ${mine.includes("tomato") ? "Поставьте помидор перед перцем" : "Возьмите помидор и поставьте его перед перцем"} — он примет её на себя.`;
+    return `Их морковь нанесла ${share}% урона. Попробуйте ${name("defense")} и ${mine.includes("tomato") ? "поставьте помидор перед перцем" : "возьмите помидор"}.`;
   if (top.character === "pepper")
-    return `Их перец нанёс ${share}% урона. ${mine.includes("carrot") ? "Жмите рывок моркови сразу" : "Возьмите морковь"} — рывок бьёт прямо по стрелку.`;
-  return `Их помидор нанёс ${share}% урона. Огненный шар бьёт по площади — ${mine.includes("pepper") ? "бейте, когда враги стоят кучей" : "возьмите перца"}.`;
+    return `Их перец нанёс ${share}% урона. Попробуйте ${name("hunt")}${mine.includes("carrot") ? "" : " и возьмите морковь"}: она бросится на стрелка.`;
+  return `Их помидор нанёс ${share}% урона. Попробуйте ${name("attack")}: отряд выбивает бойцов по одному.`;
 }
 function formatTime(t) {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
@@ -875,13 +1008,18 @@ function stepCombat(dt) {
   if (before >= FINAL_TIME && time < FINAL_TIME) floaters.push({ x: W / 2, y: H * 0.4, text: "Финал: урон ×3", t: 1.8, color: "#ff5a3c", size: 22 });
   energy = Math.min(10, energy + dt * ENERGY_RATE);
   enemyEnergy = Math.min(10, enemyEnergy + dt * ENERGY_RATE);
-  enemyThink -= dt;
-  if (auto && enemyThink <= 0) {
-    enemyThink = 1 + Math.random() * 1.5;
-    enemyAct();
+  for (const team of [0, 1]) {
+    if (!engaged[team] && (BATTLE_TIME - time > 10 || alive(1 - team).some((q) => alive(team).some((m) => attackDistance(q, m) < 120 * combatUnit()))))
+      engaged[team] = true;
+    skillThink[team] -= dt;
+    if (auto && skillThink[team] <= 0) {
+      skillThink[team] = 0.4;
+      teamSkills(team);
+    }
   }
   for (const team of [0, 1]) shields[team] = shieldOwners[team]?.hp > 0 ? Math.max(0, shields[team] - dt) : 0;
   for (const f of F) {
+    f.stillFor = f.moving ? 0 : (f.stillFor || 0) + dt;
     f.stepStart = { x: f.x, y: f.y };
     f.moving = false;
     f.retreating = false;
@@ -896,7 +1034,7 @@ function stepCombat(dt) {
     if (f.hp <= 0) continue;
     if (f.dash && planDash(f, dt)) continue;
     // Once engaged, a fighter keeps its target until it falls; only a skill (carrot dash) can switch it.
-    const t = f.target && f.target.hp > 0 ? f.target : chooseCombatTarget(f);
+    const t = f.target && f.target.hp > 0 ? f.target : strategyTarget(f);
     if (!t) continue;
     f.target = t;
     const dx = t.x - f.x,
@@ -919,7 +1057,9 @@ function stepCombat(dt) {
         retreat = true;
       } else if (gap > preferred + tolerance) move = true;
     } else move = gap > 0;
-    const lateral = lateralAlignment(f, t, dx, dy, d);
+    // Defence waits on its own ground until the enemy comes close or 10 s pass.
+    if (strategy[f.team] === "defense" && !engaged[f.team] && !retreat) move = false;
+    const lateral = engaged[f.team] || strategy[f.team] !== "defense" ? lateralAlignment(f, t, dx, dy, d) : 0;
     if (lateral) {
       const lx = lateral + (retreat ? nx : 0),
         ly = retreat ? ny : 0,
@@ -928,7 +1068,7 @@ function stepCombat(dt) {
       ny = ly / len;
       move = true;
     }
-    const slot = engageSlotDirection(f, t, d, range);
+    const slot = strategy[f.team] === "defense" && !engaged[f.team] ? null : engageSlotDirection(f, t, d, range);
     if (slot) {
       move = slot.move;
       retreat = !!slot.retreat;
@@ -960,8 +1100,8 @@ function stepCombat(dt) {
     }
     if (f.cast > 0) move = false;
     if (move) {
-      f.vx = nx * f.stats.moveSpeed * speedMultiplier() * unit;
-      f.vy = ny * f.stats.moveSpeed * speedMultiplier() * unit;
+      f.vx = nx * f.stats.moveSpeed * moveBonus(f) * speedMultiplier() * unit;
+      f.vy = ny * f.stats.moveSpeed * moveBonus(f) * speedMultiplier() * unit;
       f.retreating = retreat;
     }
     // In combat a fighter always looks at its target, also while stepping sideways or back; only the dash looks where it runs.
@@ -1287,6 +1427,7 @@ document.querySelector("#restartMotion").onclick = () => {
       f.y = saved.y;
     });
     enemyRating = lastSetup.rating;
+    strategy[1] = lastSetup.strategy;
     resetCombatStats();
   }
   shots = [];
@@ -1303,7 +1444,8 @@ document.querySelector("#restartMotion").onclick = () => {
   timer.style.color = "";
   energy = 2;
   enemyEnergy = 2;
-  enemyThink = 2;
+  skillThink = [0.5, 0.5];
+  engaged = [false, false];
   playerSkills = 0;
   for (const f of F) {
     f.hp = f.max;
@@ -1315,6 +1457,7 @@ document.querySelector("#restartMotion").onclick = () => {
     f.lock = 0;
     f.slotSettled = false;
     f.escapeT = 0;
+    f.stillFor = 0;
     f.attackEngaged = false;
     f.attackTarget = null;
     f.alignmentTarget = null;
@@ -1342,6 +1485,7 @@ document.querySelector("#restartMotion").onclick = () => {
   document.querySelector("#auto").classList.remove("active");
   document.querySelector("#auto").textContent = "Начать бой";
   renderSkillBar();
+  renderStrategyBar();
   updateHeader();
 };
 document.querySelector("#shuffleTeams").onclick = () => document.querySelector("#restartMotion").click();
@@ -1391,4 +1535,5 @@ c.addEventListener("pointercancel", () => (positionDrag = null));
 document.querySelector("#restartBattle").onclick = () => document.querySelector("#restartMotion").click();
 timer.textContent = formatTime(time);
 renderSkillBar();
+renderStrategyBar();
 updateHeader();
