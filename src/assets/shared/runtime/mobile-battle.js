@@ -27,8 +27,11 @@ function engageSlotDirection(f, t, d, range) {
     // Allies on the same side of the same target spread into rows above and below it.
     mates = F.filter((q) => q.hp > 0 && q.team === f.team && q.target === t && q.slotTarget === t && q.slotSide === side),
     row = [0, 1, -1, 2][Math.max(0, mates.indexOf(f))] || 0,
-    sx = t.x + side * (combatRadius(f) + combatRadius(t) + gap) - f.x,
-    sy = t.y + row * 2.2 * combatRadius(f) - f.y,
+    reach = combatRadius(f) + combatRadius(t) + gap,
+    // Shooters line up in rows; melee mates take places on an arc around the target so each can still reach it.
+    angle = f.stats.preferredRange > 0 ? 0 : row * 0.95,
+    sx = t.x + side * reach * Math.cos(angle) - f.x,
+    sy = t.y + (f.stats.preferredRange > 0 ? row * 2.2 * combatRadius(f) : reach * Math.sin(angle)) - f.y,
     sd = Math.hypot(sx, sy),
     tolerance = (f.stats.preferredRange > 0 ? 8 : 3) * unit;
   // Settle once close and only set off again when the slot drifts clearly away, so pushes from neighbours do not cause twitching.
@@ -36,6 +39,8 @@ function engageSlotDirection(f, t, d, range) {
   f.settledTarget = t;
   if (sd <= tolerance) f.slotSettled = true;
   else if (sd > tolerance * 4) f.slotSettled = false;
+  // A settled fighter that can no longer reach its target walks again at once.
+  if (f.slotSettled && !inAttackRange(f, t)) f.slotSettled = false;
   if (f.slotSettled) return { move: false };
   // Moving away from the target counts as a retreat, so the fighter keeps facing it.
   return { move: true, x: sx / sd, y: sy / sd, retreat: sx * (t.x - f.x) + sy * (t.y - f.y) < 0 };
