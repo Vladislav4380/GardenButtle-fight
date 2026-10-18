@@ -128,8 +128,8 @@ const COMBAT_SPECS = {
   tomato: {
     role: "Страж",
     max: 900,
-    power: 22,
-    defense: 12,
+    power: 24,
+    defense: 10,
     attackInterval: 1.15,
     moveSpeed: 38,
     mass: 3,
@@ -140,8 +140,8 @@ const COMBAT_SPECS = {
   },
   pepper: {
     role: "Стрелок",
-    max: 700,
-    power: 43,
+    max: 640,
+    power: 41,
     defense: 6,
     attackInterval: 0.95,
     moveSpeed: 55,
@@ -153,9 +153,9 @@ const COMBAT_SPECS = {
   },
   carrot: {
     role: "Быстрый боец",
-    max: 420,
-    power: 32,
-    defense: 3,
+    max: 500,
+    power: 34,
+    defense: 6,
     attackInterval: 0.8,
     moveSpeed: 78,
     mass: 1.2,
@@ -173,7 +173,9 @@ const FIGHTER_SKILLS = {
 };
 const FIGHTER_NAMES = { pepper: "Перец", tomato: "Помидор", carrot: "Морковь" };
 const BATTLE_TIME = 60,
-  SHIELD_TIME = 5;
+  SHIELD_TIME = 5,
+  FINAL_TIME = 15,
+  ENERGY_RATE = 0.5;
 function combatUnit() {
   return layout === "mobile-horizontal" ? Math.min(W / 700, H / 390) : Math.min(W / 390, H / 700);
 }
@@ -446,12 +448,13 @@ function applyDamage(f, d) {
 }
 function hurt(f, d) {
   if (f.hp <= 0) return;
-  // An active tomato shield takes half of every hit aimed at its allies.
+  // Final seconds: triple damage so stalled fights (tomato mirrors) still end.
+  if (time < FINAL_TIME) d *= 3;
+  // An active tomato shield halves every hit aimed at its allies; the tomato itself takes a quarter.
   const owner = shieldOwners[f.team];
   if (shields[f.team] > 0 && owner && owner.hp > 0 && owner !== f) {
-    const share = Math.floor(d / 2);
-    applyDamage(owner, share);
-    d -= share;
+    applyDamage(owner, Math.floor(d / 4));
+    d -= Math.floor(d / 2);
   }
   applyDamage(f, d);
   sync();
@@ -636,11 +639,11 @@ function showBattleResult() {
   progress.round += 1;
   saveProgress();
   document.querySelector("#battleResultText").textContent = win ? "Вы победили" : loss ? "Вы проиграли" : "Ничья";
-  const reason = timeout ? "Время вышло, решило оставшееся здоровье. " : "";
+  const reason = timeout ? "Время вышло. " : "";
   document.querySelector("#battleResultDetail").textContent =
     (win ? "★".repeat(stars) + "☆".repeat(3 - stars) + " " : "") +
     reason +
-    (win ? "Отряд противника побеждён" : loss ? "Ваш отряд побеждён" : timeout ? "Здоровья у отрядов поровну" : "Оба отряда побеждены") +
+    (timeout ? (win ? "У вашего отряда осталось больше здоровья" : loss ? "У соперника осталось больше здоровья" : "Здоровья у отрядов поровну") : win ? "Отряд противника побеждён" : loss ? "Ваш отряд побеждён" : "Оба отряда побеждены") +
     ` · рейтинг ${delta >= 0 ? "+" : ""}${delta}`;
   result.hidden = false;
   updateHeader();
@@ -664,6 +667,7 @@ function update(dt) {
   for (let i = 0; i < count; i++) stepCombat(dt / count);
   advanceDeathEffects(dt);
   timer.textContent = formatTime(time);
+  timer.style.color = time < FINAL_TIME ? "#ff5a3c" : "";
   sync();
   if (!alive(0).length || !alive(1).length || time <= 0) finishCombat();
 }
@@ -679,7 +683,7 @@ function planDash(f, dt) {
     f.dash = null;
     f.cast = 0.42;
     f.cool = nextAttackInterval(f);
-    hurt(t, Math.max(1, Math.round(f.stats.power * 2.2 - t.stats.defense)));
+    hurt(t, Math.max(1, Math.round(f.stats.power * 1.8 - t.stats.defense)));
     burst(t.x, t.y - 45, "rgba(255,150,40,A)");
     return true;
   }
@@ -696,9 +700,11 @@ function planDash(f, dt) {
 }
 function stepCombat(dt) {
   if (!alive(0).length || !alive(1).length || time <= 0) return;
+  const before = time;
   time = Math.max(0, time - dt);
-  energy = Math.min(10, energy + dt * 0.35);
-  enemyEnergy = Math.min(10, enemyEnergy + dt * 0.35);
+  if (before >= FINAL_TIME && time < FINAL_TIME) floaters.push({ x: W / 2, y: H * 0.4, text: "Финал: урон ×3", t: 1.8, color: "#ff5a3c", size: 22 });
+  energy = Math.min(10, energy + dt * ENERGY_RATE);
+  enemyEnergy = Math.min(10, enemyEnergy + dt * ENERGY_RATE);
   enemyThink -= dt;
   if (auto && enemyThink <= 0) {
     enemyThink = 1 + Math.random() * 1.5;
@@ -823,7 +829,7 @@ function stepCombat(dt) {
       s.dead = 1;
       if (s.kind === "tomato") burst(s.x, s.y, "rgba(225,28,18,A)");
       if (s.big) {
-        const radius = 70 * combatUnit();
+        const radius = 90 * combatUnit();
         blasts.push({ x: s.x, y: s.y, r: 0, max: radius, t: 0.5, life: 0.5, col: "rgba(255,120,30,A)" });
         for (let i = 0; i < 3; i++) burst(s.x, s.y);
         for (const q of alive(s.to.team)) if (q !== s.to && Math.hypot(q.x - s.to.x, q.y - s.to.y) <= radius) hurt(q, Math.round(s.dmg / 2));
@@ -898,6 +904,7 @@ function render() {
     g.ellipse(selectedFighter.x, selectedFighter.y + 3, baseScale() * 350, baseScale() * 95, 0, 0, 7);
     g.stroke();
   }
+  if (battleStarted) drawTargetLines();
   for (const f of [...F].sort((a, b) => a.y - b.y)) fighter(f);
   drawShields();
   drawDeathEffects();
@@ -934,6 +941,51 @@ function render() {
     g.fillText(p.text, p.x, p.y);
   }
   g.globalAlpha = 1;
+}
+// Ground arrows from each fighter to its current target, in the team colour, so pairs read at a glance.
+function drawTargetLines() {
+  g.save();
+  g.lineCap = "round";
+  for (const f of F) {
+    const t = f.target;
+    if (f.hp <= 0 || !t || t.hp <= 0) continue;
+    const dx = t.x - f.x,
+      dy = t.y - f.y,
+      d = Math.hypot(dx, dy),
+      rf = combatRadius(f),
+      rt = combatRadius(t) + 6;
+    if (d < rf + rt + 8) continue;
+    const ux = dx / d,
+      uy = dy / d,
+      x0 = f.x + ux * rf,
+      y0 = f.y + uy * rf,
+      x1 = t.x - ux * rt,
+      y1 = t.y - uy * rt,
+      col = f.team ? "255,75,48" : "72,170,255";
+    g.setLineDash([]);
+    g.strokeStyle = "rgba(0,0,0,0.35)";
+    g.lineWidth = 7;
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.lineTo(x1, y1);
+    g.stroke();
+    g.strokeStyle = `rgba(${col},0.95)`;
+    g.fillStyle = `rgba(${col},1)`;
+    g.lineWidth = 4;
+    g.setLineDash([9, 6]);
+    g.lineDashOffset = -performance.now() / 40;
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.lineTo(x1, y1);
+    g.stroke();
+    g.setLineDash([]);
+    g.beginPath();
+    g.moveTo(x1 + ux * 4, y1 + uy * 4);
+    g.lineTo(x1 - ux * 13 - uy * 8, y1 - uy * 13 + ux * 8);
+    g.lineTo(x1 - ux * 13 + uy * 8, y1 - uy * 13 - ux * 8);
+    g.fill();
+  }
+  g.restore();
 }
 // Before the battle: tint each team's half and mark the border players may not cross.
 function drawHalves() {
@@ -1037,6 +1089,7 @@ document.querySelector("#restartMotion").onclick = () => {
   document.querySelector("#auto").disabled = false;
   time = BATTLE_TIME;
   timer.textContent = formatTime(time);
+  timer.style.color = "";
   energy = 2;
   enemyEnergy = 2;
   enemyThink = 2;

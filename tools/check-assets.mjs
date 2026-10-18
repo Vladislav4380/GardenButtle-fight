@@ -1,11 +1,11 @@
 import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';
 const root=process.cwd(),walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);
-const poses=id=>id==='carrot'?['cast','cast-b','idle','walk-a','walk-b','walk-pass','walk-pass-2']:id==='tomato'?['cast','cast-b','idle','walk-a','walk-b','walk-pass','walk-pass-2']:['cast','idle','walk-a','walk-b'];const expectedFor=id=>['manifest.json',...['back','enemy','front'].flatMap(view=>poses(id).map(pose=>'sprites/'+view+'/'+pose+'.png'))].sort();
+const poses=id=>id==='carrot'?['cast','cast-b','idle','walk-a','walk-b','walk-pass','walk-pass-2']:id==='tomato'?['cast','cast-b','idle','walk-a','walk-b','walk-pass','walk-pass-2']:['cast','idle','walk-a','walk-b'];const expectedFor=id=>['manifest.json',...['back','front'].flatMap(view=>poses(id).map(pose=>'sprites/'+view+'/'+pose+'.png'))].sort();
 let characterCount=0;
 for(const id of ['pepper','tomato','carrot']){
  const dir=path.join('src/assets/characters',id),actual=walk(dir).map(p=>path.relative(dir,p).replaceAll('\\','/')).filter(p=>!/^(source|reference)\//.test(p)).sort();const expected=expectedFor(id);assert.deepEqual(actual,expected,id+' resource tree differs');
  const m=JSON.parse(fs.readFileSync(path.join(dir,'manifest.json'),'utf8'));assert.deepEqual(m.canvas,{width:1024,height:1536});assert.deepEqual(m.anchor,{x:id==='tomato'?677:512,y:1360});assert.equal(m.visualHeight,1150);assert.deepEqual(Object.fromEntries(Object.entries(m.states).map(([state,c])=>[state,c.frameCount])),{idle:1,walk:id==='tomato'||id==='carrot'?4:2,attack:id==='carrot'||id==='tomato'?2:1});
- const listed=[];for(const view of m.views)for(const cfg of Object.values(m.states))for(const name of cfg.files){const p=path.join(dir,'sprites',view,name),b=fs.readFileSync(p);assert.ok(b.readUInt32BE(16)>=1024);assert.equal(b.readUInt32BE(20),1536);listed.push('sprites/'+view+'/'+name)}assert.deepEqual([...new Set(listed)].sort(),expected.filter(p=>p.endsWith('.png')&&!p.startsWith('sprites/enemy/')));characterCount++;
+ const listed=[];for(const view of m.views)for(const cfg of Object.values(m.states))for(const name of cfg.files){const p=path.join(dir,'sprites',view,name),b=fs.readFileSync(p);assert.ok(b.readUInt32BE(16)>=1024);assert.equal(b.readUInt32BE(20),1536);listed.push('sprites/'+view+'/'+name)}assert.deepEqual([...new Set(listed)].sort(),expected.filter(p=>p.endsWith('.png')));characterCount++;
 }
 const files=[...walk('src/app'),...walk('src/scenes'),...walk('src/assets/shared')].filter(p=>/\.(ts|js|html|css|scss)$/.test(p));
 let missing=[],obsolete=[],verified=0;
