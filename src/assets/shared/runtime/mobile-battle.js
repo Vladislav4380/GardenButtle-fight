@@ -531,7 +531,7 @@ function applyDamage(f, d, src) {
     f.livedFor = BATTLE_TIME - time;
     beginDeathEffect(f);
   }
-  f.hit = 0.22;
+  f.hit = 0.14;
   burst(f.x, f.y - 45);
   // Jitter keeps simultaneous numbers apart; yellow = damage dealt by the player, red = damage taken.
   floaters.push({ x: f.x + (Math.random() - 0.5) * 28, y: f.y - 85 - Math.random() * 14, text: "-" + d, t: 0.8, color: f.team ? "#ffe36b" : "#ff472c" });
@@ -816,14 +816,15 @@ function update(dt) {
   sync();
   if (!alive(0).length || !alive(1).length || time <= 0) finishCombat();
 }
-// Turn only on a clear change of direction and not more often than every 0.35 s, so fighters do not flicker left-right or front-back.
+const TURN_HOLD = 0.5;
+// Turn only on a clear change of direction and not more often than every TURN_HOLD seconds, so fighters do not flicker left-right or front-back.
 function turnToward(f, x, y, dt) {
   f.turnHold = Math.max(0, (f.turnHold || 0) - dt);
   if (f.turnHold > 0) return;
   const len = Math.hypot(x, y) || 1,
     facing = x > 0.25 * len ? 1 : x < -0.25 * len ? -1 : f.facing || 1,
     back = y < -0.35 * len ? true : y > 0.35 * len ? false : !!f.back;
-  if (facing !== f.facing || back !== !!f.back) f.turnHold = 0.35;
+  if (facing !== f.facing || back !== !!f.back) f.turnHold = TURN_HOLD;
   f.facing = facing;
   f.back = back;
 }
@@ -956,11 +957,13 @@ function stepCombat(dt) {
     if (engagement && (!f.attackEngaged || f.attackTarget !== t)) f.cool = Math.max(f.cool, attackReactionDelay(f));
     f.attackEngaged = engagement;
     f.attackTarget = engagement ? t : null;
-    if (engagement && f.cool <= 0 && f.cast <= 0) {
-      if (Math.abs(dx) > 0.1 && Math.sign(dx) !== f.facing) {
-        f.facing = Math.sign(dx);
-        f.turnHold = 0.35;
-      }
+    // A fighter never strikes with its back to the target: it first turns (respecting the turn pause), then attacks.
+    const facingAway = Math.abs(dx) > 0.25 * d && Math.sign(dx) !== f.facing;
+    if (facingAway && f.turnHold <= 0) {
+      f.facing = Math.sign(dx);
+      f.turnHold = TURN_HOLD;
+    }
+    if (engagement && f.cool <= 0 && f.cast <= 0 && !(Math.abs(dx) > 0.25 * d && Math.sign(dx) !== f.facing)) {
       fire(f, t);
       f.cool = nextAttackInterval(f);
     }

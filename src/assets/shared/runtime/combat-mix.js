@@ -98,12 +98,15 @@ function drawMixedFighter(f) {
   g.save();
   g.translate(f.x, f.y);
   g.scale(mixedFlip(f), 1);
-  if (f.hit) g.filter = "brightness(2.1)";
+  // Short soft flash on a hit; a strong one made tanks that are hit often flicker.
+  if (f.hit) g.filter = "brightness(1.35)";
   if (f.character === "carrot" && f.cast > 0) {
     const phase = Math.sin((1 - f.cast / 0.42) * Math.PI);
     g.translate(phase * 8, -phase);
     g.rotate(phase * 0.04);
   }
+  // Tomato recoil is done in code: idle and shot use the same aiming frame, the body jerks back a little.
+  if (f.character === "tomato" && f.cast > 0) g.translate(Math.sin((1 - f.cast / 0.42) * Math.PI) * 6, 0);
   if (!f.moving && f.cast <= 0) g.scale(1, 1 + 0.004 * Math.sin((performance.now() / 1000) * 2 + f.lane));
   g.drawImage(f.team === 1 ? enemyTint(image) : image, -p.anchor.x * z, -p.anchor.y * z, Math.max(p.canvas.width, image.naturalWidth) * z, p.canvas.height * z);
   g.restore();
