@@ -959,7 +959,6 @@ function render() {
     g.ellipse(selectedFighter.x, selectedFighter.y + 3, baseScale() * 350, baseScale() * 95, 0, 0, 7);
     g.stroke();
   }
-  if (battleStarted) drawTargetLines();
   for (const f of [...F].sort((a, b) => a.y - b.y)) fighter(f);
   drawShields();
   drawDeathEffects();
@@ -996,53 +995,6 @@ function render() {
     g.fillText(p.text, p.x, p.y);
   }
   g.globalAlpha = 1;
-}
-// Ground arrows from each fighter to its current target, in the team colour, so pairs read at a glance.
-function drawTargetLines() {
-  g.save();
-  g.lineCap = "round";
-  for (const f of F) {
-    const t = f.target;
-    if (f.hp <= 0 || !t || t.hp <= 0) continue;
-    const dx = t.x - f.x,
-      dy = t.y - f.y,
-      d = Math.hypot(dx, dy),
-      rf = combatRadius(f),
-      rt = combatRadius(t) + 6;
-    if (d < 1) continue;
-    // Fighters in contact still get a short arrow at the target's feet.
-    const ux = dx / d,
-      uy = dy / d,
-      x1 = t.x - ux * rt,
-      y1 = t.y - uy * rt,
-      short = d < rf + rt + 30,
-      sx = short ? x1 - ux * 26 : f.x + ux * rf,
-      sy = short ? y1 - uy * 26 : f.y + uy * rf,
-      col = f.team ? "255,75,48" : "72,170,255";
-    g.setLineDash([]);
-    g.strokeStyle = "rgba(0,0,0,0.35)";
-    g.lineWidth = 7;
-    g.beginPath();
-    g.moveTo(sx, sy);
-    g.lineTo(x1, y1);
-    g.stroke();
-    g.strokeStyle = `rgba(${col},0.95)`;
-    g.fillStyle = `rgba(${col},1)`;
-    g.lineWidth = 4;
-    g.setLineDash([9, 6]);
-    g.lineDashOffset = -performance.now() / 40;
-    g.beginPath();
-    g.moveTo(sx, sy);
-    g.lineTo(x1, y1);
-    g.stroke();
-    g.setLineDash([]);
-    g.beginPath();
-    g.moveTo(x1 + ux * 4, y1 + uy * 4);
-    g.lineTo(x1 - ux * 13 - uy * 8, y1 - uy * 13 + ux * 8);
-    g.lineTo(x1 - ux * 13 + uy * 8, y1 - uy * 13 - ux * 8);
-    g.fill();
-  }
-  g.restore();
 }
 // Before the battle: tint each team's half and mark the border players may not cross.
 function drawHalves() {
