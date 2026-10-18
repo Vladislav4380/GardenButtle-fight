@@ -805,6 +805,17 @@ function update(dt) {
   sync();
   if (!alive(0).length || !alive(1).length || time <= 0) finishCombat();
 }
+// Turn only on a clear change of direction and not more often than every 0.35 s, so fighters do not flicker left-right or front-back.
+function turnToward(f, x, y, dt) {
+  f.turnHold = Math.max(0, (f.turnHold || 0) - dt);
+  if (f.turnHold > 0) return;
+  const len = Math.hypot(x, y) || 1,
+    facing = x > 0.25 * len ? 1 : x < -0.25 * len ? -1 : f.facing || 1,
+    back = y < -0.35 * len ? true : y > 0.35 * len ? false : !!f.back;
+  if (facing !== f.facing || back !== !!f.back) f.turnHold = 0.35;
+  f.facing = facing;
+  f.back = back;
+}
 // Carrot dash: runs fast toward its target and hits on arrival; gives up if it cannot get there in time.
 function planDash(f, dt) {
   const t = f.dash.target;
@@ -926,19 +937,19 @@ function stepCombat(dt) {
       f.retreating = retreat;
       const lookX = retreat || f.aligning ? dx / d : nx,
         lookY = retreat || f.aligning ? dy / d : ny;
-      f.back = lookY < 0;
-      if (Math.abs(lookX) > 0.001) f.facing = lookX >= 0 ? 1 : -1;
-      else if (f.aligning) f.facing = -f.alignSide;
+      if (Math.abs(lookX) > 0.001 || !f.aligning) turnToward(f, lookX, lookY, dt);
+      else turnToward(f, -f.alignSide, lookY, dt);
     }
-    if (!move) {
-      f.back = dy < 0;
-      if (Math.abs(dx) > 0.1) f.facing = dx >= 0 ? 1 : -1;
-    }
+    if (!move) turnToward(f, dx, dy, dt);
     const engagement = !f.aligning && inAttackRange(f, t);
     if (engagement && (!f.attackEngaged || f.attackTarget !== t)) f.cool = Math.max(f.cool, attackReactionDelay(f));
     f.attackEngaged = engagement;
     f.attackTarget = engagement ? t : null;
     if (engagement && f.cool <= 0 && f.cast <= 0) {
+      if (Math.abs(dx) > 0.1 && Math.sign(dx) !== f.facing) {
+        f.facing = Math.sign(dx);
+        f.turnHold = 0.35;
+      }
       fire(f, t);
       f.cool = nextAttackInterval(f);
     }
