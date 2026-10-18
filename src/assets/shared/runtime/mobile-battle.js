@@ -7,6 +7,16 @@ function nextAttackInterval(f) {
 }
 
 // Front-only sprites need a readable horizontal angle before engaging.
+// Melee fighters close in on a slot level with the target, so duels read as face to face.
+function meleeSlotDirection(f, t, d, range) {
+  const unit = combatUnit();
+  if (f.stats.preferredRange !== 0 || d >= range + combatRadius(f) + combatRadius(t) + 60 * unit) return null;
+  const side = Math.sign(f.x - t.x) || (f.team ? 1 : -1),
+    sx = t.x + side * (combatRadius(f) + combatRadius(t) + 2 * unit) - f.x,
+    sy = t.y - f.y,
+    sd = Math.hypot(sx, sy);
+  return sd > 3 * unit ? { move: true, x: sx / sd, y: sy / sd } : { move: false };
+}
 function lateralAlignment(f, t, dx, dy, d) {
   const unit = combatUnit();
   if (f.alignmentTarget !== t) {
@@ -14,7 +24,7 @@ function lateralAlignment(f, t, dx, dy, d) {
     f.aligning = false;
     f.alignSide = 0;
   }
-  const near = d <= (f.stats.attackRange * rangeMultiplier() + f.stats.radius + t.stats.radius + 40) * unit;
+  const near = d <= f.stats.attackRange * rangeMultiplier() * unit + combatRadius(f) + combatRadius(t) + 40 * unit;
   const goal = Math.max((combatRadius(f) + combatRadius(t)) * 0.9, Math.abs(dy) * 0.8);
   if (!near || Math.abs(dy) < 8 * unit || Math.abs(dx) >= goal) {
     f.aligning = false;
@@ -179,8 +189,11 @@ const BATTLE_TIME = 60,
 function combatUnit() {
   return layout === "mobile-horizontal" ? Math.min(W / 700, H / 390) : Math.min(W / 390, H / 700);
 }
+// Collision follows the drawn body, so neighbours stand side by side instead of overlapping sprites.
+const BODY_WIDTH = { pepper: 0.27, tomato: 0.3, carrot: 0.28 };
 function combatRadius(f) {
-  return (f.stats?.radius || 20) * combatUnit();
+  const body = baseScale() * 1100 * (characterProfiles[f.character]?.scale || 1) * (BODY_WIDTH[f.character] || 0.27);
+  return Math.max((f.stats?.radius || 20) * combatUnit(), body);
 }
 function rangeMultiplier() {
   return +document.querySelector("#attackRange").value / 100;
@@ -298,7 +311,7 @@ function separateFighters(dt = 0) {
       hp: f.hp,
       mass: f.stats.mass,
       moveSpeed: f.stats.moveSpeed * speedMultiplier(),
-      radius: f.stats.radius,
+      radius: combatRadius(f) / unit,
       position: { x: f.x / unit, y: f.y / unit },
     }));
   FigurePhysics.resolveOverlaps(
@@ -835,6 +848,14 @@ function stepCombat(dt) {
       nx = lx / len;
       ny = ly / len;
       move = true;
+    }
+    const slot = meleeSlotDirection(f, t, d, range);
+    if (slot) {
+      move = slot.move;
+      if (move) {
+        nx = slot.x;
+        ny = slot.y;
+      }
     }
     const wall = wallPush(f);
     if (move && (wall.x || wall.y)) {
