@@ -477,26 +477,33 @@ function fire(from, to, mult = 1) {
   }
   from.pendingFire = { to, mult, t: 0.16 };
 }
-function applyDamage(f, d) {
+function applyDamage(f, d, src) {
   if (f.hp <= 0 || d <= 0) return;
+  const dealt = Math.min(f.hp, d);
   f.hp = Math.max(0, f.hp - d);
-  if (f.hp === 0) beginDeathEffect(f);
+  // Per-fighter battle summary for the result screen.
+  f.taken = (f.taken || 0) + dealt;
+  if (src) src.dealt = (src.dealt || 0) + dealt;
+  if (f.hp === 0) {
+    f.livedFor = BATTLE_TIME - time;
+    beginDeathEffect(f);
+  }
   f.hit = 0.22;
   burst(f.x, f.y - 45);
   // Jitter keeps simultaneous numbers apart; yellow = damage dealt by the player, red = damage taken.
   floaters.push({ x: f.x + (Math.random() - 0.5) * 28, y: f.y - 85 - Math.random() * 14, text: "-" + d, t: 0.8, color: f.team ? "#ffe36b" : "#ff472c" });
 }
-function hurt(f, d) {
+function hurt(f, d, src) {
   if (f.hp <= 0) return;
   // Final seconds: triple damage so stalled fights (tomato mirrors) still end.
   if (time < FINAL_TIME) d *= 3;
   // An active tomato shield halves every hit aimed at its allies; the tomato itself takes a quarter.
   const owner = shieldOwners[f.team];
   if (shields[f.team] > 0 && owner && owner.hp > 0 && owner !== f) {
-    applyDamage(owner, Math.floor(d / 4));
+    applyDamage(owner, Math.floor(d / 4), src);
     d -= Math.floor(d / 2);
   }
-  applyDamage(f, d);
+  applyDamage(f, d, src);
   sync();
 }
 function teamHealth(team) {
@@ -623,6 +630,7 @@ document.querySelector("#auto").onclick = () => {
   auto = !auto;
   if (auto && !battleStarted) {
     battleStarted = true;
+    lastSetup = { rating: enemyRating, fighters: F.map((f) => ({ character: f.character, x: f.x, y: f.y })) };
     selectedFighter = null;
     positionDrag = null;
     document.querySelector("#positionHint").hidden = true;
@@ -685,11 +693,38 @@ function showBattleResult() {
     reason +
     (timeout ? (win ? "У вашего отряда осталось больше здоровья" : loss ? "У соперника осталось больше здоровья" : "Здоровья у отрядов поровну") : win ? "Отряд противника побеждён" : loss ? "Ваш отряд побеждён" : "Оба отряда побеждены") +
     ` · рейтинг ${delta >= 0 ? "+" : ""}${delta}`;
+  renderBattleSummary(result);
   result.hidden = false;
   updateHeader();
   document.querySelector("#auto").classList.remove("active");
   document.querySelector("#auto").textContent = "Новый бой";
   sync();
+}
+function renderBattleSummary(result) {
+  let box = result.querySelector(".battle-summary");
+  if (!box) {
+    box = document.createElement("div");
+    box.className = "battle-summary";
+    box.style.cssText = "display:grid;gap:3px;font-size:12px;color:#eef3e6;pointer-events:none";
+    result.querySelector("small")?.before(box);
+    const again = document.createElement("button");
+    again.className = "battle-rematch";
+    again.textContent = "Реванш";
+    again.style.cssText =
+      "pointer-events:auto;margin-top:4px;padding:8px 22px;border:0;border-radius:10px;font:800 15px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531);box-shadow:0 3px 0 #9c5d10";
+    again.onclick = () => {
+      rematchNext = true;
+      document.querySelector("#restartMotion").click();
+    };
+    result.querySelector("small")?.before(again);
+    const hint = result.querySelector("small");
+    if (hint) hint.textContent = "«Реванш» — тот же соперник, можно переставить бойцов. «Новый бой» — другой соперник.";
+  }
+  const lived = (f) => Math.round(f.hp > 0 ? BATTLE_TIME - time : f.livedFor ?? 0);
+  box.innerHTML = F.filter((f) => f.team === 0)
+    .sort((a, b) => a.lane - b.lane)
+    .map((f) => `<span>${FIGHTER_NAMES[f.character]}: нанёс ${f.dealt || 0}, получил ${f.taken || 0}, ${f.hp > 0 ? "выжил" : "продержался " + lived(f) + " с"}</span>`)
+    .join("");
 }
 function formatTime(t) {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
@@ -723,7 +758,7 @@ function planDash(f, dt) {
     f.dash = null;
     f.cast = 0.42;
     f.cool = nextAttackInterval(f);
-    hurt(t, Math.max(1, Math.round(f.stats.power * 1.8 - t.stats.defense)));
+    hurt(t, Math.max(1, Math.round(f.stats.power * 1.8 - t.stats.defense)), f);
     burst(t.x, t.y - 45, "rgba(255,150,40,A)");
     return true;
   }
@@ -765,8 +800,12 @@ function stepCombat(dt) {
   for (const f of F) {
     if (f.hp <= 0) continue;
     if (f.dash && planDash(f, dt)) continue;
-    const t = chooseCombatTarget(f);
+    // Keep the chosen target through an attack and for a short while after, so fighters do not jitter between targets.
+    f.lock = Math.max(0, (f.lock || 0) - dt);
+    const keep = f.target && f.target.hp > 0 && (f.lock > 0 || f.cast > 0 || f.pendingFire || f.melee);
+    const t = keep ? f.target : chooseCombatTarget(f);
     if (!t) continue;
+    if (t !== f.target) f.lock = f.character === "pepper" ? 1.5 : 0.6;
     f.target = t;
     const dx = t.x - f.x,
       dy = t.y - f.y,
@@ -865,7 +904,7 @@ function stepCombat(dt) {
       if (f.melee.t <= 0) {
         const hit = f.melee;
         f.melee = null;
-        if (inAttackRange(f, hit.target)) hurt(hit.target, hit.dmg);
+        if (inAttackRange(f, hit.target)) hurt(hit.target, hit.dmg, f);
       }
     }
   }
@@ -887,9 +926,9 @@ function stepCombat(dt) {
         const radius = 90 * combatUnit();
         blasts.push({ x: s.x, y: s.y, r: 0, max: radius, t: 0.5, life: 0.5, col: "rgba(255,120,30,A)" });
         for (let i = 0; i < 3; i++) burst(s.x, s.y);
-        for (const q of alive(s.to.team)) if (q !== s.to && Math.hypot(q.x - s.to.x, q.y - s.to.y) <= radius) hurt(q, Math.round(s.dmg / 2));
+        for (const q of alive(s.to.team)) if (q !== s.to && Math.hypot(q.x - s.to.x, q.y - s.to.y) <= radius) hurt(q, Math.round(s.dmg / 2), s.from);
       }
-      hurt(s.to, s.dmg);
+      hurt(s.to, s.dmg, s.from);
       continue;
     }
     s.x += (dx / d) * step;
@@ -1084,9 +1123,24 @@ document.querySelector("#moveSpeed").oninput = (e) => {
   document.querySelector("#speedValue").textContent = e.target.value + "%";
   renderCombatSettings();
 };
+let lastSetup = null,
+  rematchNext = false;
 document.querySelector("#restartMotion").onclick = () => {
+  const rematch = rematchNext && lastSetup;
+  rematchNext = false;
   assignTeamCharacters();
   place();
+  // Rematch: same opponent lineup and positions; your fighters return to where they started.
+  if (rematch) {
+    F.forEach((f, i) => {
+      const saved = lastSetup.fighters[i];
+      if (f.team) f.character = saved.character;
+      f.x = saved.x;
+      f.y = saved.y;
+    });
+    enemyRating = lastSetup.rating;
+    resetCombatStats();
+  }
   shots = [];
   sparks = [];
   floaters = [];
@@ -1104,6 +1158,11 @@ document.querySelector("#restartMotion").onclick = () => {
   enemyThink = 2;
   for (const f of F) {
     f.hp = f.max;
+    f.dealt = 0;
+    f.taken = 0;
+    f.livedFor = null;
+    f.target = null;
+    f.lock = 0;
     f.attackEngaged = false;
     f.attackTarget = null;
     f.alignmentTarget = null;
