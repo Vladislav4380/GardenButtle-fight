@@ -406,6 +406,9 @@ let enemyRating = progress.rating;
 function randomLineup() {
   return Array.from({ length: 3 }, () => ["pepper", "tomato", "carrot"][Math.floor(Math.random() * 3)]);
 }
+// The tuning panel is for development: shown only with ?debug in the address.
+const motionSettings = document.querySelector(".motion-settings");
+if (motionSettings && !/debug/.test(globalThis.location?.search || "")) motionSettings.hidden = true;
 // The player picks their own lineup before the battle; the opponent's is random and visible during setup.
 function assignTeamCharacters() {
   const enemy = randomLineup();
@@ -552,7 +555,7 @@ function sync() {
     const f = laneFighter(+x.dataset.lane);
     if (!f) return;
     x.classList.toggle("dead", battleStarted && f.hp <= 0);
-    x.disabled = battleStarted && (!auto || f.hp <= 0 || energy < FIGHTER_SKILLS[f.character].cost);
+    x.disabled = battleStarted && (!auto || f.hp <= 0 || energy < FIGHTER_SKILLS[f.character].cost || (f.character === "tomato" && shields[f.team] > 0));
   });
 }
 // Skills spend energy only when they can act.
@@ -608,7 +611,10 @@ function act(lane) {
   if (!auto || !f) return;
   const cost = FIGHTER_SKILLS[f.character].cost;
   if (energy < cost) return;
-  if (useFighterSkill(f)) energy -= cost;
+  if (useFighterSkill(f)) {
+    energy -= cost;
+    playerSkills++;
+  }
   sync();
 }
 function enemyAct() {
@@ -632,7 +638,7 @@ function renderSkillBar() {
     .map((lane) => {
       const f = laneFighter(lane),
         skill = FIGHTER_SKILLS[f.character];
-      return `<button class="skill skill-${f.character}" data-lane="${lane}"><span class="cost">${skill.cost}</span><img src="/assets/characters/${f.character}/sprites/front/idle.png" alt=""><strong>${FIGHTER_NAMES[f.character]}<em>${battleStarted ? skill.name : "Сменить ↻"}</em></strong></button>`;
+      return `<button class="skill skill-${f.character}" data-lane="${lane}"><span class="cost">${skill.cost}</span><img src="/assets/characters/${f.character}/sprites/front/idle.png" alt=""><strong>${FIGHTER_NAMES[f.character]}<em>${battleStarted ? skill.name : COMBAT_SPECS[f.character].role + " · сменить ↻"}</em></strong></button>`;
     })
     .join("");
   document.querySelectorAll(".skill").forEach((x) => (x.onclick = () => act(+x.dataset.lane)));
@@ -640,7 +646,8 @@ function renderSkillBar() {
 }
 function updateHeader() {
   const small = document.querySelector(".round small");
-  if (small) small.textContent = "РАУНД " + progress.round;
+  const finished = document.querySelector("#battleResult")?.hidden === false;
+  if (small) small.textContent = "БОЙ " + (finished ? progress.round - 1 : progress.round);
   const names = document.querySelectorAll(".hero .name"),
     ratings = document.querySelectorAll(".hero .rating"),
     portraits = document.querySelectorAll(".hero .portrait img");
@@ -720,7 +727,7 @@ function showBattleResult() {
   document.querySelector("#battleResultText").textContent = win ? "Вы победили" : loss ? "Вы проиграли" : "Ничья";
   const reason = timeout ? "Время вышло. " : "";
   document.querySelector("#battleResultDetail").textContent =
-    (win ? "★".repeat(stars) + "☆".repeat(3 - stars) + " " : "") +
+    (win ? "★".repeat(stars) + "☆".repeat(3 - stars) + " (★ — выживший боец) " : "") +
     reason +
     (timeout ? (win ? "У вашего отряда осталось больше здоровья" : loss ? "У соперника осталось больше здоровья" : "Здоровья у отрядов поровну") : win ? "Отряд противника побеждён" : loss ? "Ваш отряд побеждён" : "Оба отряда побеждены") +
     ` · рейтинг ${delta >= 0 ? "+" : ""}${delta}`;
@@ -736,7 +743,9 @@ function renderBattleSummary(result) {
   if (!box) {
     box = document.createElement("div");
     box.className = "battle-summary";
-    box.style.cssText = "display:grid;gap:3px;font-size:12px;color:#eef3e6;pointer-events:none";
+    box.style.cssText = "display:grid;gap:3px;font-size:12px;color:#eef3e6;pointer-events:none;max-width:340px";
+    // A solid backdrop keeps the text readable over live fighters.
+    result.style.background = "radial-gradient(ellipse at center,#041009f2 0,#041009cc 55%,#04100955 85%)";
     result.querySelector("small")?.before(box);
     const again = document.createElement("button");
     again.className = "battle-rematch";
@@ -751,11 +760,30 @@ function renderBattleSummary(result) {
     const hint = result.querySelector("small");
     if (hint) hint.textContent = "«Реванш» — тот же соперник, можно переставить бойцов. «Новый бой» — другой соперник.";
   }
-  const lived = (f) => Math.round(f.hp > 0 ? BATTLE_TIME - time : f.livedFor ?? 0);
-  box.innerHTML = F.filter((f) => f.team === 0)
-    .sort((a, b) => a.lane - b.lane)
-    .map((f) => `<span>${FIGHTER_NAMES[f.character]}: нанёс ${f.dealt || 0}, получил ${f.taken || 0}, ${f.hp > 0 ? "выжил" : "продержался " + lived(f) + " с"}</span>`)
-    .join("");
+  const lived = (f) => Math.round(f.hp > 0 ? BATTLE_TIME - time : f.livedFor ?? 0),
+    foes = F.filter((f) => f.team === 1).sort((a, b) => (b.dealt || 0) - (a.dealt || 0));
+  box.innerHTML =
+    F.filter((f) => f.team === 0)
+      .sort((a, b) => a.lane - b.lane)
+      .map((f) => `<span>${FIGHTER_NAMES[f.character]}: нанёс ${f.dealt || 0}, получил ${f.taken || 0}, ${f.hp > 0 ? "выжил" : "продержался " + lived(f) + " с"}</span>`)
+      .join("") +
+    `<span style="color:#d9b8ff">Соперник: ${foes.map((f) => FIGHTER_NAMES[f.character] + " " + (f.dealt || 0)).join(", ")}</span>` +
+    `<span style="color:#ffe294;font-weight:800">${battleHint(result.dataset.outcome, foes)}</span>`;
+}
+// One concrete tip after the battle: what hurt the player most and what to try in the rematch.
+function battleHint(outcome, foes) {
+  const total = foes.reduce((s, f) => s + (f.dealt || 0), 0) || 1,
+    top = foes[0],
+    share = Math.round((100 * (top.dealt || 0)) / total),
+    mine = F.filter((f) => f.team === 0).map((f) => f.character);
+  if (outcome === "win") return alive(0).length < 3 ? "Совет: победа без потерь даёт 3 звезды и больше рейтинга." : "Чистая победа!";
+  if (!playerSkills) return "Совет: вы не нажали ни одного умения — с ними побед в разы больше.";
+  if (time <= 0) return "Совет: в финале урон ×3 — сберегите бойцов к последним 15 секундам.";
+  if (top.character === "carrot")
+    return `Их морковь нанесла ${share}% урона. ${mine.includes("tomato") ? "Поставьте помидор перед перцем" : "Возьмите помидор и поставьте его перед перцем"} — он примет её на себя.`;
+  if (top.character === "pepper")
+    return `Их перец нанёс ${share}% урона. ${mine.includes("carrot") ? "Жмите рывок моркови сразу" : "Возьмите морковь"} — рывок бьёт прямо по стрелку.`;
+  return `Их помидор нанёс ${share}% урона. Огненный шар бьёт по площади — ${mine.includes("pepper") ? "бейте, когда враги стоят кучей" : "возьмите перца"}.`;
 }
 function formatTime(t) {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
@@ -1164,7 +1192,8 @@ document.querySelector("#moveSpeed").oninput = (e) => {
   renderCombatSettings();
 };
 let lastSetup = null,
-  rematchNext = false;
+  rematchNext = false,
+  playerSkills = 0;
 document.querySelector("#restartMotion").onclick = () => {
   const rematch = rematchNext && lastSetup;
   rematchNext = false;
@@ -1196,6 +1225,7 @@ document.querySelector("#restartMotion").onclick = () => {
   energy = 2;
   enemyEnergy = 2;
   enemyThink = 2;
+  playerSkills = 0;
   for (const f of F) {
     f.hp = f.max;
     f.dealt = 0;
