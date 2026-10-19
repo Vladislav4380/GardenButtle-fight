@@ -105,12 +105,30 @@ for(const outcome of ['win','loss','draw']){
 }
 {
  const {run}=context();
- run(`for(const f of F)f.hp=0;globalThis.tomA=F[0];globalThis.tomB=F[1];for(const f of [tomA,tomB]){f.character='tomato';f.stats={...COMBAT_SPECS.tomato};f.hp=f.max=240;f.cool=100;f.y=H*.6}tomA.x=W*.25;tomB.x=W*.75;for(let i=0;i<500;i++)stepCombat(.016)`);
+ // Both sides attack: with a random enemy strategy two defences would wait apart forever.
+ run(`strategy[0]=strategy[1]='attack';for(const f of F)f.hp=0;globalThis.tomA=F[0];globalThis.tomB=F[1];for(const f of [tomA,tomB]){f.character='tomato';f.stats={...COMBAT_SPECS.tomato};f.hp=f.max=240;f.cool=100;f.y=H*.6}tomA.x=W*.25;tomB.x=W*.75;for(let i=0;i<500;i++)stepCombat(.016)`);
  assert(run('attackDistance(tomA,tomB)>60*combatUnit()&&inAttackRange(tomA,tomB)'),'two tomatoes must stop apart within shooting range');
  assert(run('!tomA.moving&&!tomB.moving'),'tomatoes must stop closing at preferred range');
  run(`tomB.x=tomA.x+combatRadius(tomA)+combatRadius(tomB)+10*combatUnit();tomA.facing=1;globalThis.tomOldX=tomA.x;stepCombat(.016)`);
  assert(run('tomA.retreating&&tomA.x<tomOldX&&tomA.facing===1'),'close tomato must backpedal while facing enemy');
  console.log('PASS: tomatoes retain visible shooting gap and backpedal when crowded');
+}
+{
+ const {run}=context();
+ run(`for(const f of F)f.hp=0;globalThis.walker=F[0];globalThis.goal=F[1];globalThis.raider=F[3];for(const f of [walker,goal,raider]){f.hp=f.max=240}walker.character='carrot';walker.stats={...COMBAT_SPECS.carrot};walker.x=W*.2;walker.y=goal.y=raider.y=H*.6;goal.x=W*.8;raider.x=W*.3;walker.target=goal`);
+ run('hurt(walker,5,raider)');
+ assert(run('walker.target===raider'),'a fighter hit on its way must switch to the attacker');
+ run('goal.x=walker.x+combatRadius(walker)+combatRadius(goal);walker.target=goal;hurt(walker,5,raider)');
+ assert(run('walker.target===goal'),'a fighter already fighting its target must keep it');
+ console.log('PASS: hit on the way switches target, engaged fighter keeps it');
+}
+for(const plan of ['defense','attack','hunt']){
+ const {run,el}=context();
+ run(`strategy[0]='${plan}';for(const q of alive(1))q.hp=100;globalThis.low=alive(1).reduce((b,q)=>q.y>b.y?q:b);for(const f of alive(0)){f.x=low.x-W*.06;f.y=low.y}globalThis.shown=alive(0).map(chooseCombatTarget)`);
+ assert(run('shown.every(t=>t===low)'),'setup badges must all sit on the chosen enemy');
+ el('#auto').click();
+ assert(run('alive(0).every(f=>f.target===low)'),'battle must open on the enemies the setup badges showed ('+plan+')');
+ console.log('PASS: opening targets follow setup badges under',plan);
 }
 for(const edge of ['center','left','right']){
  const {run}=context();

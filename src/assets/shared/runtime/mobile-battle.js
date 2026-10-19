@@ -88,7 +88,7 @@ const PUSH_SMOOTH = 0.12;
 function smoothPushes(dt) {
   const k = Math.exp(-dt / PUSH_SMOOTH);
   for (const f of F) {
-    if (f.hp <= 0 || f.dash || !f.stepStart) {
+    if (f.hp <= 0 || !f.stepStart) {
       f.offX = (f.offX || 0) * k;
       f.offY = (f.offY || 0) * k;
       continue;
@@ -316,7 +316,7 @@ function threatToShooters(team) {
     }
   return best;
 }
-// First target under the team strategy; afterwards the fighter keeps it until it falls.
+// Target under the team strategy (the enemy's first target too); a fighter keeps it until it falls.
 function strategyTarget(f) {
   const foes = alive(1 - f.team),
     mates = alive(f.team),
@@ -554,7 +554,7 @@ function place() {
   // Lanes share the same span whatever the team size.
   const step = (k) => (TEAM_SIZE > 1 ? (k * 2) / (TEAM_SIZE - 1) : 1);
   for (const f of F) {
-    f.offX = f.offY = 0;
+    f.offX = f.offY = f.mvx = f.mvy = 0;
     const depth = f.team ? ENEMY_DEPTH[f.character] + (Math.random() - 0.5) * 0.12 : 0;
     if (layout === "mobile-vertical") {
       f.x = W * (0.2 + step(0.3) * f.lane);
@@ -670,6 +670,9 @@ function hurt(f, d, src) {
   // Attack goes in without cover: its fighters take more damage.
   if (strategy[f.team] === "attack") d = Math.round(d * STRATEGY_TUNE.reckless);
   applyDamage(f, d, src);
+  // A fighter still on its way to its target turns on the enemy that hits it; one already fighting keeps its target.
+  if (f.hp > 0 && src && src.hp > 0 && src.team !== f.team && !f.dash && f.target !== src && !(f.target && f.target.hp > 0 && inAttackRange(f, f.target)))
+    f.target = src;
   sync();
 }
 function teamHealth(team) {
@@ -865,6 +868,8 @@ document.querySelector("#auto").onclick = () => {
     selectedFighter = null;
     positionDrag = null;
     document.querySelector("#positionHint").hidden = true;
+    // The player's fighters open on the enemies the setup badges showed; the strategy picks every later target.
+    for (const f of alive(0)) f.target = chooseCombatTarget(f);
     renderSkillBar();
     renderStrategyBar();
   }
@@ -1011,6 +1016,8 @@ function turnToward(f, x, y, dt) {
   f.back = back;
 }
 // Carrot dash: runs fast toward its target and hits on arrival; gives up if it cannot get there in time.
+const DASH_RAMP = 0.15;
+const STEP_EASE = 0.06;
 function planDash(f, dt) {
   const t = f.dash.target;
   f.dash.t -= dt;
@@ -1030,7 +1037,9 @@ function planDash(f, dt) {
   const dx = t.x - f.x,
     dy = t.y - f.y,
     d = Math.max(0.001, Math.hypot(dx, dy)),
-    speed = f.stats.moveSpeed * 5 * speedMultiplier() * combatUnit();
+    // The dash speeds up over DASH_RAMP seconds instead of jumping to full speed in one frame.
+    ramp = Math.min(1, 0.35 + (1.2 - f.dash.t) / DASH_RAMP),
+    speed = f.stats.moveSpeed * 5 * ramp * speedMultiplier() * combatUnit();
   f.vx = (dx / d) * speed;
   f.vy = (dy / d) * speed;
   f.back = dy < 0;
@@ -1070,7 +1079,7 @@ function stepCombat(dt) {
   for (const f of F) {
     if (f.hp <= 0) continue;
     if (f.dash && planDash(f, dt)) continue;
-    // Once engaged, a fighter keeps its target until it falls; only a skill (carrot dash) can switch it.
+    // Once engaged, a fighter keeps its target until it falls; only a skill (carrot dash) or being hit on the way (see hurt) switches it.
     const t = f.target && f.target.hp > 0 ? f.target : strategyTarget(f);
     if (!t) continue;
     f.target = t;
@@ -1158,6 +1167,20 @@ function stepCombat(dt) {
       fire(f, t);
       f.cool = nextAttackInterval(f);
     }
+  }
+  // Starting and stopping take STEP_EASE seconds instead of one frame; the dash keeps its own speed.
+  const ease = 1 - Math.exp(-dt / STEP_EASE);
+  for (const f of F) {
+    if (f.hp <= 0 || f.dash) {
+      f.mvx = f.vx;
+      f.mvy = f.vy;
+      continue;
+    }
+    f.mvx = (f.mvx || 0) + (f.vx - (f.mvx || 0)) * ease;
+    f.mvy = (f.mvy || 0) + (f.vy - (f.mvy || 0)) * ease;
+    if (!f.vx && !f.vy && Math.hypot(f.mvx, f.mvy) < 4 * combatUnit()) f.mvx = f.mvy = 0;
+    f.vx = f.mvx;
+    f.vy = f.mvy;
   }
   for (const f of F)
     if (f.hp > 0) {
