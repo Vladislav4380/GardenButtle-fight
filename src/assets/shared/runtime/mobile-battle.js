@@ -15,13 +15,27 @@ function slotSide(f, t, unit) {
   }
   return f.slotSide;
 }
+// A shooter caught too close backs off until it is almost at its preferred distance again; separate
+// thresholds to start and stop, so it does not flip between backing off and stepping in every frame.
+function shooterBacking(f, t, range) {
+  const unit = combatUnit(),
+    preferred = Math.min(f.stats.preferredRange * rangeMultiplier() * unit, range),
+    gap = attackDistance(f, t);
+  if (f.backingFrom !== t) {
+    f.backingFrom = t;
+    f.backing = false;
+  }
+  if (!f.backing && gap < Math.max(f.stats.minimumRange * unit, preferred - 8 * unit)) f.backing = true;
+  else if (f.backing && gap >= preferred - 1 * unit) f.backing = false;
+  return f.backing;
+}
 // Every fighter near its target takes a slot level with it on its own side, at its preferred distance,
 // so duels read as face to face instead of diagonal piles.
 function engageSlotDirection(f, t, d, range) {
   const unit = combatUnit();
   if (d >= range + combatRadius(f) + combatRadius(t) + 60 * unit) return null;
   // A shooter caught too close backs straight off first; the slot only fine-tunes position afterwards.
-  if (f.stats.preferredRange > 0 && attackDistance(f, t) < Math.min(f.stats.preferredRange * rangeMultiplier() * unit, range) - 8 * unit) return null;
+  if (f.stats.preferredRange > 0 && shooterBacking(f, t, range)) return null;
   const gap = f.stats.preferredRange > 0 ? Math.min(f.stats.preferredRange * rangeMultiplier() * unit, range) : 2 * unit,
     side = slotSide(f, t, unit),
     // Allies on the same side of the same target spread into rows above and below it.
@@ -67,6 +81,25 @@ function lateralAlignment(f, t, dx, dy, d) {
 }
 
 // Full gait-cycle distance in screen pixels; independent of sprite frame count.
+const WALK_HOLD = 0.2;
+// Collision pushes are shown smoothed: the drawn figure follows its own steps at once, while the
+// back-and-forth of bodies pressing into each other is averaged out over PUSH_SMOOTH seconds.
+const PUSH_SMOOTH = 0.12;
+function smoothPushes(dt) {
+  const k = Math.exp(-dt / PUSH_SMOOTH);
+  for (const f of F) {
+    if (f.hp <= 0 || f.dash || !f.stepStart) {
+      f.offX = (f.offX || 0) * k;
+      f.offY = (f.offY || 0) * k;
+      continue;
+    }
+    const px = f.x - f.stepStart.x - f.vx * dt,
+      py = f.y - f.stepStart.y - f.vy * dt,
+      cap = combatRadius(f) * 0.5;
+    f.offX = Math.max(-cap, Math.min(cap, ((f.offX || 0) + px) * k));
+    f.offY = Math.max(-cap, Math.min(cap, ((f.offY || 0) + py) * k));
+  }
+}
 function walkCycleDistance(f) {
   const p = characterProfiles[f.character];
   return Math.max(0.001, (baseScale() * 1100 * (p.scale || 1) * p.strideLength) / p.visualHeight);
@@ -76,8 +109,11 @@ function advanceWalkCycle(f, dx, dy, dt) {
   // Reject sideways/backward pushes and cap forward travel at self-propelled travel.
   const projected = ownSpeed > 0.001 ? (dx * f.vx + dy * f.vy) / ownSpeed : 0;
   const ownTravel = Math.min(Math.max(0, projected), ownSpeed * Math.max(0, dt));
-  f.moving = f.hp > 0 && f.cast <= 0 && ownTravel > 0.001;
-  if (f.moving) f.walk = ((f.walk || 0) + ownTravel / walkCycleDistance(f)) % 1;
+  // The walk pose is kept for a moment after a step, so a fighter pressed back by a neighbour
+  // does not flicker between walk and idle frames.
+  f.walkHold = ownTravel > 0.001 ? WALK_HOLD : Math.max(0, (f.walkHold || 0) - dt);
+  f.moving = f.hp > 0 && f.cast <= 0 && (ownTravel > 0.001 || f.walkHold > 0);
+  if (ownTravel > 0.001) f.walk = ((f.walk || 0) + ownTravel / walkCycleDistance(f)) % 1;
   return ownTravel;
 }
 // Death uses particles only: no sprite pieces or juice.
@@ -518,6 +554,7 @@ function place() {
   // Lanes share the same span whatever the team size.
   const step = (k) => (TEAM_SIZE > 1 ? (k * 2) / (TEAM_SIZE - 1) : 1);
   for (const f of F) {
+    f.offX = f.offY = 0;
     const depth = f.team ? ENEMY_DEPTH[f.character] + (Math.random() - 0.5) * 0.12 : 0;
     if (layout === "mobile-vertical") {
       f.x = W * (0.2 + step(0.3) * f.lane);
@@ -1050,7 +1087,7 @@ function stepCombat(dt) {
     if (f.stats.preferredRange > 0) {
       const preferred = Math.min(f.stats.preferredRange * rangeMultiplier() * unit, range),
         tolerance = 8 * unit;
-      if (gap < Math.max(f.stats.minimumRange * unit, preferred - tolerance)) {
+      if (shooterBacking(f, t, range)) {
         nx = -nx;
         ny = -ny;
         move = true;
@@ -1129,6 +1166,7 @@ function stepCombat(dt) {
       clampFighter(f);
     }
   separateFighters(dt);
+  smoothPushes(dt);
   for (const f of F) {
     if (f.hp <= 0) {
       f.pendingFire = null;
@@ -1236,6 +1274,23 @@ function fighter(f) {
   drawMixedFighter(f);
 }
 function render() {
+  // Draw everything at the smoothed position, then put the real one back.
+  for (const f of F) {
+    f.realX = f.x;
+    f.realY = f.y;
+    f.x -= f.offX || 0;
+    f.y -= f.offY || 0;
+  }
+  try {
+    renderScene();
+  } finally {
+    for (const f of F) {
+      f.x = f.realX;
+      f.y = f.realY;
+    }
+  }
+}
+function renderScene() {
   g.clearRect(0, 0, W, H);
   if (!battleStarted) drawHalves();
   if (selectedFighter && !battleStarted) {
