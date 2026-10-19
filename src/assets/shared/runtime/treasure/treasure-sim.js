@@ -139,7 +139,10 @@ TB.sim = (() => {
   const blow = (f, t, mult) => Math.max(1, Math.round(f.stats.power * mult - t.stats.defense));
 
   function hurt(w, f, d, src) {
-    if (f.hp > 0 && d > 0) w.damage.push({ f, d, src });
+    if (f.hp > 0 && d > 0) {
+      if (src) d = Math.max(1, Math.round(d * TB.vegetables.archetypeMultiplier(src.character, f.character)));
+      w.damage.push({ f, d, src });
+    }
   }
   // All damage of the step at once. An active tomato shield halves hits on allies; the tomato takes a quarter.
   function applyDamage(w) {

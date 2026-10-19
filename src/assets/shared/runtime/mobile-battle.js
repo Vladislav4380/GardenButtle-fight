@@ -197,48 +197,63 @@ function drawDeathEffects() {
   }
 }
 
-// Base profiles from the schematic battle; tomato range and carrot targeting are customized.
+// Base profiles, balanced as a triangle: pepper beats tomato, carrot beats pepper, tomato beats carrot.
 const COMBAT_SPECS = {
   tomato: {
     role: "Страж",
-    max: 900,
-    power: 28,
-    defense: 10,
-    attackInterval: 1.15,
-    moveSpeed: 38,
-    mass: 3,
-    attackRange: 100,
-    preferredRange: 80,
+    max: 820,
+    power: 30,
+    defense: 13,
+    attackInterval: 1.05,
+    moveSpeed: 42,
+    mass: 3.2,
+    attackRange: 88,
+    preferredRange: 65,
     minimumRange: 30,
     radius: 23,
   },
   pepper: {
     role: "Стрелок",
-    max: 570,
-    power: 37,
-    defense: 6,
-    attackInterval: 0.95,
-    moveSpeed: 55,
-    mass: 1.7,
-    attackRange: 125,
-    preferredRange: 100,
+    max: 540,
+    power: 42,
+    defense: 5,
+    attackInterval: 1.05,
+    moveSpeed: 52,
+    mass: 1.6,
+    attackRange: 138,
+    preferredRange: 112,
     minimumRange: 35,
     radius: 20,
   },
   carrot: {
     role: "Быстрый боец",
-    max: 580,
-    power: 37,
-    defense: 6,
-    attackInterval: 0.8,
-    moveSpeed: 78,
-    mass: 1.2,
-    attackRange: 27,
+    max: 520,
+    power: 34,
+    defense: 5,
+    attackInterval: 0.85,
+    moveSpeed: 72,
+    mass: 1.25,
+    attackRange: 28,
     preferredRange: 0,
     minimumRange: 0,
     radius: 19,
   },
 };
+// Archetype of each fighter — bonus is defined on archetype, not on character.
+// New character needs only 1 line: FIGHTER_ARCHETYPES[newId] = "wall" (or sniper/assassin/support).
+const FIGHTER_ARCHETYPES = { tomato: "wall", pepper: "sniper", carrot: "assassin" };
+const ARCHETYPE_BONUS = {
+  wall: { sniper: 0.82, assassin: 1.35 },
+  sniper: { wall: 1.35, assassin: 0.82 },
+  assassin: { sniper: 1.35, wall: 0.82 },
+  support: { assassin: 1.35, wall: 0.82 },
+};
+function archetypeMultiplier(attacker, target) {
+  const a = FIGHTER_ARCHETYPES[attacker?.character],
+    b = FIGHTER_ARCHETYPES[target?.character];
+  if (!a || !b) return 1;
+  return ARCHETYPE_BONUS[a]?.[b] ?? 1;
+}
 // One active skill per fighter: the button belongs to that fighter and goes dark when it dies.
 const FIGHTER_SKILLS = {
   pepper: { name: "Огненный шар", cost: 4 },
@@ -249,23 +264,24 @@ const FIGHTER_NAMES = { pepper: "Перец", tomato: "Помидор", carrot: 
 // Team strategy, chosen before the battle. The battle itself is automatic: the strategy decides targets,
 // whether the team waits or advances, and when each skill fires.
 const STRATEGIES = {
-  defense: { name: "Защита", text: "ждём врага на месте; кто стоит, получает на 45% меньше урона. Все бьют ближнего к помидору, морковь охраняет стрелков." },
-  attack: { name: "Атака", text: "все бьют самого слабого врага по очереди и сразу тратят умения, но в атаке получают на 15% больше урона." },
-  hunt: { name: "Охота", text: "морковь на 30% быстрее и сразу рвётся к стрелкам, перцы бьют её цель, помидор прикрывает рывок щитом." },
+  defense: { name: "Защита", text: "ждём врага на месте; кто стоит, получает на 28% меньше урона. Все бьют ближнего к помидору, морковь охраняет стрелков." },
+  attack: { name: "Атака", text: "все бьют самого слабого врага по очереди и сразу тратят умения, но в атаке получают на 8% больше урона." },
+  hunt: { name: "Охота", text: "морковь на 22% быстрее и сразу рвётся к стрелкам, перцы бьют её цель, помидор прикрывает рывок щитом." },
 };
 const STRATEGY_IDS = Object.keys(STRATEGIES);
 // Tuning of the strategy bonuses (checked by simulation).
-const STRATEGY_TUNE = { digIn: 0.55, huntSpeed: 1.3, huntDashCost: 3, reckless: 1.15 };
+const STRATEGY_TUNE = { digIn: 0.72, huntSpeed: 1.22, huntDashCost: 3, reckless: 1.08 };
 function skillCost(f) {
   return f.character === "carrot" && strategy[f.team] === "hunt" ? STRATEGY_TUNE.huntDashCost : FIGHTER_SKILLS[f.character].cost;
 }
 function moveBonus(f) {
   return f.character === "carrot" && strategy[f.team] === "hunt" ? STRATEGY_TUNE.huntSpeed : 1;
 }
-const BATTLE_TIME = 60,
+const BATTLE_TIME = 32,
   SHIELD_TIME = 5,
-  FINAL_TIME = 15,
-  ENERGY_RATE = 0.5;
+  FINAL_TIME = 8,
+  ENERGY_RATE = 0.75,
+  START_ENERGY = 3;
 function combatUnit() {
   return layout === "mobile-horizontal" ? Math.min(W / 700, H / 390) : Math.min(W / 390, H / 700);
 }
@@ -476,8 +492,8 @@ const c = document.querySelector("#cv"),
 let W = 0,
   H = 0,
   last = performance.now(),
-  energy = 2,
-  enemyEnergy = 2,
+  energy = START_ENERGY,
+  enemyEnergy = START_ENERGY,
   skillThink = [0.5, 0.5],
   engaged = [false, false],
   time = BATTLE_TIME,
@@ -657,8 +673,8 @@ function applyDamage(f, d, src) {
 }
 function hurt(f, d, src) {
   if (f.hp <= 0) return;
-  // Final seconds: triple damage so stalled fights (tomato mirrors) still end.
-  if (time < FINAL_TIME) d *= 3;
+  // Archetype counter bonus: wall > assassin > sniper > wall (defined on archetype, not per character).
+  if (src) d = Math.max(1, Math.round(d * archetypeMultiplier(src, f)));
   // An active tomato shield halves every hit aimed at its allies; the tomato itself takes a quarter.
   const owner = shieldOwners[f.team];
   if (shields[f.team] > 0 && owner && owner.hp > 0 && owner !== f) {
@@ -1049,13 +1065,11 @@ function planDash(f, dt) {
 }
 function stepCombat(dt) {
   if (!alive(0).length || !alive(1).length || time <= 0) return;
-  const before = time;
   time = Math.max(0, time - dt);
-  if (before >= FINAL_TIME && time < FINAL_TIME) floaters.push({ x: W / 2, y: H * 0.4, text: "Финал: урон ×3", t: 1.8, color: "#ff5a3c", size: 22 });
   energy = Math.min(10, energy + dt * ENERGY_RATE);
   enemyEnergy = Math.min(10, enemyEnergy + dt * ENERGY_RATE);
   for (const team of [0, 1]) {
-    if (!engaged[team] && (BATTLE_TIME - time > 10 || alive(1 - team).some((q) => alive(team).some((m) => attackDistance(q, m) < 120 * combatUnit()))))
+    if (!engaged[team] && (BATTLE_TIME - time > 5 || alive(1 - team).some((q) => alive(team).some((m) => attackDistance(q, m) < 120 * combatUnit()))))
       engaged[team] = true;
     skillThink[team] -= dt;
     if (auto && skillThink[team] <= 0) {
@@ -1520,8 +1534,8 @@ document.querySelector("#restartMotion").onclick = () => {
   time = BATTLE_TIME;
   timer.textContent = formatTime(time);
   timer.style.color = "";
-  energy = 2;
-  enemyEnergy = 2;
+  energy = START_ENERGY;
+  enemyEnergy = START_ENERGY;
   skillThink = [0.5, 0.5];
   engaged = [false, false];
   playerSkills = 0;

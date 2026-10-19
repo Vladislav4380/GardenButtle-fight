@@ -36,7 +36,7 @@ for(const axis of ['x','y']){
 {
  const {run}=context();
  run(`for(const f of F)f.hp=0;globalThis.hunter=F[0];hunter.character='carrot';hunter.hp=100;hunter.x=100;hunter.y=200;globalThis.nearEnemy=F[1];nearEnemy.character='tomato';nearEnemy.stats={...COMBAT_SPECS.tomato};nearEnemy.hp=100;nearEnemy.x=130;nearEnemy.y=200;globalThis.rangedEnemy=F[3];rangedEnemy.character='pepper';rangedEnemy.stats={...COMBAT_SPECS.pepper};rangedEnemy.hp=100;rangedEnemy.x=600;rangedEnemy.y=200`);
- assert.equal(run('COMBAT_SPECS.tomato.attackRange'),100);
+ assert.equal(run('COMBAT_SPECS.tomato.attackRange'),88);
  assert(run('COMBAT_SPECS.tomato.attackRange<COMBAT_SPECS.pepper.attackRange'));
  assert(run('chooseCombatTarget(hunter)===nearEnemy'),'carrot chooses nearest even if distant enemy has more range');
  run('nearEnemy.hp=0');assert(run('chooseCombatTarget(hunter)===rangedEnemy'),'carrot ignores dead nearest enemy');

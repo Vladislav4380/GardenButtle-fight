@@ -6,10 +6,17 @@ var TB = globalThis.TB || (globalThis.TB = {});
 TB.vegetables = (() => {
   const ROLE_NAMES = { defense: "Защита", support: "Поддержка", attack: "Нападение" },
     ROLE_ICONS = { defense: "🛡", support: "✚", attack: "⚔" };
+  const ARCHETYPE_BONUS = {
+    wall: { sniper: 0.82, assassin: 1.35 },
+    sniper: { wall: 1.35, assassin: 0.82 },
+    assassin: { sniper: 1.35, wall: 0.82 },
+    support: { assassin: 1.35, wall: 0.82 },
+  };
   const VEGETABLES = {
     tomato: {
       name: "Помидор",
       kind: "Тяжёлый боец",
+      archetype: "wall",
       // Same numbers as the main battle.
       stats: { max: 900, power: 28, defense: 10, attackInterval: 1.15, moveSpeed: 38, mass: 3, attackRange: 100, preferredRange: 80, minimumRange: 30 },
       skill: { id: "shield", name: "Щит отряда", cost: 4 },
@@ -30,6 +37,7 @@ TB.vegetables = (() => {
     carrot: {
       name: "Морковь",
       kind: "Мобильный боец",
+      archetype: "assassin",
       stats: { max: 600, power: 39, defense: 6, attackInterval: 0.75, moveSpeed: 78, mass: 1.2, attackRange: 27, preferredRange: 0, minimumRange: 0 },
       skill: { id: "dash", name: "Рывок", cost: 3 },
       traits: { pathing: "weave", leash: 4, grip: 0.55 },
@@ -42,6 +50,7 @@ TB.vegetables = (() => {
     pepper: {
       name: "Перец",
       kind: "Дальнобойный",
+      archetype: "sniper",
       stats: { max: 430, power: 30, defense: 6, attackInterval: 0.95, moveSpeed: 55, mass: 1.7, attackRange: 125, preferredRange: 100, minimumRange: 35 },
       skill: { id: "fireball", name: "Огненный шар", cost: 4 },
       traits: { pathing: "steer", leash: 0.5, grip: 0.3 },
@@ -53,6 +62,11 @@ TB.vegetables = (() => {
     },
   };
   const IDS = Object.keys(VEGETABLES);
+  const archetypeMultiplier = (attacker, target) => {
+    const a = VEGETABLES[attacker]?.archetype, b = VEGETABLES[target]?.archetype;
+    if (!a || !b) return 1;
+    return ARCHETYPE_BONUS[a]?.[b] ?? 1;
+  };
   const roleText = (id, role) => `${VEGETABLES[id].name} · ${ROLE_NAMES[role]} — ${VEGETABLES[id].roles[role].text}`;
-  return { VEGETABLES, IDS, ROLE_NAMES, ROLE_ICONS, roleText };
+  return { VEGETABLES, IDS, ROLE_NAMES, ROLE_ICONS, ARCHETYPE_BONUS, archetypeMultiplier, roleText };
 })();
