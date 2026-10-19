@@ -21,6 +21,13 @@ export const SCENES = [
     "path": "duels/mobile-horizontal"
   },
   {
+    "id": "treasure",
+    "title": "Бой за сокровище",
+    "description": "Сундук и три героя: место старта задаёт роль, бой идёт сам, побеждает захват сундука.",
+    "group": "Мобильный бой",
+    "path": "duels/treasure"
+  },
+  {
     "id": "pepper-1v1",
     "title": "Перец · 1×1",
     "description": "Огненные атаки и рассыпание проигравшего в пепел.",
