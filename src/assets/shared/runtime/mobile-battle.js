@@ -101,8 +101,9 @@ function smoothPushes(dt) {
   }
 }
 function walkCycleDistance(f) {
-  const p = characterProfiles[f.character];
-  return Math.max(0.001, (baseScale() * 1100 * (p.scale || 1) * p.strideLength) / p.visualHeight);
+  // Sheet-only heroes (beet, corn, zucchini) have no stride in their manifest: they take the usual one.
+  const p = characterProfiles[f.character] || {};
+  return Math.max(0.001, (baseScale() * 1100 * (p.scale || 1) * (p.strideLength || 600)) / (p.visualHeight || 1150));
 }
 function advanceWalkCycle(f, dx, dy, dt) {
   const ownSpeed = Math.hypot(f.vx, f.vy);
@@ -124,12 +125,12 @@ function beginDeathEffect(f, kind = ["smoke", "sparks"][Math.floor(Math.random()
   f.pendingFire = null;
   f.melee = null;
   f.moving = false;
-  const profile = characterProfiles[f.character],
+  const profile = characterProfiles[f.character] || { visualHeight: 1150 },
     z = (baseScale() * 1100 * (profile.scale || 1)) / profile.visualHeight;
-  const image = typeof mixedPose === "function" ? mixedPose(f) : null,
-    flip = typeof mixedFlip === "function" ? mixedFlip(f) : f.facing || 1;
+  // The image to fade out, whichever way the hero is drawn (front sprite or generated sheet).
+  const shot = typeof mixedSnapshot === "function" ? mixedSnapshot(f) : null;
   const h = profile.visualHeight * z,
-    e = { kind, x: f.x, y: f.y, z, h, image, flip, profile, age: 0, duration: 1.3, parts: [] };
+    e = { kind, x: f.x, y: f.y, z, h, shot, age: 0, duration: 1.3, parts: [] };
   for (let i = 0; i < 55; i++) {
     const a = Math.random() * Math.PI * 2,
       v = h * (0.4 + Math.random() * 1.6);
@@ -161,18 +162,12 @@ function drawDeathEffects() {
     g.save();
     const fade = Math.max(0, 1 - e.age / e.duration);
     // Fade the intact character briefly; never cut it into rectangular images.
-    if (e.image && e.age < 0.25) {
+    if (e.shot && e.age < 0.25) {
       g.save();
       g.globalAlpha = Math.max(0, 1 - e.age / 0.25);
       g.translate(e.x, e.y);
-      g.scale(e.flip, 1);
-      g.drawImage(
-        e.image,
-        -e.profile.anchor.x * e.z,
-        -e.profile.anchor.y * e.z,
-        Math.max(e.profile.canvas.width, e.image.naturalWidth) * e.z,
-        e.profile.canvas.height * e.z,
-      );
+      g.scale(e.shot.flip, 1);
+      g.drawImage(e.shot.image, -e.shot.ax, -e.shot.ay, e.shot.w, e.shot.h);
       g.restore();
     }
     for (const p of e.parts) {
@@ -225,6 +220,10 @@ const COMBAT_SPECS = {
     minimumRange: 35,
     radius: 20,
   },
+  // Heroes drawn only from generated sheets: a melee warrior, a cannon shooter and a heavy guard.
+  beet: { role: "Воин", max: 640, power: 36, defense: 8, attackInterval: 0.9, moveSpeed: 56, mass: 2, attackRange: 28, preferredRange: 0, minimumRange: 0, radius: 21 },
+  corn: { role: "Пушкарь", max: 540, power: 38, defense: 5, attackInterval: 1, moveSpeed: 50, mass: 1.6, attackRange: 120, preferredRange: 95, minimumRange: 30, radius: 20 },
+  zucchini: { role: "Страж", max: 880, power: 29, defense: 14, attackInterval: 1.2, moveSpeed: 40, mass: 3.3, attackRange: 30, preferredRange: 0, minimumRange: 0, radius: 23 },
   carrot: {
     role: "Быстрый боец",
     max: 520,
@@ -259,8 +258,16 @@ const FIGHTER_SKILLS = {
   pepper: { name: "Огненный шар", cost: 4 },
   carrot: { name: "Рывок к стрелку", cost: 3 },
   tomato: { name: "Щит отряда", cost: 4 },
+  beet: { name: "Вихрь", cost: 3 },
+  corn: { name: "Залп", cost: 3 },
+  zucchini: { name: "Оглушение", cost: 3 },
 };
-const FIGHTER_NAMES = { pepper: "Перец", tomato: "Помидор", carrot: "Морковь" };
+function portraitOf(id) {
+  return typeof characterPortrait === "function" ? characterPortrait(id) : "/assets/characters/" + id + "/sprites/front/idle.png";
+}
+const FIGHTER_NAMES = { pepper: "Перец", tomato: "Помидор", carrot: "Морковь", beet: "Свёкла", corn: "Кукуруза", zucchini: "Кабачок" };
+// Order of the lineup picker; the last three have no front sprites and need a scene that draws sheets.
+const LINEUP_CHARACTERS = ["pepper", "tomato", "carrot", "beet", "corn", "zucchini"];
 // Team strategy, chosen before the battle. The battle itself is automatic: the strategy decides targets,
 // whether the team waits or advances, and when each skill fires.
 const STRATEGIES = {
@@ -277,16 +284,16 @@ function skillCost(f) {
 function moveBonus(f) {
   return f.character === "carrot" && strategy[f.team] === "hunt" ? STRATEGY_TUNE.huntSpeed : 1;
 }
-const BATTLE_TIME = 32,
+const BATTLE_TIME = 60,
   SHIELD_TIME = 5,
-  FINAL_TIME = 8,
+  FINAL_TIME = 15,
   ENERGY_RATE = 0.75,
   START_ENERGY = 3;
 function combatUnit() {
   return layout === "mobile-horizontal" ? Math.min(W / 700, H / 390) : Math.min(W / 390, H / 700);
 }
 // Collision follows the drawn body, so neighbours stand side by side instead of overlapping sprites.
-const BODY_WIDTH = { pepper: 0.27, tomato: 0.3, carrot: 0.28 };
+const BODY_WIDTH = { pepper: 0.27, tomato: 0.3, carrot: 0.28, beet: 0.28, corn: 0.27, zucchini: 0.3 };
 function combatRadius(f) {
   const body = baseScale() * 1100 * (characterProfiles[f.character]?.scale || 1) * (BODY_WIDTH[f.character] || 0.27);
   return Math.max((f.stats?.radius || 20) * combatUnit(), body);
@@ -306,6 +313,13 @@ function chooseCombatTarget(f) {
     if (f.character === "pepper" && q.hp !== best.hp) return q.hp > best.hp ? q : best;
     return Math.hypot(q.x - f.x, q.y - f.y) < Math.hypot(best.x - f.x, best.y - f.y) ? q : best;
   }, null);
+}
+// The nearest enemy by the gap between bodies. A fighter still walking keeps its current pick unless another enemy is
+// clearly closer, so it does not waver between two enemies at almost the same distance.
+function nearestFoe(f) {
+  const cur = f.target && f.target.hp > 0 ? f.target : null,
+    best = alive(1 - f.team).reduce((b, q) => (!b || attackDistance(f, q) < attackDistance(f, b) ? q : b), null);
+  return cur && best && attackDistance(f, best) > attackDistance(f, cur) - 10 * combatUnit() ? cur : best;
 }
 function nearestTo(from, foes) {
   return foes.reduce((b, q) => (!b || Math.hypot(q.x - from.x, q.y - from.y) < Math.hypot(b.x - from.x, b.y - from.y) ? q : b), null);
@@ -419,7 +433,7 @@ function renderCombatSettings() {
   if (!host) return;
   host.innerHTML = F.map(
     (f, i) =>
-      `<fieldset><legend>${f.team ? "Красные" : "Синие"} · ${{ pepper: "Перец", tomato: "Помидор", carrot: "Морковь" }[f.character]} · ${f.stats.role}</legend>${[
+      `<fieldset><legend>${f.team ? "Красные" : "Синие"} · ${FIGHTER_NAMES[f.character]} · ${f.stats.role}</legend>${[
         ["attackRange", "Дальность", 0, 350, 1],
         ["attackInterval", "Интервал, с", 0.45, 5, 0.05],
         ["moveSpeed", "Скорость", 1, 150, 1],
@@ -534,12 +548,13 @@ function saveProgress() {
 }
 const progress = loadProgress();
 let enemyRating = progress.rating;
-const strategy = [STRATEGIES[progress.strategy] ? progress.strategy : "defense", "attack"];
+// Both teams always attack; the player decides only the lineup and the placement.
+const strategy = ["attack", "attack"];
 function randomStrategy() {
-  return STRATEGY_IDS[Math.floor(Math.random() * STRATEGY_IDS.length)];
+  return "attack";
 }
 function randomLineup() {
-  return Array.from({ length: TEAM_SIZE }, () => ["pepper", "tomato", "carrot"][Math.floor(Math.random() * 3)]);
+  return Array.from({ length: TEAM_SIZE }, () => LINEUP_CHARACTERS[Math.floor(Math.random() * LINEUP_CHARACTERS.length)]);
 }
 // The tuning panel is for development: shown only with ?debug in the address.
 const setupHint = document.querySelector("#positionHint");
@@ -565,7 +580,7 @@ function resize() {
   place();
 }
 // The opponent forms up by role: tank in front, shooter behind, fast fighter between.
-const ENEMY_DEPTH = { tomato: 0.12, carrot: 0.4, pepper: 0.85 };
+const ENEMY_DEPTH = { tomato: 0.12, carrot: 0.4, pepper: 0.85, beet: 0.3, corn: 0.8, zucchini: 0.12 };
 function place() {
   // Lanes share the same span whatever the team size.
   const step = (k) => (TEAM_SIZE > 1 ? (k * 2) / (TEAM_SIZE - 1) : 1);
@@ -649,7 +664,8 @@ function spawnProjectile(from, to, mult) {
 function fire(from, to, mult = 1) {
   if (from.hp <= 0 || !inAttackRange(from, to) || from.cast > 0) return;
   from.cast = 0.42;
-  if (from.character === "carrot") {
+  // Fighters without a shooting distance hit in melee.
+  if (from.stats.preferredRange <= 0) {
     from.melee = { target: to, t: 0.2, dmg: Math.max(1, Math.round(from.stats.power * mult - to.stats.defense)) };
     return;
   }
@@ -675,6 +691,8 @@ function hurt(f, d, src) {
   if (f.hp <= 0) return;
   // Archetype counter bonus: wall > assassin > sniper > wall (defined on archetype, not per character).
   if (src) d = Math.max(1, Math.round(d * archetypeMultiplier(src, f)));
+  // Final seconds: triple damage so stalled fights (tomato mirrors) still end.
+  if (time < FINAL_TIME) d *= 3;
   // An active tomato shield halves every hit aimed at its allies; the tomato itself takes a quarter.
   const owner = shieldOwners[f.team];
   if (shields[f.team] > 0 && owner && owner.hp > 0 && owner !== f) {
@@ -683,12 +701,12 @@ function hurt(f, d, src) {
   }
   // Defence digs in: a fighter that has stood still for half a second takes less damage.
   if (strategy[f.team] === "defense" && (f.stillFor || 0) >= 0.5) d = Math.max(1, Math.round(d * STRATEGY_TUNE.digIn));
-  // Attack goes in without cover: its fighters take more damage.
-  if (strategy[f.team] === "attack") d = Math.round(d * STRATEGY_TUNE.reckless);
   applyDamage(f, d, src);
-  // A fighter still on its way to its target turns on the enemy that hits it; one already fighting keeps its target.
-  if (f.hp > 0 && src && src.hp > 0 && src.team !== f.team && !f.dash && f.target !== src && !(f.target && f.target.hp > 0 && inAttackRange(f, f.target)))
+  // A fighter hit by another enemy that is closer than its current one turns on the attacker, even in a fight.
+  if (f.hp > 0 && src && src.hp > 0 && src.team !== f.team && !f.dash && f.target !== src && (!f.target || f.target.hp <= 0 || attackDistance(f, src) < attackDistance(f, f.target))) {
     f.target = src;
+    f.fighting = inAttackRange(f, src) ? src : null;
+  }
   sync();
 }
 function teamHealth(team) {
@@ -716,12 +734,13 @@ function skillTarget(f) {
     plan = strategy[f.team];
   if (f.hp <= 0 || !foes.length) return null;
   if (f.character === "carrot") {
-    if (plan === "attack") return strategyTarget(f);
+    // In attack the dash goes at the carrot's own target, so it never pulls the carrot out of a fight.
+    if (plan === "attack") return f.target && f.target.hp > 0 ? f.target : nearestFoe(f);
     if (plan === "defense") return threatToShooters(f.team) || ((f.team ? enemyEnergy : energy) >= 8 ? longestRange(f, foes) : null);
     return longestRange(f, foes);
   }
   if (f.character === "tomato") return shields[f.team] > 0 ? null : f;
-  return f.target && f.target.hp > 0 ? f.target : strategyTarget(f);
+  return f.target && f.target.hp > 0 ? f.target : nearestFoe(f);
 }
 // When a skill is worth its energy under the team strategy.
 function wantsSkill(f) {
@@ -739,6 +758,8 @@ function wantsSkill(f) {
   }
   const t = skillTarget(f);
   if (!t) return false;
+  // The beet's whirl and the zucchini's stun need an enemy within reach.
+  if (f.character === "beet" || f.character === "zucchini") return inAttackRange(f, t);
   if (f.character === "carrot") return plan !== "hunt" || t.stats.preferredRange > 0 || foes.length === 1;
   const crowd = foes.filter((q) => q !== t && Math.hypot(q.x - t.x, q.y - t.y) <= 90 * unit).length;
   return plan !== "defense" || crowd >= 1 || final || (f.team ? enemyEnergy : energy) >= 8;
@@ -771,6 +792,20 @@ function useFighterSkill(f) {
     const p = socket(f);
     f.cast = 0.42;
     shots.push({ x: p.x, y: p.y, to: t, from: f, kind: "pepper", big: true, dmg: Math.max(1, Math.round(f.stats.power * 2.4 - t.stats.defense)), trail: [], spin: 0 });
+  } else if (f.character === "corn") {
+    // A volley: one fast shot at two and a half times the damage.
+    const p = socket(f);
+    f.cast = 0.42;
+    shots.push({ x: p.x, y: p.y, to: t, from: f, kind: "corn", dmg: Math.max(1, Math.round(f.stats.power * 2.5 - t.stats.defense)), trail: [], spin: 0 });
+  } else if (f.character === "beet") {
+    // A whirl: every enemy within reach takes 1.6 times the damage.
+    f.cast = 0.42;
+    for (const q of alive(1 - f.team)) if (inAttackRange(f, q)) hurt(q, Math.max(1, Math.round(f.stats.power * 1.6 - q.stats.defense)), f);
+  } else if (f.character === "zucchini") {
+    // A mace blow: double damage, and the target neither moves nor attacks for 1.5 s.
+    f.cast = 0.42;
+    hurt(t, Math.max(1, Math.round(f.stats.power * 2 - t.stats.defense)), f);
+    if (t.hp > 0) t.stun = 1.5;
   } else if (f.character === "carrot") {
     // Dash through the line to the enemy with the longest range and strike twice as hard.
     f.dash = { target: t, t: 1.2 };
@@ -789,8 +824,8 @@ function act(lane) {
   if (!battleStarted) {
     // Before the battle a tap swaps this slot's vegetable.
     if (!f) return;
-    const order = ["pepper", "tomato", "carrot"];
-    progress.lineup[lane] = order[(order.indexOf(progress.lineup[lane]) + 1) % 3];
+    const order = LINEUP_CHARACTERS;
+    progress.lineup[lane] = order[(order.indexOf(progress.lineup[lane]) + 1) % order.length];
     saveProgress();
     f.character = progress.lineup[lane];
     f.stats = { ...COMBAT_SPECS[f.character] };
@@ -811,7 +846,7 @@ function renderSkillBar() {
     .map((lane) => {
       const f = laneFighter(lane),
         skill = FIGHTER_SKILLS[f.character];
-      return `<button class="skill skill-${f.character}" data-lane="${lane}"><span class="cost">${skillCost(f)}</span><img src="/assets/characters/${f.character}/sprites/front/idle.png" alt=""><strong>${FIGHTER_NAMES[f.character]}<em>${battleStarted ? skill.name : COMBAT_SPECS[f.character].role + " · сменить ↻"}</em></strong></button>`;
+      return `<button class="skill skill-${f.character}" data-lane="${lane}"><span class="cost">${skillCost(f)}</span><img src="${portraitOf(f.character)}" alt=""><strong>${FIGHTER_NAMES[f.character]}<em>${battleStarted ? skill.name : COMBAT_SPECS[f.character].role + " · сменить ↻"}</em></strong></button>`;
     })
     .join("");
   document.querySelectorAll(".skill").forEach((x) => (x.onclick = () => act(+x.dataset.lane)));
@@ -840,21 +875,12 @@ function renderStrategyBar() {
     bar.id = "strategyBar";
     actions.insertBefore(bar, energyBox);
   }
-  bar.hidden = battleStarted;
-  bar.style.display = battleStarted ? "none" : "";
-  energyBox.style.display = battleStarted ? "" : "none";
+  // There is no strategy to pick any more: the energy panel stays in its place.
+  bar.hidden = true;
+  bar.style.display = "none";
+  energyBox.style.display = "";
   if (battleStarted) return;
-  bar.innerHTML = STRATEGY_IDS.map((id) => `<button data-id="${id}" class="${id === strategy[0] ? "on" : ""}">${STRATEGIES[id].name}</button>`).join("");
-  bar.querySelectorAll("button").forEach(
-    (b) =>
-      (b.onclick = () => {
-        strategy[0] = b.dataset.id;
-        progress.strategy = strategy[0];
-        saveProgress();
-        renderStrategyBar();
-      }),
-  );
-  if (setupHint) setupHint.innerHTML = `<b>Соперник: ${STRATEGIES[strategy[1]].name}.</b> ${STRATEGIES[strategy[0]].name}: ${STRATEGIES[strategy[0]].text} Значок у ног врага — кого боец атакует первым.`;
+  if (setupHint) setupHint.innerHTML = "Расставьте бойцов: каждый идёт на ближайшего врага и бьётся с ним до конца.";
 }
 function updateHeader() {
   const small = document.querySelector(".round small");
@@ -868,8 +894,8 @@ function updateHeader() {
   if (ratings[0]) ratings[0].textContent = "🏆 " + progress.rating;
   if (ratings[1]) ratings[1].textContent = "🏆 " + enemyRating;
   const lead = (team) => F.find((f) => f.team === team && f.lane === 0);
-  if (portraits[0]) portraits[0].src = `/assets/characters/${lead(0).character}/sprites/front/idle.png`;
-  if (portraits[1]) portraits[1].src = `/assets/characters/${lead(1).character}/sprites/front/idle.png`;
+  if (portraits[0]) portraits[0].src = portraitOf(lead(0).character);
+  if (portraits[1]) portraits[1].src = portraitOf(lead(1).character);
 }
 document.querySelector("#auto").onclick = () => {
   if (battleEnding) return;
@@ -884,8 +910,6 @@ document.querySelector("#auto").onclick = () => {
     selectedFighter = null;
     positionDrag = null;
     document.querySelector("#positionHint").hidden = true;
-    // The player's fighters open on the enemies the setup badges showed; the strategy picks every later target.
-    for (const f of alive(0)) f.target = chooseCombatTarget(f);
     renderSkillBar();
     renderStrategyBar();
   }
@@ -992,16 +1016,17 @@ function battleHint(outcome, foes) {
     share = Math.round((100 * (top.dealt || 0)) / total),
     mine = F.filter((f) => f.team === 0).map((f) => f.character);
   if (outcome === "win") return alive(0).length < TEAM_SIZE ? "Совет: победа без потерь даёт " + TEAM_SIZE + (TEAM_SIZE > 4 ? " звёзд" : " звезды") + " и больше рейтинга." : "Чистая победа!";
-  const name = (id) => "«" + STRATEGIES[id].name + "»";
+  // Each tip names the counter from the archetype triangle and where to put it.
   if (top.character === "carrot")
-    return `Их морковь нанесла ${share}% урона. Попробуйте ${name("defense")} и ${mine.includes("tomato") ? "поставьте помидор перед перцем" : "возьмите помидор"}.`;
+    return `Их морковь нанесла ${share}% урона. ${mine.includes("tomato") ? "Поставьте помидор напротив неё" : "Возьмите помидор и поставьте напротив неё"}: он её контрит.`;
   if (top.character === "pepper")
-    return `Их перец нанёс ${share}% урона. Попробуйте ${name("hunt")}${mine.includes("carrot") ? "" : " и возьмите морковь"}: она бросится на стрелка.`;
-  return `Их помидор нанёс ${share}% урона. Попробуйте ${name("attack")}: отряд выбивает бойцов по одному.`;
+    return `Их перец нанёс ${share}% урона. ${mine.includes("carrot") ? "Поставьте морковь напротив него" : "Возьмите морковь и поставьте напротив него"}: она его контрит.`;
+  return `Их помидор нанёс ${share}% урона. ${mine.includes("pepper") ? "Поставьте перец напротив него" : "Возьмите перец и поставьте напротив него"}: он его контрит.`;
 }
 function formatTime(t) {
   return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 }
+const BATTLE_SPEED = 1.5;
 function update(dt) {
   if (battleEnding) {
     advanceDeathEffects(dt * rate);
@@ -1009,7 +1034,8 @@ function update(dt) {
     return;
   }
   if (!auto) return;
-  dt *= rate;
+  // The battle runs 1.5 times as fast as real time at ×1 (×2 doubles that).
+  dt *= rate * BATTLE_SPEED;
   // Short physics steps keep contact pressure stable at both playback speeds.
   const count = Math.max(1, Math.ceil(dt / 0.016));
   for (let i = 0; i < count; i++) stepCombat(dt / count);
@@ -1043,7 +1069,7 @@ function planDash(f, dt) {
   }
   if (attackDistance(f, t) <= f.stats.attackRange * rangeMultiplier() * combatUnit() + 0.1) {
     f.dash = null;
-    f.target = t;
+    f.target = f.fighting = t;
     f.cast = 0.42;
     f.cool = nextAttackInterval(f);
     hurt(t, Math.max(1, Math.round(f.stats.power * 1.8 - t.stats.defense)), f);
@@ -1065,11 +1091,13 @@ function planDash(f, dt) {
 }
 function stepCombat(dt) {
   if (!alive(0).length || !alive(1).length || time <= 0) return;
+  const before = time;
   time = Math.max(0, time - dt);
+  if (before >= FINAL_TIME && time < FINAL_TIME) floaters.push({ x: W / 2, y: H * 0.4, text: "Финал: урон ×3", t: 1.8, color: "#ff5a3c", size: 22 });
   energy = Math.min(10, energy + dt * ENERGY_RATE);
   enemyEnergy = Math.min(10, enemyEnergy + dt * ENERGY_RATE);
   for (const team of [0, 1]) {
-    if (!engaged[team] && (BATTLE_TIME - time > 5 || alive(1 - team).some((q) => alive(team).some((m) => attackDistance(q, m) < 120 * combatUnit()))))
+    if (!engaged[team] && (BATTLE_TIME - time > 10 || alive(1 - team).some((q) => alive(team).some((m) => attackDistance(q, m) < 120 * combatUnit()))))
       engaged[team] = true;
     skillThink[team] -= dt;
     if (auto && skillThink[team] <= 0) {
@@ -1093,10 +1121,16 @@ function stepCombat(dt) {
   for (const f of F) {
     if (f.hp <= 0) continue;
     if (f.dash && planDash(f, dt)) continue;
-    // Once engaged, a fighter keeps its target until it falls; only a skill (carrot dash) or being hit on the way (see hurt) switches it.
-    const t = f.target && f.target.hp > 0 ? f.target : strategyTarget(f);
+    // Stunned by the zucchini: no move, no attack.
+    if (f.stun > 0) {
+      f.stun -= dt;
+      continue;
+    }
+    // Until it is in a fight a fighter heads for the nearest enemy; once that enemy is in reach it fights it to the end.
+    const t = f.target && f.target.hp > 0 && f.fighting === f.target ? f.target : nearestFoe(f);
     if (!t) continue;
     f.target = t;
+    if (inAttackRange(f, t)) f.fighting = t;
     const dx = t.x - f.x,
       dy = t.y - f.y,
       d = Math.max(0.001, Math.hypot(dx, dy)),
@@ -1240,7 +1274,8 @@ function stepCombat(dt) {
     const dx = s.to.x - s.x,
       dy = s.to.y - baseScale() * 500 - s.y,
       d = Math.hypot(dx, dy),
-      step = 340 * dt;
+      // Tomatoes fly faster than fireballs.
+      step = (s.kind === "tomato" || s.kind === "corn" ? 550 : 340) * dt;
     if (d <= Math.max(combatRadius(s.to), step)) {
       s.dead = 1;
       if (s.kind === "tomato") burst(s.x, s.y, "rgba(225,28,18,A)");
@@ -1279,8 +1314,22 @@ function stepCombat(dt) {
   floaters = floaters.filter((p) => p.t > 0);
 }
 
+// A corn kernel: a small yellow oval.
+function drawCornShot(s) {
+  g.save();
+  g.translate(s.x, s.y);
+  g.rotate(s.spin);
+  g.fillStyle = "#ffd23a";
+  g.strokeStyle = "#b8860b";
+  g.lineWidth = 1;
+  g.beginPath();
+  g.ellipse(0, 0, 7, 5, 0, 0, 7);
+  g.fill();
+  g.stroke();
+  g.restore();
+}
 function drawTomatoShot(s) {
-  const r = 6;
+  const r = 9;
   g.save();
   g.translate(s.x, s.y);
   g.rotate(s.spin);
@@ -1342,7 +1391,7 @@ function renderScene() {
   drawDeathEffects();
   g.globalCompositeOperation = "lighter";
   for (const s of shots) {
-    if (s.kind === "tomato") continue;
+    if (s.kind === "tomato" || s.kind === "corn") continue;
     const k = s.big ? 2.2 : 1;
     for (const q of s.trail) glow(q.x, q.y, 12 * k, "rgba(255,65,8,A)", Math.max(0, q.t / 0.22) * 0.4);
     glow(s.x, s.y, 18 * k, "rgba(255,60,8,A)", 0.9);
@@ -1361,8 +1410,8 @@ function renderScene() {
   for (const p of sparks) glow(p.x, p.y, 8, p.col, Math.max(0, p.t / p.max));
   g.globalCompositeOperation = "source-over";
   for (const s of shots) if (s.kind === "tomato") drawTomatoShot(s);
+  for (const s of shots) if (s.kind === "corn") drawCornShot(s);
   drawHealthBars();
-  if (!battleStarted) drawTargetPreview();
   for (const p of floaters) {
     g.globalAlpha = Math.min(1, Math.max(0, p.t / 0.8));
     g.fillStyle = p.color || "#ff472c";
@@ -1420,45 +1469,6 @@ function drawShields() {
   }
 }
 // Health bars without names; bars that would overlap are stacked upward.
-// Before the battle each enemy shows small portrait badges at its feet of the player's fighters that will attack it first,
-// so moving a fighter visibly changes who fights whom. The selected fighter's badge is highlighted.
-function drawTargetPreview() {
-  const r = Math.max(9, Math.min(14, baseScale() * 160)),
-    badges = new Map();
-  for (const f of F) {
-    if (f.team !== 0 || f.hp <= 0) continue;
-    const t = chooseCombatTarget(f);
-    if (!t) continue;
-    if (!badges.has(t)) badges.set(t, []);
-    badges.get(t).push(f);
-  }
-  for (const [t, list] of badges) {
-    const top = t.y + r + 6;
-    list.forEach((f, i) => {
-      const x = t.x + (i - (list.length - 1) / 2) * (r * 2 + 3),
-        on = f === selectedFighter,
-        image = mixedSprites[f.character]?.["idle/front"]?.[0];
-      g.save();
-      g.beginPath();
-      g.arc(x, top, on ? r * 1.25 : r, 0, 7);
-      g.fillStyle = "#0b1710e6";
-      g.fill();
-      g.clip();
-      if (image?.complete && image.naturalWidth) {
-        // Head and chest of the idle frame, taken around the profile anchor.
-        const a = characterProfiles[f.character].anchor,
-          k = on ? r * 1.25 : r;
-        g.drawImage(image, a.x - 400, 170, 800, 800, x - k, top - k, k * 2, k * 2);
-      }
-      g.restore();
-      g.strokeStyle = on ? "#ffe167" : "#9fd0ff";
-      g.lineWidth = on ? 2.5 : 1.5;
-      g.beginPath();
-      g.arc(x, top, on ? r * 1.25 : r, 0, 7);
-      g.stroke();
-    });
-  }
-}
 function drawHealthBars() {
   const w = Math.max(24, Math.min(44, baseScale() * 540)),
     placed = [];
@@ -1491,6 +1501,8 @@ function frame(n) {
   requestAnimationFrame(frame);
 }
 mixedReady.then(() => {
+  // Portraits of sheet heroes exist only once their sheets are loaded.
+  renderSkillBar();
   sync();
   requestAnimationFrame(frame);
 });
@@ -1544,7 +1556,7 @@ document.querySelector("#restartMotion").onclick = () => {
     f.dealt = 0;
     f.taken = 0;
     f.livedFor = null;
-    f.target = null;
+    f.target = f.fighting = null;
     f.slotTarget = null;
     f.lock = 0;
     f.slotSettled = false;

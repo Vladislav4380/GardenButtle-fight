@@ -1,0 +1,15 @@
+ЗАГРУЗИТЬ: art\beet\sheet.png (весь лист 5 × 7). Можно в тот же чат, где он был сделан, или в новый.
+СОХРАНИТЬ КАК: art\beet\sheet.png (поверх старого) — игра подхватит сама после копирования в src\assets\characters\beet\sprites\sheet.png.
+
+The uploaded image is a sprite sheet of my game character, an angry beet warrior with a green cape and a sword:
+a grid of 5 rows × 7 columns. Rows are directions (1 front, 2 three-quarter front, 3 side, 4 three-quarter back, 5 back),
+columns are poses (1 idle, 2-5 walk cycle, 6 attack wind-up, 7 attack strike).
+
+Fix ONE mistake: in some walk frames the sword is missing from the hand. The character must hold the same sword in his
+right hand in EVERY cell, exactly like in column 1 of the same row (same sword size, same grip, blade pointing the same way;
+during the walk the sword only swings slightly with the arm).
+The cells to fix (row, column): row 1 columns 3, 4 and 5; row 2 columns 3, 4 and 5 (the sword there is too short or held too low);
+row 5 columns 2, 3, 4 and 5 (seen from the back: the hand and the blade stick out to the side of the cape, as in row 5 column 1).
+
+Change nothing else: keep the same grid, the same 35 figures in the same places, the same poses, legs, size, colors and style,
+the same white background. No grid lines, no text, no numbers.

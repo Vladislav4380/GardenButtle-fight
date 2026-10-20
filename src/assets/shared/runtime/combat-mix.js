@@ -7,8 +7,9 @@ function enemyTint(image) {
   if (tinted) return tinted;
   tinted = document.createElement("canvas");
   // Half resolution is still sharper than the fighter on screen and tints 4x faster.
-  tinted.width = Math.ceil(image.naturalWidth / 2);
-  tinted.height = Math.ceil(image.naturalHeight / 2);
+  // Images and canvases (frames cut from a sheet) are both accepted.
+  tinted.width = Math.ceil((image.naturalWidth || image.width) / 2);
+  tinted.height = Math.ceil((image.naturalHeight || image.height) / 2);
   const t = tinted.getContext("2d");
   t.drawImage(image, 0, 0, tinted.width, tinted.height);
   try {
@@ -42,12 +43,21 @@ function enemyTint(image) {
 }
 
 const characterProfiles = {},
-  mixedSprites = { pepper: {}, tomato: {}, carrot: {} };
+  mixedSprites = { pepper: {}, tomato: {}, carrot: {}, beet: {}, corn: {}, zucchini: {} },
+  // A scene with <html data-sprites="sheet"> draws the heroes from their generated sheets (sheet-sprites.js):
+  // 8 directions with walk and attack frames instead of the front sprites turned left or right.
+  useSheets = typeof document !== "undefined" && document.documentElement?.dataset?.sprites === "sheet" && typeof loadSheetFrames === "function",
+  mixedSheets = {};
 const mixedReady = Promise.all(
-  ["pepper", "tomato", "carrot"].map(async (id) => {
+  // Beet, corn and zucchini exist only as sheets; without sheets they are not drawn.
+  (useSheets ? ["pepper", "tomato", "carrot", "beet", "corn", "zucchini"] : ["pepper", "tomato", "carrot"]).map(async (id) => {
     const response = await fetch("/assets/characters/" + id + "/manifest.json");
     if (!response.ok) throw Error("Missing character " + id);
     const profile = (characterProfiles[id] = await response.json());
+    if (useSheets && profile.sheet) {
+      mixedSheets[id] = await loadSheetFrames(id, profile);
+      return;
+    }
     await Promise.all(
       Object.entries(profile.states).flatMap(([state, config]) =>
         ["front"].flatMap((view) => {
@@ -68,6 +78,50 @@ const mixedReady = Promise.all(
     );
   }),
 );
+// The sheet walk frames move the legs less than the old front sprites, so they run 1.5 times as often per step
+// to keep the walk as lively.
+const SHEET_WALK_RATE = 1.5;
+// Sheet heroes look where they walk; standing (or backing off) they look at their target.
+function mixedSheetPose(f) {
+  const frames = mixedSheets[f.character];
+  if (!frames) return null;
+  const t = f.target && f.target.hp > 0 ? f.target : null;
+  let dx, dy;
+  if (f.moving && !f.retreating && (f.vx || f.vy)) {
+    dx = f.vx;
+    dy = f.vy;
+  } else if (t) {
+    dx = t.x - f.x;
+    dy = t.y - f.y;
+  } else {
+    dx = f.facing || (f.team ? -1 : 1);
+    dy = 0;
+  }
+  const dir = steadyDirection(f, dx, dy),
+    state = f.cast > 0 ? "attack" : f.moving ? "walk" : "idle",
+    fr = sheetFrame(frames, state, dir.row, state === "walk" ? ((f.walk || 0) * SHEET_WALK_RATE) % 1 : 1 - f.cast / 0.42),
+    p = characterProfiles[f.character];
+  if (!fr) return null;
+  const len = Math.hypot(dx, dy) || 1;
+  return { fr, flip: dir.flip, z: (baseScale() * 1100 * (p.scale || 1)) / frames.height, ux: dx / len, uy: dy / len };
+}
+// What the death effect fades out: the current image with its anchor and size on screen.
+function mixedSnapshot(f) {
+  const s = mixedSheetPose(f);
+  if (s) return { image: s.fr.canvas, ax: s.fr.ax * s.z, ay: s.fr.ay * s.z, w: s.fr.canvas.width * s.z, h: s.fr.canvas.height * s.z, flip: s.flip };
+  const image = mixedPose(f),
+    p = characterProfiles[f.character],
+    z = (baseScale() * 1100 * (p.scale || 1)) / p.visualHeight;
+  return image && { image, ax: p.anchor.x * z, ay: p.anchor.y * z, w: Math.max(p.canvas.width, image.naturalWidth) * z, h: p.canvas.height * z, flip: mixedFlip(f) };
+}
+// A small picture of the hero for buttons and the header: the sheet's idle front frame, or the front sprite.
+const portraitCache = {};
+function characterPortrait(id) {
+  if (portraitCache[id]) return portraitCache[id];
+  const frame = mixedSheets[id]?.["idle/front"]?.[0];
+  if (!frame) return "/assets/characters/" + id + "/sprites/front/idle.png";
+  return (portraitCache[id] = frame.canvas.toDataURL());
+}
 function mixedPose(f) {
   const state = f.cast > 0 ? "attack" : f.moving ? "walk" : "idle",
     view = "front",
@@ -81,9 +135,17 @@ function mixedPose(f) {
   return frames[index];
 }
 function mixedFlip(f) {
+  const s = mixedSheetPose(f);
+  if (s) return s.flip;
   return (f.facing || (f.team === 0 ? 1 : -1)) * (f.character === "tomato" ? -1 : 1);
 }
 function mixedSocket(f) {
+  // Sheet heroes: the weapon is in front of the body, a bit above the middle, toward where the hero looks.
+  const s = mixedSheetPose(f);
+  if (s) {
+    const h = s.fr.canvas.height * s.z;
+    return { x: f.x + s.ux * h * 0.3, y: f.y - h * 0.5 + s.uy * h * 0.15 };
+  }
   const p = characterProfiles[f.character],
     socket = p.sockets.front.attack,
     z = (baseScale() * 1100 * (p.scale || 1)) / p.visualHeight;
@@ -91,6 +153,18 @@ function mixedSocket(f) {
 }
 function drawMixedFighter(f) {
   if (f.hp <= 0) return;
+  const s = mixedSheetPose(f);
+  if (s) {
+    g.save();
+    g.translate(f.x, f.y);
+    g.scale(s.flip, 1);
+    if (f.hit) g.filter = "brightness(1.35)";
+    if (!f.moving && f.cast <= 0) g.scale(1, 1 + 0.004 * Math.sin((performance.now() / 1000) * 2 + (f.lane || 0)));
+    // Enemies are tinted purple: rings and health bars alone did not tell the teams apart in a crowd.
+    g.drawImage(f.team === 1 ? sheetEnemyTint(s.fr.canvas) : s.fr.canvas, -s.fr.ax * s.z, -s.fr.ay * s.z, s.fr.canvas.width * s.z, s.fr.canvas.height * s.z);
+    g.restore();
+    return;
+  }
   const image = mixedPose(f),
     p = characterProfiles[f.character];
   if (!image || !image.complete || !image.naturalWidth) return;

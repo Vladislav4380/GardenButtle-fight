@@ -75,7 +75,8 @@
     "front/walk-pass-2": "source/walk/frames-walk-shoot-v3/frame-04.png (ChatGPT, ref-walk-shoot.png + prompt-walk-shoot.txt, stride fixed by follow-up edit)",
     "back/walk-pass-2": "copy of back/idle.png (no back passing pose yet)",
     "front/cast-b": "TEMP copy of frame-05 (aim); recoil frame-06 rejected, waiting for prompt-shoot-fix.txt result",
-    "back/cast-b": "copy of back/cast.png"
+    "back/cast-b": "copy of back/cast.png",
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/tomato/sheet.png); used by the 6×6 battle, the 3×3 battle keeps the front sprites"
   },
   "notes": [
     "front set regenerated in new style; back view still old, shifted +165px to match anchor.x 677",
@@ -83,5 +84,25 @@
     "walk frames scaled to identical head width (410px), not identical height",
     "walk: all 4 front frames from one generation (ref-cycle.png + prompt-cycle.txt), scaled to identical head width",
     "front walk + attack (aim, recoil) from one ChatGPT sheet; frames scaled to equal head width; attack socket = muzzle in aim frame"
-  ]
+  ],
+  "sheet": {
+    "file": "sprites/sheet.png",
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right"
+  }
 }

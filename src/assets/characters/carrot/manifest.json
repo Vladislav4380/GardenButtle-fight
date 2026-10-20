@@ -76,10 +76,31 @@
     "front/walk-pass": "source/walk/frames-walk-v1/frame-02.png (ChatGPT, ref-walk.png + prompt-walk.txt)",
     "front/walk-pass-2": "source/walk/frames-walk-v1/frame-04.png (ChatGPT, ref-walk.png + prompt-walk.txt)",
     "back/walk-pass": "copy of back/idle.png",
-    "back/walk-pass-2": "copy of back/idle.png"
+    "back/walk-pass-2": "copy of back/idle.png",
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/carrot/sheet.png); used by the 6×6 battle, the 3×3 battle keeps the front sprites"
   },
   "notes": [
     "Back poses use the previously prepared equipped-model render.",
     "Attack frames (front and back): cast.png = wind-up, cast-b.png = thrust; canvas widened to the right (anchor unchanged)."
-  ]
+  ],
+  "sheet": {
+    "file": "sprites/sheet.png",
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right"
+  }
 }

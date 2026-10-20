@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 export const routes: Routes = [
- { path: '', loadComponent: () => import('./pages/home.page').then(m => m.HomePage) },
+ // The site opens on the 6×6 battle; the list of all battles lives at /catalog.
+ { path: '', pathMatch: 'full', redirectTo: 'duels/tft-6x6' },
+ { path: 'catalog', loadComponent: () => import('./pages/home.page').then(m => m.HomePage) },
  { path: 'duels/:id', loadComponent: () => import('./pages/canvas-scene.page').then(m => m.CanvasScenePage) },
  { path: 'figures', loadComponent: () => import('./pages/figures/app').then(m => m.App) },
  { path: 'fight', loadComponent: () => import('./pages/fight/fight.page').then(m => m.FightPage) },

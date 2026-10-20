@@ -66,8 +66,28 @@
     "back/idle": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/combat-idle-back-v001.png",
     "back/cast": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/back-cast.png",
     "back/walk-a": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/back-walkA.png",
-    "back/walk-b": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/back-walkB.png"
+    "back/walk-b": "D:/HomeProjects/GardenBattle-Work/jobs/20261003_red-pepper_v001/battle-model/pepper-sprite-1v1-v001/assets/pepper/back-walkB.png",
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/pepper/sheet.png); used by the 6×6 battle, the 3×3 battle keeps the front sprites"
   },
-  "notes": []
+  "notes": [],
+  "sheet": {
+    "file": "sprites/sheet.png",
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right"
+  }
 }
-

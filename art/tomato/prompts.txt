@@ -1,0 +1,29 @@
+ПРОМПТ ДЛЯ ГЕРОЯ: Помидор. ОДНА генерация — весь лист сразу.
+ЗАГРУЗИТЬ: D:/HomeProjects/GardenButtle-fight/src/assets/characters/tomato/sprites/front/idle.png
+Новый чат ChatGPT. СОХРАНИТЬ КАК: art\tomato\sheet.png (рядом с этим файлом). Формат картинки: самый большой, горизонтальный.
+
+The uploaded image is my game character: an angry tomato guardian with a green stem on top, green ragged cape, brown boots, a round red shield on one arm and a small tomato cannon on the other.
+Draw ONE sprite sheet of this character for a mobile auto-battler: a grid of 5 rows × 8 columns, 40 figures in total.
+All figures are the same character, the same costume, the same weapon in the same hand, drawn at EXACTLY the same size:
+the same head width and the same total height in every cell (difference not more than 3%). In every row all figures
+stand on one common ground line. Camera slightly from above, about 35 degrees down, like units on a Teamfight Tactics
+board, the same camera in every cell.
+
+ROWS = directions (the whole row keeps one direction):
+row 1 - facing the camera (front);
+row 2 - three-quarter front, turned to the RIGHT;
+row 3 - side view, facing RIGHT;
+row 4 - three-quarter back, turned to the RIGHT, no face visible;
+row 5 - facing away from the camera (back), no face visible.
+
+COLUMNS = poses (the same pose in the whole column):
+column 1 - idle combat stance;
+columns 2-5 - walk cycle in the row's direction: 2 contact step (one leg forward, heels about one head width apart),
+3 passing (standing leg straight, the other knee bent, boot slightly lifted), 4 contact step with the other leg forward,
+5 passing with the other leg;
+column 6 - attack wind-up: the tomato cannon raised and aimed in the facing direction, shield covering the body;
+column 7 - attack strike: the cannon fires, a small burst of red juice and smoke at the muzzle, the arm recoils a little;
+column 8 - recovery, halfway back to the idle stance.
+
+Every figure stays inside its own cell with clear white space around it; figures must not touch or overlap.
+White background, no grid lines, no shadows on the ground, no text, no numbers, no labels.

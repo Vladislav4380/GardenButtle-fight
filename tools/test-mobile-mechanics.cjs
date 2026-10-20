@@ -65,7 +65,7 @@ for(const axis of ['x','y']){
 }
 for(const kind of ['smoke','sparks']){
  const {run,el}=context();
- run(`globalThis.mixedPose=()=>({naturalWidth:1024,naturalHeight:1536});globalThis.mixedFlip=()=>1;globalThis.drawCalls=0;for(const method of ['save','restore','translate','scale','rotate','beginPath','arc','ellipse','fill','fillRect'])g[method]=()=>{};g.drawImage=()=>drawCalls++;globalThis.victim=F[1];victim.hp=0;beginDeathEffect(victim,'${kind}');drawDeathEffects()`);
+ run(`globalThis.mixedSnapshot=()=>({image:{},ax:0,ay:0,w:1,h:1,flip:1});globalThis.drawCalls=0;for(const method of ['save','restore','translate','scale','rotate','beginPath','arc','ellipse','fill','fillRect'])g[method]=()=>{};g.drawImage=()=>drawCalls++;globalThis.victim=F[1];victim.hp=0;beginDeathEffect(victim,'${kind}');drawDeathEffects()`);
  assert.equal(run('deathEffects.length'),1);assert.equal(run('deathEffects[0].kind'),kind);
  assert(run('deathEffects[0].parts.length>30&&drawCalls>0'));
  assert(run('deathEffects[0].parts.every(p=>p.sx===undefined&&p.sy===undefined&&p.sw===undefined)'), 'death must not contain sprite fragments');
@@ -115,20 +115,19 @@ for(const outcome of ['win','loss','draw']){
 }
 {
  const {run}=context();
- run(`for(const f of F)f.hp=0;globalThis.walker=F[0];globalThis.goal=F[1];globalThis.raider=F[3];for(const f of [walker,goal,raider]){f.hp=f.max=240}walker.character='carrot';walker.stats={...COMBAT_SPECS.carrot};walker.x=W*.2;walker.y=goal.y=raider.y=H*.6;goal.x=W*.8;raider.x=W*.3;walker.target=goal`);
- run('hurt(walker,5,raider)');
- assert(run('walker.target===raider'),'a fighter hit on its way must switch to the attacker');
- run('goal.x=walker.x+combatRadius(walker)+combatRadius(goal);walker.target=goal;hurt(walker,5,raider)');
- assert(run('walker.target===goal'),'a fighter already fighting its target must keep it');
- console.log('PASS: hit on the way switches target, engaged fighter keeps it');
-}
-for(const plan of ['defense','attack','hunt']){
- const {run,el}=context();
- run(`strategy[0]='${plan}';for(const q of alive(1))q.hp=100;globalThis.low=alive(1).reduce((b,q)=>q.y>b.y?q:b);for(const f of alive(0)){f.x=low.x-W*.06;f.y=low.y}globalThis.shown=alive(0).map(chooseCombatTarget)`);
- assert(run('shown.every(t=>t===low)'),'setup badges must all sit on the chosen enemy');
- el('#auto').click();
- assert(run('alive(0).every(f=>f.target===low)'),'battle must open on the enemies the setup badges showed ('+plan+')');
- console.log('PASS: opening targets follow setup badges under',plan);
+ run(`for(const f of F)f.hp=0;globalThis.walker=F[0];globalThis.far=F[1];globalThis.near=F[3];for(const f of [walker,far,near]){f.hp=f.max=900;f.cool=100;f.character='tomato';f.stats={...COMBAT_SPECS.tomato}}walker.character='carrot';walker.stats={...COMBAT_SPECS.carrot};walker.x=W*.2;walker.y=far.y=near.y=H*.6;far.x=W*.55;near.x=W*.75;stepCombat(.016)`);
+ assert(run('walker.target===far'),'a walking fighter heads for the nearest enemy');
+ run('near.x=walker.x+W*.12;stepCombat(.016)');
+ assert(run('walker.target===near'),'while walking it switches to a closer enemy');
+ run('near.x=walker.x+combatRadius(walker)+combatRadius(near);stepCombat(.016);far.x=walker.x+combatRadius(walker)+combatRadius(far)-5;near.x=W*.8;stepCombat(.016)');
+ assert(run('walker.target===near&&walker.fighting===near'),'once in a fight it keeps its enemy until it falls');
+ run('near.hp=0;stepCombat(.016)');
+ assert(run('walker.target===far'),'after its enemy falls it takes the nearest one');
+ run('far.hp=900;near.hp=900;far.x=walker.x+combatRadius(walker)+combatRadius(far);walker.target=walker.fighting=far;near.x=W*.9;hurt(walker,5,near)');
+ assert(run('walker.target===far'),'a hit from a farther enemy does not break the fight');
+ run('near.x=walker.x+combatRadius(walker)+combatRadius(near)-8;hurt(walker,5,near)');
+ assert(run('walker.target===near&&walker.fighting===near'),'a hit from a closer enemy switches the fighter to it');
+ console.log('PASS: nearest enemy while walking, fight to the end once engaged, closer attacker takes over');
 }
 for(const edge of ['center','left','right']){
  const {run}=context();

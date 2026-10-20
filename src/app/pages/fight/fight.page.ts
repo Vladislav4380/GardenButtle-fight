@@ -740,7 +740,7 @@ export class FightPage implements AfterViewInit, OnDestroy {
   }
 
   goToGarden(): void {
-    void this.router.navigateByUrl('/');
+    void this.router.navigateByUrl('/catalog');
   }
 
   ngOnDestroy(): void {

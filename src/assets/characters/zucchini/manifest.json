@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "zucchini",
+  "sheet": {
+    "file": "sprites/sheet.png",
+    "rows": ["front", "front34", "side", "back34", "back"],
+    "columns": ["idle", "walk", "walk", "walk", "walk", "attack", "attack"],
+    "facing": "right"
+  },
+  "sources": {
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/zucchini/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}
