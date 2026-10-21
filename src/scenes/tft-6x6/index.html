@@ -14,10 +14,11 @@
 .field{position:relative;flex:1;min-height:0}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 /* The hint: a pill at the top of the field until the first touch. */
+.sfxlog{position:absolute;right:6px;top:84px;z-index:5;padding:8px 10px;border-radius:8px;background:#000d;font:14px/1.5 ui-monospace,monospace;color:#ffe9b0;white-space:nowrap;cursor:pointer}.sfxlog b{color:#9bd96b}
 .hint{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:max-content;max-width:92%;z-index:4;padding:6px 12px;border-radius:12px;background:#0b1710d9;font-size:14px;color:#e4f0dc;text-align:center;pointer-events:none}.hint[hidden]{display:none}
 .traits:not([hidden]){display:flex}.traits{flex-wrap:wrap;align-items:center;gap:3px 12px;padding:5px 10px;background:#122a1c;border-top:1px solid #2b4634;border-bottom:1px solid #2b4634;z-index:2}.traits[hidden]{display:none}.traits>b{font:800 11px system-ui;color:#9fb3a3;text-transform:uppercase;letter-spacing:.05em}.chip{min-height:44px;padding:4px 2px;border:0;background:none;color:#a9bdaf;font:600 14px system-ui;text-align:left;cursor:pointer}.chip b{color:#d8e8d0}.chip.on,.chip.on b{color:#ffd56b}.info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92%,420px);z-index:5;padding:12px 14px;border-radius:14px;background:#0b1710f2;border:1px solid #9bd96b;font-size:16px;line-height:1.4}.info h3{margin:0 0 6px;font-size:19px}.info p{margin:4px 0}.info p.on{color:#ffe36b}.info .bonus{color:#9bd96b;font-weight:700}.info .close{margin-top:8px;font-size:11px;color:#8fa596;text-align:center}
 /* After a battle: the result panel and, under it, the buttons across the whole screen. */
-.after{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:0 12px max(12px,env(safe-area-inset-bottom))}.after[hidden],.bottom[hidden]{display:none}
+.after{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:0 12px calc(max(12px,env(safe-area-inset-bottom)) + 60px)}.after[hidden],.bottom[hidden]{display:none}
 .after .actions{display:flex;width:100%;max-width:520px;flex-direction:column;gap:12px;animation:result-in .45s .35s cubic-bezier(.2,1.3,.4,1) both}
 .after .actions button{width:100%;height:62px;font-size:20px}.after #start{order:-1}.after #energy{display:none}
 .result{width:min(340px,100%);box-sizing:border-box;padding:18px 22px;border-radius:16px;background:#0b1710ee;border:1px solid #9bd96b;text-align:center}
@@ -30,11 +31,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 @keyframes result-in{from{opacity:0;transform:translateY(40px) scale(.8)}to{opacity:1;transform:none}}
 @keyframes result-pop{from{opacity:0;transform:scale(1.4)}to{opacity:1;transform:scale(1)}}.result span{font-size:13px;color:#cfe3c4}
 /* The buttons stand on the field itself, over its bottom edge (the board keeps clear of them, see controlsHeight),
-   kept to the left: the free host shows its banner in the bottom right corner. Styled as game buttons: a gold one for
+   kept to the left and raised over the free host's banner, which sits in the bottom right corner (about 60 px). Styled as game buttons: a gold one for
    the battle and a wooden one for the squad, both raised and pressed down when tapped. */
-.bottom{position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;flex-direction:column;padding:6px 12px max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));pointer-events:none}
+.bottom{position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;flex-direction:column;padding:6px 12px calc(max(12px,env(safe-area-inset-bottom)) + 60px) max(12px,env(safe-area-inset-left));pointer-events:none}
 .actions{display:flex;gap:10px;align-items:center}
-.actions button{pointer-events:auto;height:58px;min-width:58px;padding:0 20px;border:3px solid #6b3f08;border-radius:16px;font:900 18px system-ui;letter-spacing:.01em;color:#3a1d00;text-shadow:0 1px 0 #fff7;background:linear-gradient(#ffe794,#f6b638 55%,#d98a12);box-shadow:inset 0 2px 0 #fff8,0 4px 0 #5a3407,0 8px 16px #000a;cursor:pointer;transition:transform .06s,box-shadow .06s}
+.actions button{pointer-events:auto;white-space:nowrap;height:58px;min-width:58px;padding:0 20px;border:3px solid #6b3f08;border-radius:16px;font:900 18px system-ui;letter-spacing:.01em;color:#3a1d00;text-shadow:0 1px 0 #fff7;background:linear-gradient(#ffe794,#f6b638 55%,#d98a12);box-shadow:inset 0 2px 0 #fff8,0 4px 0 #5a3407,0 8px 16px #000a;cursor:pointer;transition:transform .06s,box-shadow .06s}
 .actions button:active{transform:translateY(3px);box-shadow:inset 0 2px 0 #fff8,0 1px 0 #5a3407,0 4px 10px #000a}
 .actions button:disabled{filter:grayscale(.5) brightness(.8)}
 .actions .ghost{color:#ffeccb;text-shadow:0 1px 0 #000a;border-color:#2e1a08;background:linear-gradient(#9b6b3c,#6e4524 60%,#55341a);box-shadow:inset 0 2px 0 #ffffff30,0 4px 0 #2e1a08,0 8px 16px #000a}

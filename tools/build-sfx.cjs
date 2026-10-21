@@ -1,5 +1,5 @@
 // Builds the game's bundled battle sounds, src/assets/audio/sfx, from the CC0 files in art/sfx-cc0 (see its
-// SOURCES.md) and the game's own set in art/sfx. Each sound is cut to its length with a fade and its loudness
+// SOURCES.md). Each sound is cut to its length with a fade and its loudness
 // levelled (needs ffmpeg on the PATH). A cue with several files gets several takes (name-0.mp3, name-1.mp3, ...);
 // the game picks one at random each time. list.json gives each cue's number of takes.
 //   node tools/build-sfx.cjs
@@ -21,27 +21,17 @@ const PICK = {
   kernel: [takes("item_stone_0#.ogg", [1, 2, 3]), 0.35],
   splat: [takes("squish_0#.mp3", [1, 2, 3, 4]), 0.45],
   fire: [takes("spell_fire_0#.ogg", [1, 2, 3]), 0.6],
-  magic: [[C + "spell_02.ogg"], 0.5],
-  // Shots leaving the shooter: quieter than the blows.
+  // The bow's string as an arrow leaves: quieter than the blows. Other shots, the eggplant's magic, abilities and
+  // falls have no sound.
   bow: [takes("swish_#.wav", [1, 2, 3, 4]), 0.25, -30],
-  throw: [takes("swish_#.wav", [5, 6, 7]), 0.25, -30],
-  "fireball-cast": [[C + "fireball.wav"], 0.6, -28],
-  "magic-cast": [[C + "spell_01.ogg"], 0.5, -28],
-  // Moving: steps (quiet, there are many), a sprint's rush of air, the carrot's leap.
+  // Moving: steps (quiet, there are many) and a sprint's rush of air. The leap, the round's end and the result
+  // have no sound.
   step: [takes("footstep_grass_#.ogg", [0, 1, 2, 3, 4]), 0.3, -34],
   dash: [takes("swish_#.wav", [8, 9, 10]), 0.3, -28],
-  leap: [[C + "whoosh.wav"], 0.6, -26],
-  death: [takes("stones_0#.ogg", [1, 2]), 0.6],
-  // Events.
-  ability: [[C + "draw_knife.ogg"], 0.6, -24],
-  "round-end": [["art/sfx/round-end.wav"], 1.5, -20],
-  win: [[C + "horn.ogg"], 3, -20],
-  // The same horn, a fourth lower: gloomier.
-  lose: [[C + "horn.ogg"], 3, -20, "asetrate=44100*0.75,aresample=44100"],
 };
 // Loudness each blow is levelled to (LUFS): quiet enough that a crowd of blows does not drown the rest.
 const LOUDNESS = -24;
-// A long horn cut short fades out over its last second; a blow over its last 0.1 s.
+// A sound cut short fades out over its last 0.1–0.2 s.
 const fade = (secs) => Math.min(1, Math.max(0.1, secs * 0.3));
 
 fs.rmSync(out, { recursive: true, force: true });

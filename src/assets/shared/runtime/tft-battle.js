@@ -423,7 +423,6 @@ function startHunt(f) {
     const c = hexCenter(spot.col, spot.row);
     dust(f.x, f.y, 6);
     f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: JUMP_TIME, jump: true };
-    sfx("leap");
     f.col = spot.col;
     f.row = spot.row;
     say(f, "Прыжок в тыл");
@@ -482,7 +481,7 @@ function startMove(f, h, sprint) {
   const c = hexCenter(h.col, h.row);
   // The hex is taken at once, so nobody else steps into it.
   f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: f.stats.step * (f.hunt ? HUNT_STEP : 1) * (sprint ? sprint.k : 1), trail: sprint?.trail };
-  sfx(sprint ? "dash" : "step");
+  sfx(sprint ? "dash" : "step", { who: f.character });
   f.col = h.col;
   f.row = h.row;
 }
@@ -549,7 +548,6 @@ function startDeath(f) {
       };
     });
   deaths.push({ f, x: f.x, y: f.y, kind, parts, age: 0, life: 1.3, pose: f.pose });
-  sfx("death");
 }
 function stepDeaths(dt) {
   for (const e of deaths) {
@@ -648,7 +646,7 @@ function releasePending(f, dt) {
     y = f.y + (dy / d) * 0.45,
     speed = f.character === "pepper" || f.character === "eggplant" ? 6.8 : 11;
   shots.push({ x, y, to: p.to, from: f, kind: f.character, big: p.big, raw: f.stats.ad * p.mult, speed, stun: p.stun });
-  sfx("shoot", { kind: WEAPON[f.character] });
+  if (WEAPON[f.character] === "arrow") sfx("shoot", { kind: "arrow", who: f.character });
   // The onion's volley: one more arrow at each of the two enemies closest to its target.
   if (p.volley)
     alive(1 - f.team)
@@ -660,7 +658,6 @@ function releasePending(f, dt) {
 // Full mana: the unit casts its ability instead of the next attack; mana starts again from zero.
 function castAbility(f, t) {
   f.mana = 0;
-  sfx("cast");
   if (f.character === "tomato") {
     for (const q of alive(f.team)) if (hexDist(f, q) <= 2) q.shield = 4;
     f.cast = 0.42;
@@ -822,7 +819,6 @@ function finish() {
     outcome = !alive(1).length && alive(0).length ? "win" : !alive(0).length && alive(1).length ? "loss" : lead > 0.02 ? "win" : lead < -0.02 ? "loss" : "draw";
   result = { outcome, lead };
   shots = [];
-  sfx("end");
   if (typeof onBattleEnd === "function") onBattleEnd(result);
 }
 let onBattleEnd = null;
@@ -1278,7 +1274,7 @@ function impact(t, src, big) {
   const kind = WEAPON[src?.character] || "blunt",
     life = kind === "fire" || kind === "magic" ? 0.32 : 0.24;
   impacts.push({ x: t.x, y: t.y, kind, big, t: life, life, ang: Math.atan2(t.y - src.y, t.x - src.x), seed: Math.random() * 6.28 });
-  sfx("hit", { kind, big });
+  sfx("hit", { kind, big, who: src?.character });
 }
 function drawImpacts(g) {
   for (const e of impacts) {
@@ -1680,6 +1676,11 @@ function initPage() {
             : "Продолжить";
     // Between rounds the squad button only swaps heroes, and says so.
     $("#team").textContent = match && !match.over && (swapping() || result) ? "⇄ Заменить героев" : "Изменить отряд";
+    // ?sfx=debug: the last sounds, each with its file and the hero who made it, to find one by ear.
+    // A tap on the list holds it (and the battle) still, to read which sound it was.
+    if (sfxDebug && !sfxHeld)
+      $("#sfxlog").innerHTML =
+        "<b>нажмите — стоп</b><br>" + (globalThis.BattleSfx?.heard || []).map((h) => `${TFT_NAMES[h.who] || "—"}: ${h.file.split("/").pop()}`).reverse().join("<br>");
     $("#round").textContent = match ? `Раунд ${match.round}/${MATCH_ROUNDS} · ${match.wins[0]}:${match.wins[1]}` : "";
     // The hint goes away once the player has touched a hero.
     $("#hint").hidden = battleStarted || hintSeen;
@@ -1706,12 +1707,10 @@ function initPage() {
     const [a, b] = match.wins,
       round = r.outcome === "win" ? "Раунд ваш!" : r.outcome === "loss" ? "Раунд проигран" : "Ничья в раунде";
     $(".field").classList.add("over");
-    const won = match.over ? Math.sign(a - b) : r.outcome === "win" ? 1 : r.outcome === "loss" ? -1 : 0;
     resultTimer = setTimeout(() => {
       resultShown = true;
       $("#after").append($(".actions"));
       $("#after").hidden = false;
-      sfx(won > 0 ? "win" : won < 0 ? "loss" : "draw");
     }, RESULT_DELAY);
     $("#resultText").textContent = match.over ? (a > b ? "Победа в матче!" : a < b ? "Матч проигран" : "Ничья в матче") : round;
     $("#resultDetail").textContent = match.over
@@ -1803,6 +1802,19 @@ function initPage() {
     renderSlots();
     renderPicker();
   });
+  const sfxDebug = /[?&]sfx=debug\b/.test(location.search);
+  let sfxHeld = false;
+  if (sfxDebug) {
+    const log = document.createElement("div");
+    log.id = "sfxlog";
+    log.className = "sfxlog";
+    log.onclick = () => {
+      sfxHeld = !sfxHeld;
+      if (battleStarted && !result) running = !sfxHeld;
+      log.firstElementChild.textContent = sfxHeld ? "стоп · нажмите — дальше" : "нажмите — стоп";
+    };
+    $(".field").append(log);
+  }
   // The sound switch in the top bar.
   const soundButton = $("#sound");
   if (soundButton) {

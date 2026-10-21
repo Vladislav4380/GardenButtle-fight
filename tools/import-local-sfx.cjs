@@ -20,26 +20,16 @@ const PICK = {
   kernel: [[H + "sniper/projectile_impact01.wav", H + "sniper/projectile_impact02.wav"], 0.5],
   splat: [[H + "venomancer/attack_impact1.wav", H + "venomancer/attack_impact2.wav", H + "venomancer/attack_impact3.wav"], 0.4],
   fire: [[H + "lina/projectile_impact.wav"], 0.6],
-  magic: [[H + "lion/lion_attack_impact1.wav", H + "lion/lion_attack_impact2.wav"], 0.5],
-  // Shots leaving the shooter.
+  // The bow's string as an arrow leaves. Other shots, the eggplant's magic, abilities and falls have no sound.
   bow: [[H + "drow_ranger/arrow_1.wav", H + "drow_ranger/arrow_2.wav", H + "drow_ranger/arrow_3.wav", H + "drow_ranger/arrow_4.wav"], 0.5, -28],
-  throw: [[H + "snapfire/attack.wav"], 0.5, -28],
-  "fireball-cast": [[H + "lina/attack.wav"], 0.5, -28],
-  "magic-cast": [[H + "lion/attack01.wav", H + "lion/attack02.wav", H + "lion/attack03.wav"], 0.5, -28],
-  // Moving: steps (quiet, there are many), a sprint's rush of air, the carrot's leap.
+  // Moving: steps (quiet, there are many) and a sprint's rush of air. The leap, the round's end and the result
+  // have no sound.
   step: [["physics/footsteps/hero/axe/foley01.wav", "physics/footsteps/hero/axe/foley02.wav", "physics/footsteps/hero/axe/foley03.wav", "physics/footsteps/hero/axe/foley04.wav"], 0.3, -34],
   dash: [["weapons/creep/shared/whoosh01.wav", "weapons/creep/shared/whoosh02.wav", "weapons/creep/shared/whoosh03.wav", "weapons/creep/shared/whoosh04.wav"], 0.4, -28],
-  leap: [[H + "mirana/leap1.wav", H + "mirana/leap2.wav", H + "mirana/leap3.wav", H + "mirana/leap4.wav"], 0.7, -24],
-  death: [["physics/deaths/common/body_impact_heavy_01.wav", "physics/deaths/common/body_impact_heavy_02.wav"], 0.72],
-  // Events: a drum and horns, no singing (the library's own round and result tunes sang and howled).
-  ability: [["items/item_drum.wav"], 0.8, -24],
-  "round-end": [["misc/drum_hit02.wav"], 0.95, -20],
-  win: [["ambient/mega_horn_radiant.wav"], 3, -19],
-  lose: [["ambient/horn_dire.wav"], 3, -20],
 };
 // Loudness each blow is levelled to (LUFS): quiet enough that a crowd of blows does not drown the rest.
 const LOUDNESS = -26;
-// A long horn cut short fades out over its last second; a blow over its last 0.12 s.
+// A sound cut short fades out over its last 0.12–0.3 s.
 const fade = (secs) => Math.min(1, Math.max(0.12, secs * 0.35));
 
 fs.rmSync(out, { recursive: true, force: true });
