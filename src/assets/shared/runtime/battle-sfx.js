@@ -15,11 +15,17 @@
     muted = localStorage.getItem("battle-sfx-muted") === "1";
   } catch (e) {}
 
+  // Phones only let a page sound from inside a tap: the audio is created and woken on every tap until it runs.
   function init() {
-    if (ctx) return ctx.state === "suspended" ? ctx.resume() : null;
+    if (ctx) return ctx.state !== "running" && unlock();
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
+    // iPhone: play through the silent switch, as games do (Safari 16.4+); otherwise Web Audio is mute in silent mode.
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = "playback";
+    } catch (e) {}
     ctx = new AC();
+    unlock();
     master = ctx.createGain();
     master.gain.value = muted ? 0 : VOLUME;
     // A compressor glues the short bursts together and makes them punchier.
@@ -79,8 +85,15 @@
     s.start(ctx.currentTime + at);
     return true;
   }
-  addEventListener("pointerdown", init, true);
-  addEventListener("keydown", init, true);
+  // Resume, and play one silent sample: older iPhones start the sound only once something has played in a tap.
+  function unlock() {
+    ctx.resume?.();
+    const s = ctx.createBufferSource();
+    s.buffer = ctx.createBuffer(1, 1, 22050);
+    s.connect(ctx.destination);
+    s.start(0);
+  }
+  for (const type of ["pointerdown", "touchend", "click", "keydown"]) addEventListener(type, init, true);
 
   // A note: oscillator from f0 to f1 over dur, loudness vol, starting `at` seconds from now.
   function tone(type, f0, f1, dur, vol, at = 0) {
