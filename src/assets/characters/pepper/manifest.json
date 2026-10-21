@@ -87,22 +87,23 @@
       "attack",
       "attack"
     ],
+    "glossy": true,
     "facing": "right",
     "file": "sprites/sheet.png",
     "cell": {
-      "w": 269,
-      "h": 205
+      "w": 252,
+      "h": 221
     },
     "feet": {
-      "x": 98,
-      "y": 203
+      "x": 106,
+      "y": 219
     },
-    "height": 200,
+    "height": 212,
     "portrait": {
-      "x": 23,
-      "y": 8,
-      "w": 157,
-      "h": 195
+      "x": 31,
+      "y": 18,
+      "w": 150,
+      "h": 201
     }
   }
 }

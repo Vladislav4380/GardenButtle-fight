@@ -38,7 +38,7 @@ console.log('PASS: phone board 6 × 6 per side');
  run(setup([['t',0,'tomato',3,6],['a',6,'tomato',3,1],['b',7,'tomato',0,0]]));
  run('step(1/60)');
  assert(run('t.target===a'),'a unit takes the closest enemy');
- run('globalThis.from=t.row;for(let k=0;k<60;k++)step(1/60)');
+ run('a.stun=b.stun=100;globalThis.from=t.row;for(let k=0;k<60;k++)step(1/60)');
  assert(run('t.row<from'),'it steps hex by hex toward the target');
  run(setup([['p',0,'pepper',3,6],['a',6,'tomato',3,2],['b',7,'tomato',6,3]]));
  run('for(let k=0;k<90;k++)step(1/60)');
@@ -65,15 +65,23 @@ console.log('PASS: phone board 6 × 6 per side');
  const run=context();
  run(setup([['c',0,'carrot',1,6],['front',6,'tomato',1,3],['back',7,'pepper',5,0]]));
  run('front.cool=back.cool=100;running=battleStarted=false;startBattle()');
- assert(run('c.target===back&&c.hunt===back'),'the assassin runs for the farthest enemy');
- run('for(let k=0;k<60*5&&hexDist(c,back)>1;k++)step(1/60)');
- assert(run('hexDist(c,back)===1&&c.target===back'),'it gets round the front and reaches that enemy');
+ // The back line is 7 hexes away, out of the leap's reach: the assassin lands by the front line instead.
+ assert(run('c.target===front&&c.move?.jump&&hexDist(c,front)===1&&hexDist(c,{col:1,row:6})<=JUMP_RANGE'),'the leap is limited: out of reach of the back line it lands by the nearer enemy');
+ run(setup([['c',0,'carrot',1,5],['front',6,'tomato',1,3],['back',7,'pepper',2,1]]));
+ run('front.cool=back.cool=100;running=battleStarted=false;startBattle()');
+ assert(run('c.target===back&&c.move?.jump&&hexDist(c,back)===1'),'within reach it leaps over the front to the farthest enemy');
+ run('for(let k=0;k<60;k++)step(1/60)');
+ assert(run('!c.move&&!c.lift&&hexDist(c,back)===1&&c.target===back'),'it lands there and fights that enemy');
+ // The quarry in a corner, both its neighbours taken: no place to land, so the assassin runs instead.
  run(setup([['c',0,'carrot',6,7],['a',6,'tomato',1,0],['b',7,'tomato',0,1],['back',8,'pepper',0,0]]));
  run('a.cool=b.cool=back.cool=100;running=battleStarted=false;startBattle()');
- assert(run('c.hunt===back'));
+ assert(run('neighbors(0,0).every(n=>occupied(n.col,n.row,c))?c.hunt===back:c.move?.jump'),'with nowhere to land it runs');
  run('for(let k=0;k<60*4;k++)step(1/60)');
- assert(run('!c.hunt&&(c.target===a||c.target===b)'),'with no free way it fights the first enemy it reached');
- console.log('PASS: assassin runs round the front to the back line, or fights whoever blocks the way');
+ assert(run('!c.hunt'),'the run ends');
+ run(setup([['p',0,'peach',3,7],['t',6,'tomato',3,0]]));
+ run('t.cool=100;step(1/60)');
+ assert(run('p.move&&p.move.trail==="dust"&&Math.abs(p.move.dur-p.stats.step*0.5)<1e-9'),'the peach sprints to a far target, leaving dust');
+ console.log('PASS: assassin leaps up to 4 hexes to the farthest enemy in reach (or runs when there is nowhere to land); the peach sprints');
 }
 {
  const run=context();
@@ -81,8 +89,8 @@ console.log('PASS: phone board 6 × 6 per side');
  assert.equal(run("teamTraits(['tomato','zucchini','pepper','corn','carrot','beet']).guard.tier"),1,'two different guards switch the guard synergy on');
  assert.equal(run("teamTraits(['tomato','zucchini','pepper','peach']).fruit.tier"),2,'four different fruits reach the second fruit tier');
  assert.equal(run("teamTraits(['corn','walnut']).grain.tier"),1,'corn and walnut switch the grain synergy on');
- run("lineup=['tomato','zucchini','pepper','corn','carrot','beet'];newBattle(false);globalThis.armor0=F[0].stats.armor;globalThis.range0=F[2].stats.range;startBattle()");
- assert(run('F[0].stats.armor===armor0+12&&F[2].stats.range===range0+1'),'synergy bonuses are applied at the start of the battle');
+ run("lineup=['tomato','zucchini','pepper','corn','carrot','beet'];newBattle(false);globalThis.armor0=F[0].stats.armor;globalThis.ad0=F[2].stats.ad;startBattle()");
+ assert(run('F[0].stats.armor===armor0+12&&Math.abs(F[2].stats.ad-ad0*SHOOTER_DAMAGE[1])<1e-9'),'synergy bonuses are applied at the start of the battle');
  for(let k=0;k<20;k++)assert(run("Object.values(teamTraits(enemyLineup())).filter(t=>t.tier).length>=3"),'the enemy squad has at least 3 synergies');
  console.log('PASS: synergies count different heroes and apply their bonuses');
 }

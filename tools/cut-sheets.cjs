@@ -156,8 +156,9 @@ function writePng(file, width, height, px) {
 // Smallest enclosed white pocket (in sheet pixels) taken for background; eye whites are far smaller. Rows that show
 // the back (no eyes) and the top quarter of every row take any white pocket of a few pixels.
 const POCKET_MIN = 60,
-  BACK_POCKET_MIN = 3;
-function cutSheet({ width: W, height: H, px }, rows, cols, backRows = []) {
+  BACK_POCKET_MIN = 3,
+  GLOSSY_POCKET_MIN = 400;
+function cutSheet({ width: W, height: H, px }, rows, cols, backRows = [], glossy = false) {
   const N = W * H,
     rgb = (k) => [px[k * 4], px[k * 4 + 1], px[k * 4 + 2]],
     lo = (k) => Math.min(...rgb(k)),
@@ -207,7 +208,8 @@ function cutSheet({ width: W, height: H, px }, rows, cols, backRows = []) {
     const rowAt = ((k0 / W) * rows) / H,
       back = backRows.includes(Math.min(rows - 1, Math.floor(rowAt))),
       upper = rowAt % 1 < 0.25;
-    if (pocket.length >= (back || upper ? BACK_POCKET_MIN : POCKET_MIN)) for (const k of pocket) clear[k] = 1;
+    // A glossy hero (manifest "glossy": true) has white shine on its body and white-hot fire: only large pockets go.
+    if (pocket.length >= (glossy ? GLOSSY_POCKET_MIN : back || upper ? BACK_POCKET_MIN : POCKET_MIN)) for (const k of pocket) clear[k] = 1;
   }
   // Peel the pale fringe next to the cleared background a few pixels deep: the light antialiased rim around the outline
   // and around holes is slightly tinted, so it escapes the tests above and showed as white slivers.
@@ -466,6 +468,7 @@ function cutHero(id) {
       sheet.rows.length,
       sheet.columns.length,
       sheet.rows.flatMap((row, i) => (row.startsWith("back") ? [i] : [])),
+      sheet.glossy,
     ),
     frames = cells.filter(Boolean),
     // The cell fits the widest reach left and right of the feet and the tallest figure, plus a 2 px margin.

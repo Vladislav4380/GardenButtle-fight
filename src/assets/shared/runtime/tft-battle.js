@@ -17,30 +17,30 @@ const TEAM_SIZE = 6,
 // TFT-style units. range: hexes; attackSpeed: attacks per second; step: seconds per hex; mana: start / max.
 const TFT_SPECS = {
   tomato: { role: "Страж", max: 950, ad: 70, attackSpeed: 0.6, armor: 55, range: 2, step: 0.65, manaStart: 30, mana: 90 },
-  pepper: { role: "Стрелок", max: 680, ad: 78, attackSpeed: 0.75, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
-  carrot: { role: "Ассасин", max: 650, ad: 72, attackSpeed: 0.85, armor: 30, range: 1, step: 0.45, manaStart: 0, mana: 60 },
+  pepper: { role: "Стрелок", max: 690, ad: 78, attackSpeed: 0.75, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
+  carrot: { role: "Ассасин", max: 720, ad: 80, attackSpeed: 0.95, armor: 30, range: 1, step: 0.45, manaStart: 0, mana: 60 },
   corn: { role: "Пушкарь", max: 720, ad: 74, attackSpeed: 0.8, armor: 30, range: 3, step: 0.6, manaStart: 20, mana: 70 },
   zucchini: { role: "Страж", max: 1000, ad: 58, attackSpeed: 0.65, armor: 60, range: 1, step: 0.65, manaStart: 20, mana: 90 },
-  beet: { role: "Воин", max: 820, ad: 68, attackSpeed: 0.75, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
-  potato: { role: "Рыцарь", max: 1000, ad: 60, attackSpeed: 0.6, armor: 60, range: 1, step: 0.7, manaStart: 0, mana: 80 },
-  walnut: { role: "Страж", max: 1080, ad: 56, attackSpeed: 0.6, armor: 70, range: 1, step: 0.75, manaStart: 30, mana: 90 },
-  peach: { role: "Воин", max: 700, ad: 70, attackSpeed: 0.9, armor: 35, range: 1, step: 0.5, manaStart: 0, mana: 60 },
+  beet: { role: "Воин", max: 820, ad: 64, attackSpeed: 0.75, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
+  potato: { role: "Рыцарь", max: 880, ad: 60, attackSpeed: 0.6, armor: 60, range: 1, step: 0.7, manaStart: 0, mana: 80 },
+  walnut: { role: "Страж", max: 1000, ad: 56, attackSpeed: 0.6, armor: 70, range: 1, step: 0.75, manaStart: 30, mana: 90 },
+  peach: { role: "Воин", max: 720, ad: 70, attackSpeed: 0.8, armor: 35, range: 1, step: 0.5, manaStart: 0, mana: 60 },
   onion: { role: "Лучник", max: 580, ad: 74, attackSpeed: 0.85, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
-  eggplant: { role: "Маг", max: 620, ad: 70, attackSpeed: 0.7, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
-  cucumber: { role: "Берсерк", max: 760, ad: 64, attackSpeed: 0.8, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
+  eggplant: { role: "Маг", max: 700, ad: 80, attackSpeed: 0.7, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
+  cucumber: { role: "Берсерк", max: 760, ad: 60, attackSpeed: 0.8, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
 };
 const TFT_ABILITIES = {
   tomato: "Щит отряда: союзники в 2 клетках 4 с получают половину урона",
   pepper: "Огненный шар: 2,4× урона по цели и половина этого врагам рядом",
-  carrot: "Удар из тени: 2,2× урона по цели",
+  carrot: "Удар из тени: 2,8× урона по цели",
   beet: "Вихрь: 1,6× урона всем врагам в соседних клетках",
   corn: "Залп: выстрел из кукурузной пушки на 2,5× урона",
   zucchini: "Оглушающий удар: 2× урона булавой, цель 1,5 с не действует",
-  potato: "Крепость: 4 с получает половину урона и восстанавливает 15% здоровья",
+  potato: "Крепость: 4 с получает половину урона и восстанавливает 10% здоровья",
   walnut: "Скорлупа: себе и союзникам в соседних клетках 4 с половину урона",
-  peach: "Сладкий сок: лечит себя и союзников в соседних клетках на 120",
+  peach: "Сладкий сок: лечит себя и союзников в соседних клетках на 70",
   onion: "Залп стрел: 1,6× урона по цели и стрела каждому из двух ближайших к ней врагов",
-  eggplant: "Тёмная сфера: 2× урона по цели, цель 1 с не действует",
+  eggplant: "Тёмная сфера: 2,4× урона по цели, цель 1,5 с не действует",
   cucumber: "Колючая ярость: 1,8× урона дубиной, потом 4 с атакует на 50% чаще",
 };
 const TFT_NAMES = {
@@ -149,11 +149,12 @@ let F = [],
   floaters = [],
   blasts = [],
   impacts = [],
+  trails = [],
   time = BATTLE_TIME,
   battleStarted = false,
   running = false,
   result = null,
-  rate = 1;
+  rate = 1.5; // the game runs one and a half times faster than real time
 // The starting squad has all six heroes, so a new player sees every synergy switched on.
 let lineup = ["tomato", "zucchini", "carrot", "beet", "pepper", "corn"];
 
@@ -185,7 +186,8 @@ function defaultSpots(team, chars) {
     used = new Set(),
     spots = [];
   for (const c of chars) {
-    const rows = c === "pepper" ? back : front;
+    // Shooters stand at the back, everyone else in front.
+    const rows = HERO_TAGS[c]?.includes("shooter") ? back : front;
     let spot = null;
     for (let tries = 0; tries < 60 && !spot; tries++) {
       const row = rows[Math.floor(Math.random() * rows.length)],
@@ -230,6 +232,7 @@ function newBattle(keepPlayerSpots) {
   floaters = [];
   blasts = [];
   impacts = [];
+  trails = [];
   deaths = [];
   time = BATTLE_TIME;
   battleStarted = false;
@@ -301,8 +304,8 @@ const TRAIT_ICONS = {
 };
 const TRAITS = {
   guard: { icon: TRAIT_ICONS.guard, name: "Стражи", tiers: [2, 4], text: "все союзники +12 брони, при 4 — +24" },
-  shooter: { icon: TRAIT_ICONS.shooter, name: "Стрелки", tiers: [2, 4], text: "стрелки бьют на 1 клетку дальше, при 4 — ещё и на 20% сильнее" },
-  fighter: { icon: TRAIT_ICONS.fighter, name: "Бойцы", tiers: [2, 3], text: "бойцы атакуют на 30% чаще, при 3 — на 50%" },
+  shooter: { icon: TRAIT_ICONS.shooter, name: "Стрелки", tiers: [2, 4], text: "стрелки бьют на 10% сильнее, при 4 — на 30%" },
+  fighter: { icon: TRAIT_ICONS.fighter, name: "Бойцы", tiers: [2, 3], text: "бойцы атакуют на 25% чаще, при 3 — на 45%" },
   fruit: { icon: TRAIT_ICONS.fruit, name: "Плоды", tiers: [2, 4], text: "плоды лечатся на 15% нанесённого урона, при 4 — на 30%" },
   root: { icon: TRAIT_ICONS.root, name: "Корнеплоды", tiers: [2, 4], text: "корнеплоды +15% здоровья, при 4 — +30%" },
   grain: { icon: TRAIT_ICONS.grain, name: "Зёрна", tiers: [2], text: "зёрна пробивают половину брони" },
@@ -310,6 +313,8 @@ const TRAITS = {
 // The icon is read at drawing time: the painted badges replace the vector ones once their picture is loaded.
 for (const id of Object.keys(TRAITS)) Object.defineProperty(TRAITS[id], "icon", { get: () => TRAIT_ICONS[id] });
 // Painted badges: one row of 112 px cells in the order below, cleaned by tools/cut-sheets.cjs.
+// The same badges as canvases, for drawing over the heroes on the board.
+const BADGE_CANVAS = {};
 async function loadBadges() {
   const image = await loadImage("/assets/shared/badges/badges.png");
   ["guard", "shooter", "fighter", "fruit", "root", "grain"].forEach((id, i) => {
@@ -317,6 +322,7 @@ async function loadBadges() {
     cell.width = cell.height = 112;
     cell.getContext("2d").drawImage(image, i * 112, 0, 112, 112, 0, 0, 112, 112);
     TRAIT_ICONS[id] = `<img class="ti" src="${cell.toDataURL()}" alt="">`;
+    BADGE_CANVAS[id] = cell;
   });
 }
 // Tag → { count of different heroes, reached tier (0 = off) } for a team's lineup.
@@ -330,15 +336,17 @@ function teamTraits(chars) {
   return out;
 }
 // The bonuses are applied once, at the start of the battle.
+// Synergy multipliers by tier (index = tier).
+const SHOOTER_DAMAGE = [1, 1.1, 1.3],
+  FIGHTER_SPEED = [1, 1.25, 1.45];
 function applyTraits(team) {
   const own = F.filter((f) => f.team === team && f.hp > 0),
     t = teamTraits(own.map((f) => f.character)),
     has = (f, id) => HERO_TAGS[f.character]?.includes(id);
   for (const f of own) {
     if (t.guard.tier) f.stats.armor += 12 * t.guard.tier;
-    if (t.shooter.tier && has(f, "shooter")) f.stats.range += 1;
-    if (t.fighter.tier && has(f, "fighter")) f.stats.attackSpeed *= t.fighter.tier >= 2 ? 1.5 : 1.3;
-    if (t.shooter.tier >= 2 && has(f, "shooter")) f.stats.ad *= 1.2;
+    if (t.shooter.tier && has(f, "shooter")) f.stats.ad *= SHOOTER_DAMAGE[t.shooter.tier];
+    if (t.fighter.tier && has(f, "fighter")) f.stats.attackSpeed *= FIGHTER_SPEED[t.fighter.tier];
     if (t.fruit.tier && has(f, "fruit")) f.lifesteal = t.fruit.tier >= 2 ? 0.3 : 0.15;
     if (t.grain.tier && has(f, "grain")) f.pierce = 0.5;
     if (t.root.tier && has(f, "root")) {
@@ -377,9 +385,45 @@ const HUNT_STEP = 0.6;
 function startHunt(f) {
   const foes = alive(1 - f.team);
   if (!foes.length) return;
-  f.hunt = foes.reduce((b, q) => (hexDist(f, q) > hexDist(f, b) ? q : b));
-  f.target = f.hunt;
+  // The leap reaches JUMP_RANGE hexes: the assassin lands next to the farthest enemy it can reach, on that enemy's far
+  // side if there is room. So where it stands matters: from the back it may reach only the front line.
+  let quarry = null,
+    spot = null;
+  for (const q of [...foes].sort((a, b) => hexDist(f, b) - hexDist(f, a))) {
+    spot = neighbors(q.col, q.row)
+      .filter((n) => !occupied(n.col, n.row, f) && hexDist(n, f) <= JUMP_RANGE)
+      .reduce((b, n) => (!b || hexDist(n, f) > hexDist(b, f) ? n : b), null);
+    if (spot) {
+      quarry = q;
+      break;
+    }
+  }
+  if (!quarry) quarry = foes.reduce((b, q) => (hexDist(f, q) > hexDist(f, b) ? q : b));
+  f.target = quarry;
+  if (spot) {
+    const c = hexCenter(spot.col, spot.row);
+    dust(f.x, f.y, 6);
+    f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: JUMP_TIME, jump: true };
+    f.col = spot.col;
+    f.row = spot.row;
+    say(f, "Прыжок в тыл");
+    return;
+  }
+  // Nowhere to land: run round the enemy squad instead.
+  f.hunt = quarry;
   say(f, "Рывок в тыл");
+}
+const JUMP_RANGE = 4,
+  JUMP_TIME = 0.8,
+  JUMP_HEIGHT = 2.2;
+// Fighters' quick runs: the peach sprints to a far target, the beet charges on its first approach, the cucumber in
+// its fury runs as well as it hits. Each leaves a trail of dust or fire.
+function sprintOf(f, t) {
+  if (f.character === "cucumber" && f.rage > 0) return { k: 0.5, trail: "fire" };
+  if (f.character === "peach" && hexDist(f, t) >= 3) return { k: 0.5, trail: "dust" };
+  if (f.character === "beet" && !f.charged) return { k: 0.6, trail: "dust" };
+  if (f.hunt) return { k: 1, trail: "dust" };
+  return null;
 }
 // ---------- Movement: one hex at a time ----------
 // Breadth-first search over free hexes to the nearest hex from which the target is in range; returns the first step.
@@ -411,10 +455,13 @@ function nextStep(f, t) {
   const best = near.reduce((b, n) => (!b || hexDist(n, t) < hexDist(b, t) ? n : b), null);
   return best && hexDist(best, t) < hexDist(f, t) ? best : null;
 }
-function startMove(f, h) {
+// Every hero leaves a light mark of its own when it walks: the shooters a few motes (pepper embers, eggplant magic,
+// onion leaves, corn pollen), the guards a puff of dust at each heavy step. Fewer and smaller than the sprint trails.
+const WALK_MARK = { pepper: "ember", eggplant: "magic", onion: "leaf", corn: "pollen", tomato: "stomp", zucchini: "stomp", potato: "stomp", walnut: "stomp" };
+function startMove(f, h, sprint) {
   const c = hexCenter(h.col, h.row);
   // The hex is taken at once, so nobody else steps into it.
-  f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: f.stats.step * (f.hunt ? HUNT_STEP : 1) };
+  f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: f.stats.step * (f.hunt ? HUNT_STEP : 1) * (sprint ? sprint.k : 1), trail: sprint?.trail };
   f.col = h.col;
   f.row = h.row;
 }
@@ -429,7 +476,27 @@ function stepMove(f, dt) {
   f.x = x;
   f.y = y;
   f.moving = true;
-  if (k >= 1) f.move = null;
+  // The leap: up and down in a low arc, a puff of dust on landing.
+  f.lift = m.jump && k < 1 ? Math.sin(Math.PI * k) : 0;
+  if (m.trail && (m.puff = (m.puff || 0) - dt) <= 0) {
+    m.puff = 0.035;
+    trails.push({ x, y, kind: m.trail, t: m.trail === "fire" ? 0.45 : 0.6, life: m.trail === "fire" ? 0.45 : 0.6, seed: Math.random() });
+  }
+  const mark = !m.trail && !m.jump && WALK_MARK[f.character];
+  if (mark && mark !== "stomp" && (m.puff = (m.puff || 0) - dt) <= 0) {
+    m.puff = 0.09;
+    trails.push({ x: x + (Math.random() - 0.5) * 0.25, y, kind: "mote", mote: mark, t: 0.6, life: 0.6, seed: Math.random() });
+  }
+  if (mark === "stomp" && k >= 1) dust(x, y, 3);
+  // The leap leaves a streak of light along its arc, at the height of the body.
+  if (m.jump && k < 1 && (m.puff = (m.puff || 0) - dt) <= 0) {
+    m.puff = 0.02;
+    trails.push({ x, y, lift: f.lift, kind: "air", t: 0.35, life: 0.35, seed: Math.random() });
+  }
+  if (k >= 1) {
+    if (m.jump) dust(x, y, 8);
+    f.move = null;
+  }
 }
 
 // ---------- Damage and mana ----------
@@ -604,13 +671,13 @@ function castAbility(f, t) {
     const near = alive(f.team).filter((q) => q === f || hexDist(f, q) <= 1);
     if (f.character === "potato") {
       f.shield = 4;
-      f.hp = Math.min(f.max, f.hp + f.max * 0.15);
+      f.hp = Math.min(f.max, f.hp + f.max * 0.1);
       say(f, "Крепость");
     } else if (f.character === "walnut") {
       for (const q of near) q.shield = 4;
       say(f, "Скорлупа");
     } else {
-      for (const q of near) q.hp = Math.min(q.max, q.hp + 120);
+      for (const q of near) q.hp = Math.min(q.max, q.hp + 70);
       say(f, "Сладкий сок");
     }
     f.cast = 0.42;
@@ -630,12 +697,12 @@ function castAbility(f, t) {
     return;
   }
   if (f.character === "eggplant") {
-    attack(f, t, 2, true);
-    f.pending.stun = 1;
+    attack(f, t, 2.4, true);
+    f.pending.stun = 1.5;
     say(f, "Тёмная сфера");
     return;
   }
-  attack(f, t, 2.2, true);
+  attack(f, t, 2.8, true);
   say(f, "Удар из тени");
 }
 function say(f, text) {
@@ -643,6 +710,14 @@ function say(f, text) {
 }
 
 // ---------- Simulation ----------
+function shuffled(list) {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 function step(dt) {
   if (!running || result) return;
   time = Math.max(0, time - dt);
@@ -656,7 +731,8 @@ function step(dt) {
     f.moving = false;
     releasePending(f, dt);
   }
-  for (const f of F) {
+  // A fresh random order every frame: otherwise the first team in F always moved and struck first.
+  for (const f of shuffled(F)) {
     if (f.hp <= 0) continue;
     if (f.move) {
       stepMove(f, dt);
@@ -669,10 +745,11 @@ function step(dt) {
     const t = chooseTarget(f);
     if (!t) continue;
     if (inRange(f, t)) {
+      f.charged = true;
       if (f.cool <= 0 && f.cast <= 0 && !f.pending) f.mana >= f.stats.mana ? castAbility(f, t) : attack(f, t);
     } else if (f.cast <= 0) {
       const h = nextStep(f, t);
-      if (h) startMove(f, h);
+      if (h) startMove(f, h, sprintOf(f, t));
     }
   }
   updateShots(dt);
@@ -682,6 +759,8 @@ function step(dt) {
   blasts = blasts.filter((b) => b.t > 0);
   for (const e of impacts) e.t -= dt;
   impacts = impacts.filter((e) => e.t > 0);
+  for (const e of trails) e.t -= dt;
+  trails = trails.filter((e) => e.t > 0);
   if (!alive(0).length || !alive(1).length || time <= 0) finish();
 }
 function updateShots(dt) {
@@ -705,6 +784,9 @@ function updateShots(dt) {
       if (s.stun && s.to.hp > 0) s.to.stun = s.stun;
       continue;
     }
+    // The last positions make the streak drawn behind the shot.
+    (s.path ||= []).push({ x: s.x, y: s.y });
+    if (s.path.length > SHOT_TRAIL) s.path.shift();
     s.x += (dx / d) * move;
     s.y += (dy / d) * move;
   }
@@ -826,8 +908,9 @@ function drawSheetFighter(g, f, p, frames) {
     fr = list[index],
     z = (fighterHeight(p.s) * 1.05) / frames.height;
   g.save();
-  g.translate(p.x, p.y);
-  g.scale(dir.flip, 1);
+  // The leap rises about two body heights; at the top the hero looks a little bigger, as if closer to the camera.
+  g.translate(p.x, p.y - (f.lift || 0) * fighterHeight(p.s) * JUMP_HEIGHT);
+  g.scale(dir.flip * (1 + (f.lift || 0) * 0.15), 1 + (f.lift || 0) * 0.15);
   if (f.hit) g.filter = "brightness(1.35)";
   if (!f.moving && f.cast <= 0) g.scale(1, 1 + 0.004 * Math.sin((performance.now() / 1000) * 2 + f.index));
   // Enemies are tinted purple: rings and health bars alone did not tell the teams apart in a crowd.
@@ -841,7 +924,9 @@ function drawGroundMarks(g, f, p) {
   g.globalAlpha = 0.35;
   g.fillStyle = "#000";
   g.beginPath();
-  g.ellipse(p.x, p.y, radiusOf(f) * view.cell * p.s * 1.1, radiusOf(f) * view.cell * p.s * 0.45, 0, 0, 7);
+  // In the air the shadow shrinks under the leaping hero.
+  const air = 1 - (f.lift || 0) * 0.6;
+  g.ellipse(p.x, p.y, radiusOf(f) * view.cell * p.s * 1.1 * air, radiusOf(f) * view.cell * p.s * 0.45 * air, 0, 0, 7);
   g.fill();
   // Only a shadow: the teams are told apart by the purple tint of the enemies.
   g.globalAlpha = 1;
@@ -899,7 +984,20 @@ function drawHealth(g, f) {
   const p = project(f.x, f.y),
     w = view.cell * 0.6 * p.s,
     h = Math.max(4, view.cell * 0.07),
-    y = p.y - fighterHeight(p.s) * ((characterProfiles[f.character]?.scale || 1) * 1.02) - h;
+    y = p.y - fighterHeight(p.s) * ((characterProfiles[f.character]?.scale || 1) * 1.02 + (f.lift || 0) * JUMP_HEIGHT) - h,
+    badge = BADGE_CANVAS[HERO_TAGS[f.character]?.[0]];
+  // During placement the role badge (guard, shooter, fighter) stands over the hero instead of the bars, so the
+  // front and the back line are planned at a glance; the bars come with the battle.
+  if (!battleStarted && badge) {
+    const size = Math.max(26, view.cell * 0.46 * p.s);
+    // A soft glow round the badge, so it reads over a busy board.
+    g.save();
+    g.shadowColor = "rgba(255,225,130,0.85)";
+    g.shadowBlur = size * 0.4;
+    g.drawImage(badge, p.x - size / 2, y + h - size * 0.8, size, size);
+    g.restore();
+    return;
+  }
   g.fillStyle = "#000b";
   g.fillRect(p.x - w / 2 - 1, y - 1, w + 2, h + 2);
   g.fillStyle = TEAM_COLORS[f.team];
@@ -948,29 +1046,73 @@ function drawBoard(g, dragHex) {
       g.stroke();
     }
 }
+// A streak behind every shot, so a small arrow or tomato is easy to follow on a phone: a glowing line that thins
+// and fades toward its tail, in the shot's own colour.
+const SHOT_TRAIL = 9,
+  TRAIL_COLOR = { onion: "255,244,200", tomato: "255,110,80", corn: "255,222,90", eggplant: "205,110,255", pepper: "255,160,50" };
+function drawShotTrail(g, s) {
+  if (!s.path || s.path.length < 2) return;
+  const pts = [...s.path, { x: s.x, y: s.y }].map((q) => {
+      const p = project(q.x, q.y);
+      return { x: p.x, y: p.y - fighterHeight(p.s) * 0.55, s: p.s };
+    }),
+    rgb = TRAIL_COLOR[s.kind] || TRAIL_COLOR.pepper,
+    w = view.cell * (s.big ? 0.16 : 0.1);
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  g.lineCap = "round";
+  for (let i = 1; i < pts.length; i++) {
+    const k = i / (pts.length - 1);
+    g.strokeStyle = `rgba(${rgb},${(0.75 * k).toFixed(2)})`;
+    g.lineWidth = Math.max(1.5, w * pts[i].s * (0.25 + 0.75 * k));
+    g.beginPath();
+    g.moveTo(pts[i - 1].x, pts[i - 1].y);
+    g.lineTo(pts[i].x, pts[i].y);
+    g.stroke();
+  }
+  g.restore();
+}
 function drawShots(g) {
   for (const s of shots) {
+    drawShotTrail(g, s);
     const p = project(s.x, s.y),
       y = p.y - fighterHeight(p.s) * 0.55;
     if (s.kind === "onion") {
-      // An arrow along its flight.
+      // An arrow along its flight: a light shaft with a dark edge, so it shows on the brown ground.
       const a = Math.atan2(project(s.to.x, s.to.y).y - p.y, project(s.to.x, s.to.y).x - p.x),
-        l = view.cell * 0.28 * p.s;
+        l = view.cell * 0.36 * p.s,
+        lw = Math.max(2, view.cell * 0.045);
       g.save();
       g.translate(p.x, y);
       g.rotate(a);
-      g.strokeStyle = "#8a5a2b";
-      g.lineWidth = Math.max(1.5, view.cell * 0.03);
+      g.lineCap = "round";
+      g.strokeStyle = "#2a1a0c";
+      g.lineWidth = lw + 2;
       g.beginPath();
       g.moveTo(-l, 0);
       g.lineTo(l * 0.6, 0);
       g.stroke();
-      g.fillStyle = "#c9ccd1";
+      g.strokeStyle = "#f3dca0";
+      g.lineWidth = lw;
+      g.stroke();
+      // Fletching at the tail.
+      g.fillStyle = "#e8f4ff";
       g.beginPath();
-      g.moveTo(l, 0);
-      g.lineTo(l * 0.55, -l * 0.18);
-      g.lineTo(l * 0.55, l * 0.18);
+      g.moveTo(-l, 0);
+      g.lineTo(-l * 0.7, -l * 0.2);
+      g.lineTo(-l * 0.55, 0);
+      g.lineTo(-l * 0.7, l * 0.2);
       g.fill();
+      g.fillStyle = "#f2f4f7";
+      g.strokeStyle = "#2a1a0c";
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(l * 1.05, 0);
+      g.lineTo(l * 0.5, -l * 0.24);
+      g.lineTo(l * 0.5, l * 0.24);
+      g.closePath();
+      g.fill();
+      g.stroke();
       g.restore();
     } else if (s.kind === "eggplant") {
       const r = view.cell * (s.big ? 0.2 : 0.11) * p.s,
@@ -992,13 +1134,22 @@ function drawShots(g) {
       g.fill();
       g.stroke();
     } else if (s.kind === "tomato") {
+      // A cherry tomato: bigger than before, with a dark edge and a shine so it reads against the ground.
+      const r = view.cell * 0.12 * p.s;
       g.fillStyle = "#e3241a";
+      g.strokeStyle = "#4a0c06";
+      g.lineWidth = 1.5;
       g.beginPath();
-      g.arc(p.x, y, view.cell * 0.09 * p.s, 0, 7);
+      g.arc(p.x, y, r, 0, 7);
+      g.fill();
+      g.stroke();
+      g.fillStyle = "#ffd0c0";
+      g.beginPath();
+      g.arc(p.x - r * 0.35, y - r * 0.35, r * 0.28, 0, 7);
       g.fill();
       g.fillStyle = "#3f8a22";
       g.beginPath();
-      g.arc(p.x, y - view.cell * 0.07 * p.s, view.cell * 0.035 * p.s, 0, 7);
+      g.arc(p.x, y - r * 0.85, r * 0.38, 0, 7);
       g.fill();
     } else {
       const r = view.cell * (s.big ? 0.2 : 0.1) * p.s,
@@ -1020,6 +1171,67 @@ function drawShots(g) {
     g.beginPath();
     g.ellipse(p.x, p.y, b.r * view.cell * p.s * (1.2 - a * 0.2), b.r * view.cell * p.s * 0.55, 0, 0, 7);
     g.stroke();
+  }
+}
+// A puff of dust on the ground: a few trail pieces at one spot.
+function dust(x, y, n) {
+  for (let i = 0; i < n; i++) trails.push({ x: x + (Math.random() - 0.5) * 0.5, y: y + (Math.random() - 0.5) * 0.3, kind: "dust", t: 0.55, life: 0.55, seed: Math.random() });
+}
+// Trails on the ground behind running fighters: dust clouds that swell and fade, or small flames that rise.
+function drawTrails(g) {
+  for (const e of trails) {
+    const p = project(e.x, e.y),
+      k = 1 - e.t / e.life,
+      a = e.t / e.life,
+      size = view.cell * p.s;
+    g.save();
+    if (e.kind === "mote") {
+      // A small walking mark at waist height: embers and magic rise, leaves and pollen drift down.
+      const h = fighterHeight(p.s),
+        up = e.mote === "ember" || e.mote === "magic",
+        y = p.y - h * 0.4 + (up ? -1 : 1) * k * h * 0.3,
+        x = p.x + Math.sin(e.seed * 6.28 + k * 4) * size * 0.06,
+        r = size * (e.mote === "leaf" ? 0.05 : 0.035) * (0.6 + a * 0.4),
+        color = { ember: "255,140,40", magic: "190,110,255", leaf: "120,200,70", pollen: "255,225,90" }[e.mote];
+      g.fillStyle = `rgba(${color},${(0.9 * a).toFixed(2)})`;
+      g.shadowColor = `rgba(${color},0.8)`;
+      g.shadowBlur = r * 3;
+      g.beginPath();
+      if (e.mote === "leaf") g.ellipse(x, y, r * 1.6, r * 0.7, e.seed * 6.28 + k * 3, 0, 7);
+      else g.arc(x, y, r, 0, 7);
+      g.fill();
+    } else if (e.kind === "air") {
+      // A glowing mote left in the air by the leaping assassin: bright, small, fading fast.
+      const h = fighterHeight(p.s),
+        y = p.y - e.lift * h * JUMP_HEIGHT - h * 0.5,
+        r = size * 0.11 * a,
+        q = g.createRadialGradient(p.x, y, 0, p.x, y, r * 2);
+      q.addColorStop(0, `rgba(255,255,235,${(0.95 * a).toFixed(2)})`);
+      q.addColorStop(0.45, `rgba(255,170,60,${(0.6 * a).toFixed(2)})`);
+      q.addColorStop(1, "rgba(255,120,30,0)");
+      g.fillStyle = q;
+      g.beginPath();
+      g.arc(p.x, y, r * 2, 0, 7);
+      g.fill();
+    } else if (e.kind === "fire") {
+      const r = size * (0.12 - k * 0.06),
+        y = p.y - size * k * 0.35,
+        q = g.createRadialGradient(p.x, y, 0, p.x, y, r * 2);
+      q.addColorStop(0, `rgba(255,240,160,${(0.9 * a).toFixed(2)})`);
+      q.addColorStop(0.4, `rgba(255,120,20,${(0.7 * a).toFixed(2)})`);
+      q.addColorStop(1, "rgba(255,60,0,0)");
+      g.fillStyle = q;
+      g.beginPath();
+      g.arc(p.x + (e.seed - 0.5) * size * 0.15, y, r * 2, 0, 7);
+      g.fill();
+    } else {
+      // Light, almost white dust, so it shows on the brown ground; it swells and drifts up a little.
+      g.fillStyle = `rgba(${(225 + e.seed * 25) | 0},${(210 + e.seed * 25) | 0},${(175 + e.seed * 30) | 0},${(0.7 * a).toFixed(2)})`;
+      g.beginPath();
+      g.ellipse(p.x + (e.seed - 0.5) * size * 0.2, p.y - size * (0.06 + k * 0.12), size * (0.1 + k * 0.22), size * (0.07 + k * 0.12), 0, 0, 7);
+      g.fill();
+    }
+    g.restore();
   }
 }
 // Hit effects: a short mark on the target, by weapon. Small and quick (a quarter second), so a crowded fight stays readable.
@@ -1146,6 +1358,7 @@ function drawFloaters(g) {
 function render(g, dragHex) {
   drawBoard(g, dragHex);
   const live = F.filter((f) => f.hp > 0).sort((a, b) => a.y - b.y);
+  drawTrails(g);
   for (const f of live) drawFighter(g, f);
   drawDeaths(g);
   drawShots(g);
@@ -1254,46 +1467,34 @@ function initPage() {
       plus = (on, text) => (on ? ` <span class="bonus">${text}</span>` : ""),
       hp = Math.round(st.max * (t.root.tier && has("root") ? 1.15 : 1));
     showCard(
-      `<h3>${f.team ? "Соперник: " : ""}${TFT_NAMES[f.character]} · ${st.role}</h3>` +
+      `<h3>${f.team ? "Соперник: " : ""}${TFT_NAMES[f.character]}</h3>` +
         `<p>❤️ здоровье ${hp}${plus(t.root.tier && has("root"), "(+15% Корнеплоды)")} · ⚔️ урон ${st.ad} · 🕑 ударов в секунду ${
-          Math.round(st.attackSpeed * (t.fighter.tier && has("fighter") ? 1.3 : 1) * 100) / 100
-        }${plus(t.fighter.tier && has("fighter"), "(+30% Бойцы)")}</p>` +
-        `<p>🛡 броня ${st.armor + (t.guard.tier ? 12 : 0)}${plus(t.guard.tier, "(+12 Стражи)")} · 🎯 дальность ${st.range + (t.shooter.tier && has("shooter") ? 1 : 0)} кл.${plus(
+          Math.round(st.attackSpeed * (has("fighter") ? FIGHTER_SPEED[t.fighter.tier] : 1) * 100) / 100
+        }${plus(t.fighter.tier && has("fighter"), `(+${Math.round((FIGHTER_SPEED[t.fighter.tier] - 1) * 100)}% Бойцы)`)}</p>` +
+        `<p>🛡 броня ${st.armor + 12 * t.guard.tier}${plus(t.guard.tier, `(+${12 * t.guard.tier} Стражи)`)} · 🎯 дальность ${st.range} кл.${plus(
           t.shooter.tier && has("shooter"),
-          "(+1 Стрелки)",
+          `· урон +${Math.round((SHOOTER_DAMAGE[t.shooter.tier] - 1) * 100)}% (Стрелки)`,
         )}${t.fruit.tier && has("fruit") ? ` · 🩹 лечение ${t.fruit.tier >= 2 ? 30 : 15}% урона <span class="bonus">(Плоды)</span>` : ""}</p>` +
         `<p><b>Умение</b> (когда полна синяя полоска маны): ${TFT_ABILITIES[f.character]}</p>` +
         `<p><b>Синергии</b>${f.team ? " его отряда" : ""}:</p>` +
         (HERO_TAGS[f.character] || []).map((id) => `<p class="${t[id].tier ? "on" : ""}">${traitLine(id, t[id].count)}</p>`).join(""),
     );
   }
+  // The squad is shown on the board itself; the "Состав" button opens the picker.
   function renderSlots() {
     renderTraits();
-    $("#slots").innerHTML = lineup
-      .map((c, i) => {
-        const pic = `<img src="${portraitUrl(c)}" alt="">`;
-        // The hero's two synergy tags as icons, so the lineup can be built toward a synergy.
-        const tags = (HERO_TAGS[c] || []).map((id) => `<i title="${TRAITS[id].name}">${TRAITS[id].icon}</i>`).join("");
-        return `<button class="slot" data-i="${i}" ${battleStarted ? "disabled" : ""}><span class="tags">${tags}</span>${pic}<span>${TFT_NAMES[c]}</span></button>`;
-      })
-      .join("");
-    // A tap on a hero button opens the squad picker.
-    document.querySelectorAll(".slot").forEach((b) => (b.onclick = openPicker));
-    fitSlotNames();
   }
-  // A long name on a narrow phone ("Картофель") gets a slightly smaller font instead of being cut: 12 px down to 10.
-  function fitSlotNames() {
-    for (const name of document.querySelectorAll(".slot > span:not(.tags)")) {
-      name.style.fontSize = "";
-      for (let size = 12; size > 10 && name.scrollWidth > name.clientWidth; size -= 0.5) name.style.fontSize = size - 0.5 + "px";
-    }
-  }
-  addEventListener("resize", fitSlotNames);
   // ---------- Squad picker: a screen before the board to choose the six heroes and read about each in large type ----------
   let draft = [...lineup];
   // The idle frame facing the camera; empty until the sheet has loaded.
   function portraitUrl(c) {
     return sheetFrames[c]?.portrait || BLANK_PICTURE;
+  }
+  // Under a chosen hero: its role and kind as badges and words ("страж · плод"), so the squad's make-up is seen at once.
+  const ONE = { guard: "страж", shooter: "стрелок", fighter: "боец", fruit: "плод", root: "корнеплод", grain: "зерно" };
+  function groupsLine(c) {
+    const tags = HERO_TAGS[c] || [];
+    return `<em class="groups">${tags.map((id) => TRAITS[id].icon).join("")}<small>${tags.map((id) => ONE[id] || TRAITS[id].name.toLowerCase()).join(" · ")}</small></em>`;
   }
   function renderPicker() {
     const box = $("#picker");
@@ -1304,7 +1505,7 @@ function initPage() {
       full = chosen.length === TEAM_SIZE;
     const squad = Array.from({ length: TEAM_SIZE }, (_, i) =>
       draft[i]
-        ? `<button class="pick-slot" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span><i class="x" aria-label="убрать">✕</i></button>`
+        ? `<button class="pick-slot" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span>${groupsLine(draft[i])}<i class="x" aria-label="убрать">✕</i></button>`
         : `<button class="pick-slot empty" data-i="${i}">пусто</button>`,
     ).join("");
     const traits = Object.entries(TRAITS)
@@ -1321,7 +1522,7 @@ function initPage() {
           .map((id, i) => `<span class="kind">${i ? "Вид" : "Роль"}:</span> ${TRAITS[id].icon} <b>${TRAITS[id].name}</b> — ${TRAITS[id].text}`)
           .join("<br>");
       return `<button class="hero-card ${mine.has(c) ? "in" : ""}" data-c="${c}"><img src="${portraitUrl(c)}" alt=""><div>
-        <h4>${TFT_NAMES[c]} <span>${st.role}</span></h4><p class="tags">${tags}</p>
+        <h4>${TFT_NAMES[c]}</h4><p class="tags">${tags}</p>
         <p>❤️ здоровье ${st.max} · ⚔️ урон ${st.ad} · 🛡 броня ${st.armor} · 🎯 дальность ${st.range} кл.</p>
         <p><b>Умение</b> (при полной мане): ${TFT_ABILITIES[c]}</p>
         <p class="add">${full ? "отряд полон — уберите героя сверху" : mine.has(c) ? "+ ещё один" : "+ добавить в отряд"}</p></div></button>`;
@@ -1377,15 +1578,6 @@ function initPage() {
       $("#result").hidden = true;
     } else running = !running;
     renderSlots();
-  };
-  $("#reset").onclick = () => {
-    newBattle(false);
-    $("#result").hidden = true;
-    renderSlots();
-  };
-  $("#speed").onclick = () => {
-    rate = rate === 1 ? 2 : 1;
-    $("#speed").textContent = "×" + rate;
   };
   const point = (e) => {
     const r = canvas.getBoundingClientRect();
