@@ -3,3 +3,6 @@ dist/
 .angular/
 *.log
 
+
+# Sounds from libraries on this computer only (tools/import-local-sfx.cjs): never published.
+src/assets/audio/sfx-local/

@@ -94,3 +94,14 @@ console.log('PASS: phone board 6 × 6 per side');
  for(let k=0;k<20;k++)assert(run("Object.values(teamTraits(enemyLineup())).filter(t=>t.tier).length>=3"),'the enemy squad has at least 3 synergies');
  console.log('PASS: synergies count different heroes and apply their bonuses');
 }
+{
+ const run=context();
+ run("globalThis.E=['tomato','zucchini','pepper','corn','carrot','beet'];newBattle(false,E);globalThis.spots=F.map(f=>f.col+':'+f.row).join()");
+ run("newBattle(true,E)");
+ assert.equal(run("F.map(f=>f.col+':'+f.row).join()"),run('spots'),'the next round keeps both sides on their spots');
+ for(let k=0;k<20;k++){
+  const n=run("enemyAdjust(E).filter((c,i)=>c!==E[i]).length");
+  assert(n>=1&&n<=2,'the enemy replaces one or two heroes between rounds');
+ }
+ console.log('PASS: rounds keep the placement; the enemy replaces at most two heroes');
+}

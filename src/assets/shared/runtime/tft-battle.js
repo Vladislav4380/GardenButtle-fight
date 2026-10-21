@@ -157,6 +157,12 @@ let F = [],
   rate = 1.5; // the game runs one and a half times faster than real time
 // The starting squad has all six heroes, so a new player sees every synergy switched on.
 let lineup = ["tomato", "zucchini", "carrot", "beet", "pepper", "corn"];
+// A match is MATCH_ROUNDS battles against one opponent; before every round after the first each side may replace up
+// to MATCH_SWAPS heroes.
+const MATCH_ROUNDS = 3,
+  MATCH_SWAPS = 2;
+// Sound cues of the battle (battle-sfx.js on the page); silent where there is no page, as in the tests.
+const sfx = (name, opts) => globalThis.BattleSfx?.play(name, opts);
 
 function makeFighter(team, character, index) {
   const stats = { ...TFT_SPECS[character] };
@@ -212,12 +218,14 @@ function enemyLineup() {
   }
   return best.pick;
 }
-function newBattle(keepPlayerSpots) {
-  const old = keepPlayerSpots ? F.filter((f) => f.team === 0).map((f) => ({ col: f.homeCol ?? f.col, row: f.homeRow ?? f.row })) : null;
-  const enemy = enemyLineup();
+// Between two rounds both sides keep the spots their heroes stood on (keepSpots); a new enemy hero takes the old one's.
+function newBattle(keepSpots, enemy = enemyLineup()) {
+  const spotsOf = (team) => F.filter((f) => f.team === team).map((f) => ({ col: f.homeCol ?? f.col, row: f.homeRow ?? f.row })),
+    old = keepSpots ? spotsOf(0) : null,
+    oldTheirs = keepSpots ? spotsOf(1) : null;
   F = [];
   const mine = old || defaultSpots(0, lineup),
-    theirs = defaultSpots(1, enemy);
+    theirs = oldTheirs?.length === enemy.length ? oldTheirs : defaultSpots(1, enemy);
   lineup.forEach((c, i) => {
     const f = makeFighter(0, c, i);
     placeOnHex(f, mine[i].col, mine[i].row);
@@ -238,6 +246,17 @@ function newBattle(keepPlayerSpots) {
   battleStarted = false;
   running = false;
   result = null;
+}
+// The enemy after a lost round: up to MATCH_SWAPS heroes replaced, keeping the squad with the most synergies on.
+function enemyAdjust(enemy) {
+  const on = (pick) => Object.values(teamTraits(pick)).filter((t) => t.tier).length;
+  let best = enemy;
+  for (let tries = 0; tries < 200; tries++) {
+    const pick = [...enemy];
+    for (let n = 0; n < MATCH_SWAPS; n++) pick[Math.floor(Math.random() * TEAM_SIZE)] = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+    if (pick.some((c, i) => c !== enemy[i]) && (best === enemy || on(pick) > on(best))) best = pick;
+  }
+  return best;
 }
 function setLineupSlot(i, character) {
   if (battleStarted) return;
@@ -404,6 +423,7 @@ function startHunt(f) {
     const c = hexCenter(spot.col, spot.row);
     dust(f.x, f.y, 6);
     f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: JUMP_TIME, jump: true };
+    sfx("leap");
     f.col = spot.col;
     f.row = spot.row;
     say(f, "Прыжок в тыл");
@@ -462,6 +482,7 @@ function startMove(f, h, sprint) {
   const c = hexCenter(h.col, h.row);
   // The hex is taken at once, so nobody else steps into it.
   f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: f.stats.step * (f.hunt ? HUNT_STEP : 1) * (sprint ? sprint.k : 1), trail: sprint?.trail };
+  sfx(sprint ? "dash" : "step");
   f.col = h.col;
   f.row = h.row;
 }
@@ -528,6 +549,7 @@ function startDeath(f) {
       };
     });
   deaths.push({ f, x: f.x, y: f.y, kind, parts, age: 0, life: 1.3, pose: f.pose });
+  sfx("death");
 }
 function stepDeaths(dt) {
   for (const e of deaths) {
@@ -626,6 +648,7 @@ function releasePending(f, dt) {
     y = f.y + (dy / d) * 0.45,
     speed = f.character === "pepper" || f.character === "eggplant" ? 6.8 : 11;
   shots.push({ x, y, to: p.to, from: f, kind: f.character, big: p.big, raw: f.stats.ad * p.mult, speed, stun: p.stun });
+  sfx("shoot", { kind: WEAPON[f.character] });
   // The onion's volley: one more arrow at each of the two enemies closest to its target.
   if (p.volley)
     alive(1 - f.team)
@@ -637,6 +660,7 @@ function releasePending(f, dt) {
 // Full mana: the unit casts its ability instead of the next attack; mana starts again from zero.
 function castAbility(f, t) {
   f.mana = 0;
+  sfx("cast");
   if (f.character === "tomato") {
     for (const q of alive(f.team)) if (hexDist(f, q) <= 2) q.shield = 4;
     f.cast = 0.42;
@@ -798,6 +822,7 @@ function finish() {
     outcome = !alive(1).length && alive(0).length ? "win" : !alive(0).length && alive(1).length ? "loss" : lead > 0.02 ? "win" : lead < -0.02 ? "loss" : "draw";
   result = { outcome, lead };
   shots = [];
+  sfx("end");
   if (typeof onBattleEnd === "function") onBattleEnd(result);
 }
 let onBattleEnd = null;
@@ -1253,6 +1278,7 @@ function impact(t, src, big) {
   const kind = WEAPON[src?.character] || "blunt",
     life = kind === "fire" || kind === "magic" ? 0.32 : 0.24;
   impacts.push({ x: t.x, y: t.y, kind, big, t: life, life, ang: Math.atan2(t.y - src.y, t.x - src.x), seed: Math.random() * 6.28 });
+  sfx("hit", { kind, big });
 }
 function drawImpacts(g) {
   for (const e of impacts) {
@@ -1376,7 +1402,14 @@ function initPage() {
   if (!canvas) return;
   // A tall phone screen: 6 columns and as many rows as fit the height (the board fills the screen to the edges);
   // a wide screen: the TFT board, 7 × 4 per side. Chosen again when the phone is turned, while nobody fights yet.
+  // The buttons stand on the field over its bottom edge (a phone held upright, a big screen): the board keeps clear
+  // of them. Sideways they are in a column of their own and take nothing from the field.
+  function controlsHeight() {
+    const box = document.querySelector(".bottom");
+    return box && getComputedStyle(box).position === "absolute" ? box.getBoundingClientRect().height : 0;
+  }
   function boardFor(w, h) {
+    h -= controlsHeight();
     // The deep phone board for a phone held upright (decided by the screen, not by the field, whose height changes
     // with the panels around it); a phone turned sideways and any big screen get the TFT board.
     const upright = globalThis.innerHeight > globalThis.innerWidth && globalThis.innerWidth < 600;
@@ -1418,7 +1451,7 @@ function initPage() {
       renderSlots();
     }
     // Room above the board for the far row, whose bodies stand up over its edge.
-    layoutView(r.width, r.height, FAR > 0.8 ? ((r.width * 0.98) / BOARD_W) * 0.6 : 4, 8);
+    layoutView(r.width, r.height, FAR > 0.8 ? ((r.width * 0.98) / BOARD_W) * 0.6 : 4, 8 + controlsHeight());
   }
   // The player's synergies: active ones lit, each with its count of different heroes.
   function renderTraits() {
@@ -1480,7 +1513,7 @@ function initPage() {
         (HERO_TAGS[f.character] || []).map((id) => `<p class="${t[id].tier ? "on" : ""}">${traitLine(id, t[id].count)}</p>`).join(""),
     );
   }
-  // The squad is shown on the board itself; the "Состав" button opens the picker.
+  // The squad is shown on the board itself; the "Изменить отряд" button opens the picker.
   function renderSlots() {
     renderTraits();
   }
@@ -1492,9 +1525,53 @@ function initPage() {
   }
   // Under a chosen hero: its role and kind as badges and words ("страж · плод"), so the squad's make-up is seen at once.
   const ONE = { guard: "страж", shooter: "стрелок", fighter: "боец", fruit: "плод", root: "корнеплод", grain: "зерно" };
-  function groupsLine(c) {
+  // A badge lit (gold glow) when that group's bonus is on in the squad being chosen (t: teamTraits of the draft).
+  const badge = (id, t) => `<span class="tb${t?.[id].tier ? " on" : ""}">${TRAITS[id].icon}</span>`;
+  // A second copy of a hero adds nothing to the groups: its badges stay dark and it says so.
+  function groupsLine(c, t, repeat) {
     const tags = HERO_TAGS[c] || [];
-    return `<em class="groups">${tags.map((id) => TRAITS[id].icon).join("")}<small>${tags.map((id) => ONE[id] || TRAITS[id].name.toLowerCase()).join(" · ")}</small></em>`;
+    return `<em class="groups">${tags.map((id) => badge(id, repeat ? null : t)).join("")}<small>${
+      repeat ? "повтор — не в счёт" : tags.map((id) => ONE[id] || TRAITS[id].name.toLowerCase()).join(" · ")
+    }</small></em>`;
+  }
+  // ---------- The match: rounds, score and the heroes the player may still replace ----------
+  // base: the squad at the start of the round; between rounds the picker may change at most MATCH_SWAPS of its places.
+  let match = null;
+  function newMatch() {
+    match = { round: 1, wins: [0, 0], enemy: enemyLineup(), base: null, over: false };
+    newBattle(false, match.enemy);
+  }
+  function nextRound() {
+    if (match.over) {
+      match = { round: 1, wins: [0, 0], enemy: enemyLineup(), base: null, over: false };
+      return newBattle(true, match.enemy);
+    }
+    match.round++;
+    // The opponent reworks its squad only after losing a round.
+    if (result?.outcome === "win") match.enemy = enemyAdjust(match.enemy);
+    match.base = [...lineup];
+    newBattle(true, match.enemy);
+  }
+  const swapping = () => match && match.round > 1 && !match.over;
+  // For each place of the list: is its hero one of the round's squad (each of those counted once)?
+  function keptPlaces(list) {
+    const left = [...(match?.base || [])];
+    return list.map((c) => {
+      const k = c ? left.indexOf(c) : -1;
+      if (k >= 0) left[k] = null;
+      return k >= 0;
+    });
+  }
+  // The squad to fight with: heroes of the round's squad go back to their own places, the new ones fill the rest.
+  function settle(list) {
+    const out = Array(TEAM_SIZE).fill(null),
+      fresh = [];
+    for (const c of list) {
+      const i = match.base.findIndex((b, k) => b === c && !out[k]);
+      if (i >= 0) out[i] = c;
+      else fresh.push(c);
+    }
+    return out.map((c) => c || fresh.shift());
   }
   function renderPicker() {
     const box = $("#picker");
@@ -1502,10 +1579,18 @@ function initPage() {
     const chosen = draft.filter(Boolean),
       mine = new Set(chosen),
       t = teamTraits(chosen),
-      full = chosen.length === TEAM_SIZE;
+      full = chosen.length === TEAM_SIZE,
+      // Between rounds only MATCH_SWAPS heroes of the round's squad may leave it; the rest are locked once that is
+      // used up, so the squad can always be filled again. A hero put back counts as kept, whatever place it took.
+      kept = keptPlaces(draft),
+      left = swapping() ? MATCH_SWAPS - (TEAM_SIZE - kept.filter(Boolean).length) : TEAM_SIZE,
+      locked = (i) => swapping() && kept[i] && left <= 0,
+      canAdd = () => draft.some((x) => !x);
+    // Only the first copy of a hero counts for the groups.
+    const repeat = (i) => draft.indexOf(draft[i]) < i;
     const squad = Array.from({ length: TEAM_SIZE }, (_, i) =>
       draft[i]
-        ? `<button class="pick-slot" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span>${groupsLine(draft[i])}<i class="x" aria-label="убрать">✕</i></button>`
+        ? `<button class="pick-slot${locked(i) ? " locked" : ""}${repeat(i) ? " repeat" : ""}" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span>${groupsLine(draft[i], t, repeat(i))}${locked(i) ? "" : '<i class="x" aria-label="убрать">✕</i>'}</button>`
         : `<button class="pick-slot empty" data-i="${i}">пусто</button>`,
     ).join("");
     const traits = Object.entries(TRAITS)
@@ -1518,40 +1603,58 @@ function initPage() {
       const st = TFT_SPECS[c],
         // For each group of the hero: who else is in it and what the group gives, so the bonus is known in advance.
         // The first tag is the role, the second the kind: named as in the header above.
+        // How far the squad is in each of the hero's groups ("2/4"), lit when the bonus is on; "+1" when taking this
+        // hero would switch the bonus on ("включит") or raise it a step ("усилит").
+        withHero = teamTraits([...chosen, c]),
         tags = (HERO_TAGS[c] || [])
-          .map((id, i) => `<span class="kind">${i ? "Вид" : "Роль"}:</span> ${TRAITS[id].icon} <b>${TRAITS[id].name}</b> — ${TRAITS[id].text}`)
+          .map((id, i) => {
+            const tr = TRAITS[id],
+              count = `<span class="cnt${t[id].tier ? " on" : withHero[id].tier > t[id].tier && !full ? " next" : ""}">${t[id].count}/${tr.tiers[tr.tiers.length - 1]}${
+                withHero[id].tier > t[id].tier && !full ? (t[id].tier ? " · +1 усилит" : " · +1 включит") : ""
+              }</span>`;
+            return `<span class="kind">${i ? "Вид" : "Роль"}:</span> ${badge(id, t)} <b>${tr.name}</b> ${count} — ${tr.text}`;
+          })
           .join("<br>");
       return `<button class="hero-card ${mine.has(c) ? "in" : ""}" data-c="${c}"><img src="${portraitUrl(c)}" alt=""><div>
         <h4>${TFT_NAMES[c]}</h4><p class="tags">${tags}</p>
         <p>❤️ здоровье ${st.max} · ⚔️ урон ${st.ad} · 🛡 броня ${st.armor} · 🎯 дальность ${st.range} кл.</p>
         <p><b>Умение</b> (при полной мане): ${TFT_ABILITIES[c]}</p>
-        <p class="add">${full ? "отряд полон — уберите героя сверху" : mine.has(c) ? "+ ещё один" : "+ добавить в отряд"}</p></div></button>`;
+        <p class="add">${full ? "" : mine.has(c) ? "+ ещё один (группы не усилит)" : "+ добавить в отряд"}</p></div></button>`;
     }).join("");
-    box.innerHTML = `<h2>Выбор отряда</h2>
-      <p class="goal"><b>Собирай команду и усиливай героев!</b><br>
+    const head = swapping()
+      ? `<h2>Раунд ${match.round} из ${MATCH_ROUNDS}: замена героев</h2>
+      <p class="goal"><b>${left > 0 ? `Можно заменить ещё ${left} из ${MATCH_SWAPS}.` : "Замены на этот раунд использованы."}</b> Уберите героя сверху и выберите другого из списка —
+      новый встанет на место убранного.</p>`
+      : `<h2>Выбор отряда</h2>
+      <p class="goal"><b>Собирай команду и усиливай героев!</b> Матч — ${MATCH_ROUNDS} раунда против одного соперника,
+      между раундами можно заменить до ${MATCH_SWAPS} героев.<br>
       У каждого героя есть роль и вид. Объединяй двух разных героев одной группы, чтобы активировать её бонус.
-      Один герой может усиливать сразу две группы. Повторные герои не учитываются.</p>
+      Один герой может усиливать сразу две группы. Повторные герои не учитываются.</p>`;
+    box.innerHTML = `${head}
       <div class="pick-squad">${squad}</div><div class="pick-traits">${traits}</div><div class="pick-heroes">${cards}</div>
-      <div class="pick-go"><button id="pickGo" ${full ? "" : "disabled"}>${full ? "К расстановке →" : "Выберите ещё " + (TEAM_SIZE - chosen.length)}</button></div>`;
-    box.querySelectorAll(".pick-slot").forEach((b) => (b.onclick = () => ((draft[+b.dataset.i] = null), renderPicker())));
+      <div class="pick-go"><button id="pickGo" ${full ? "" : "disabled"}>${full ? "Расставить отряд →" : "Выберите ещё " + (TEAM_SIZE - chosen.length)}</button></div>`;
+    box.querySelectorAll(".pick-slot").forEach((b) => (b.onclick = () => locked(+b.dataset.i) || ((draft[+b.dataset.i] = null), renderPicker())));
     box.querySelectorAll(".hero-card").forEach(
       (b) =>
         (b.onclick = () => {
-          const i = draft.findIndex((x) => !x);
-          if (i >= 0) (draft[i] = b.dataset.c), renderPicker();
+          if (canAdd()) (draft[draft.findIndex((x) => !x)] = b.dataset.c), renderPicker();
         }),
     );
     $("#pickGo").onclick = () => {
       if (!full) return;
-      lineup = [...draft];
-      newBattle(false);
-      $("#result").hidden = true;
+      // Between rounds the new heroes take the places of the removed ones; otherwise a new match starts.
+      if (swapping()) settle(draft).forEach((c, i) => c !== lineup[i] && setLineupSlot(i, c));
+      else (lineup = [...draft]), newMatch();
+      hideResult();
       box.hidden = true;
       renderSlots();
     };
   }
   function openPicker() {
     if (battleStarted && !result) return;
+    // After a round the next one is set up first, so the swaps count from the squad that just fought.
+    if (result && !resultShown) return;
+    if (result) nextRound(), hideResult();
     draft = [...lineup];
     $("#picker").hidden = false;
     renderPicker();
@@ -1561,21 +1664,66 @@ function initPage() {
     $("#timer").style.color = battleStarted && time < FINAL_TIME ? "#ff5a3c" : "";
     $("#hp0").style.width = 100 * teamHealth(0) + "%";
     $("#hp1").style.width = 100 * teamHealth(1) + "%";
-    $("#energy").textContent = battleStarted && time < FINAL_TIME ? "Овертайм: урон ×2" : "";
-    $("#start").textContent = !battleStarted ? "Начать бой" : result ? "Новый бой" : running ? "Пауза" : "Продолжить";
+    $("#energy").textContent = battleStarted && !result && time < FINAL_TIME ? "Овертайм: урон ×2" : "";
+    // While the last blows and falls play out the button waits, so a tap meant for the battle does not skip the result.
+    $("#start").disabled = !!result && !resultShown;
+    $("#start").textContent = !battleStarted
+      ? "Начать бой"
+      : result && !resultShown
+        ? "…"
+        : result
+          ? match.over
+          ? "Новый матч"
+            : `Раунд ${match.round + 1} →`
+          : running
+            ? "Пауза"
+            : "Продолжить";
+    // Between rounds the squad button only swaps heroes, and says so.
+    $("#team").textContent = match && !match.over && (swapping() || result) ? "⇄ Заменить героев" : "Изменить отряд";
+    $("#round").textContent = match ? `Раунд ${match.round}/${MATCH_ROUNDS} · ${match.wins[0]}:${match.wins[1]}` : "";
     // The hint goes away once the player has touched a hero.
     $("#hint").hidden = battleStarted || hintSeen;
   }
+  // The result comes RESULT_DELAY ms after the last blow: the falls and the last numbers are seen first, then the
+  // field dims and the panel rises in (see .result in the page's styles). The buttons are hidden while heroes fight
+  // and come back under the result panel, across the whole screen; when the next round is set up they return to
+  // their corner.
+  const RESULT_DELAY = 1300;
+  let resultShown = false,
+    resultTimer = 0;
+  function hideResult() {
+    clearTimeout(resultTimer);
+    resultShown = false;
+    $("#after").hidden = true;
+    $(".bottom").append($(".actions"));
+    $(".bottom").hidden = false;
+    $(".field").classList.remove("over");
+  }
   onBattleEnd = (r) => {
-    $("#result").hidden = false;
-    $("#resultText").textContent = r.outcome === "win" ? "Победа!" : r.outcome === "loss" ? "Поражение" : "Ничья";
-    $("#resultDetail").textContent = `Живы: ваши ${alive(0).length} из ${TEAM_SIZE}, соперник ${alive(1).length} из ${TEAM_SIZE}`;
+    if (r.outcome === "win") match.wins[0]++;
+    if (r.outcome === "loss") match.wins[1]++;
+    match.over = match.round >= MATCH_ROUNDS;
+    const [a, b] = match.wins,
+      round = r.outcome === "win" ? "Раунд ваш!" : r.outcome === "loss" ? "Раунд проигран" : "Ничья в раунде";
+    $(".field").classList.add("over");
+    const won = match.over ? Math.sign(a - b) : r.outcome === "win" ? 1 : r.outcome === "loss" ? -1 : 0;
+    resultTimer = setTimeout(() => {
+      resultShown = true;
+      $("#after").append($(".actions"));
+      $("#after").hidden = false;
+      sfx(won > 0 ? "win" : won < 0 ? "loss" : "draw");
+    }, RESULT_DELAY);
+    $("#resultText").textContent = match.over ? (a > b ? "Победа в матче!" : a < b ? "Матч проигран" : "Ничья в матче") : round;
+    $("#resultDetail").textContent = match.over
+      ? `Счёт ${a}:${b}`
+      : `Счёт ${a}:${b} · перед раундом ${match.round + 1} можно заменить до ${MATCH_SWAPS} героев кнопкой «Заменить»`;
   };
   $("#start").onclick = () => {
-    if (!battleStarted) startBattle();
+    if (!battleStarted) startBattle(), ($(".bottom").hidden = true);
     else if (result) {
-      newBattle(true);
-      $("#result").hidden = true;
+      if (!resultShown) return;
+      nextRound();
+      hideResult();
     } else running = !running;
     renderSlots();
   };
@@ -1639,14 +1787,14 @@ function initPage() {
   // Some phones report the new size only after the turn has finished.
   addEventListener("orientationchange", () => setTimeout(resize, 250));
   resize();
-  newBattle(false);
+  newMatch();
   renderSlots();
   // Now the panels around the field are filled in: count the phone board rows again for the real field height.
   const box1 = canvas.getBoundingClientRect(),
     b1 = boardFor(box1.width, box1.height);
   if (b1.rows !== ROWS_PER_SIDE || b1.cols !== COLS) {
     useBoard(b1);
-    newBattle(false);
+    newBattle(false, match.enemy);
     renderSlots();
     resize();
   }
@@ -1655,6 +1803,13 @@ function initPage() {
     renderSlots();
     renderPicker();
   });
+  // The sound switch in the top bar.
+  const soundButton = $("#sound");
+  if (soundButton) {
+    const show = () => ((soundButton.textContent = globalThis.BattleSfx?.muted ? "🔇" : "🔊"), (soundButton.ariaLabel = globalThis.BattleSfx?.muted ? "Включить звук" : "Выключить звук"));
+    soundButton.onclick = () => (globalThis.BattleSfx?.toggle(), show());
+    show();
+  }
   // The page starts on the squad picker.
   if ($("#team")) $("#team").onclick = openPicker;
   openPicker();

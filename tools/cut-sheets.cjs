@@ -470,7 +470,9 @@ function cutHero(id) {
       sheet.rows.flatMap((row, i) => (row.startsWith("back") ? [i] : [])),
       sheet.glossy,
     ),
-    frames = cells.filter(Boolean),
+    // Rows drawn facing the other way than the rest of the sheet (manifest "mirrorRows": ["front34"]) are flipped,
+    // so every row faces sheet.facing as the game expects.
+    frames = cells.filter(Boolean).map((f) => (sheet.mirrorRows?.includes(sheet.rows[f.row]) ? mirror(f) : f)),
     // The cell fits the widest reach left and right of the feet and the tallest figure, plus a 2 px margin.
     left = Math.max(...frames.map((f) => f.ax)) + 2,
     right = Math.max(...frames.map((f) => f.w - f.ax)) + 2,
@@ -491,6 +493,16 @@ function cutHero(id) {
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + "\n");
   writePreview(path.join(root, "art", id, "preview.png"), cells, sheet.columns.length);
   console.log(`${id}: ${frames.length} frames, ${cw}×${ch} cells`);
+}
+
+// Flip a cut frame left to right; its feet anchor flips with it.
+function mirror(f) {
+  const out = new Uint8Array(f.px.length);
+  for (let y = 0; y < f.h; y++)
+    for (let x = 0; x < f.w; x++) out.set(f.px.subarray((y * f.w + x) * 4, (y * f.w + x) * 4 + 4), (y * f.w + (f.w - 1 - x)) * 4);
+  f.px = out;
+  f.ax = f.w - f.ax;
+  return f;
 }
 
 // Area-average downscale (colours weighted by alpha), so a badge stays small on the page.

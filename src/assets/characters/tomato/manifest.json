@@ -103,18 +103,21 @@
       "attack"
     ],
     "facing": "right",
+    "mirrorRows": [
+      "front34"
+    ],
     "file": "sprites/sheet.png",
     "cell": {
-      "w": 251,
+      "w": 238,
       "h": 204
     },
     "feet": {
-      "x": 120,
+      "x": 107,
       "y": 202
     },
     "height": 196,
     "portrait": {
-      "x": 32,
+      "x": 19,
       "y": 12,
       "w": 185,
       "h": 190
