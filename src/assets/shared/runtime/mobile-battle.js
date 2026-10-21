@@ -1503,6 +1503,7 @@ function frame(n) {
 mixedReady.then(() => {
   // Portraits of sheet heroes exist only once their sheets are loaded.
   renderSkillBar();
+  updateHeader();
   sync();
   requestAnimationFrame(frame);
 });

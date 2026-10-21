@@ -56,6 +56,9 @@ console.log('PASS: phone board 6 × 6 per side');
  assert(run('p.mana===0&&p.pending&&p.pending.big'),'full mana casts the ability and resets mana');
  run('globalThis.m0=a.mana;hurt(a,100,p)');
  assert(run('a.mana>m0'),'taking damage gives mana');
+ run(setup([['u',0,'cucumber',3,6],['a',6,'tomato',3,5]]));
+ run('globalThis.slow=(attack(u,a),u.cool);u.pending=null;castAbility(u,a);u.pending=null;attack(u,a)');
+ assert(run('u.rage>0&&Math.abs(u.cool-slow/1.5)<1e-9'),'the cucumber fury makes it attack half as often again');
  console.log('PASS: mana from attacks and damage, ability at full mana');
 }
 {
@@ -76,8 +79,10 @@ console.log('PASS: phone board 6 × 6 per side');
  const run=context();
  assert.equal(run("teamTraits(['tomato','tomato','tomato','tomato','tomato','tomato']).guard.tier"),0,'six tomatoes are one guard: no synergy');
  assert.equal(run("teamTraits(['tomato','zucchini','pepper','corn','carrot','beet']).guard.tier"),1,'two different guards switch the guard synergy on');
- assert.equal(run("teamTraits(['tomato','zucchini','pepper']).fruit.tier"),2,'three different fruits reach the second fruit tier');
+ assert.equal(run("teamTraits(['tomato','zucchini','pepper','peach']).fruit.tier"),2,'four different fruits reach the second fruit tier');
+ assert.equal(run("teamTraits(['corn','walnut']).grain.tier"),1,'corn and walnut switch the grain synergy on');
  run("lineup=['tomato','zucchini','pepper','corn','carrot','beet'];newBattle(false);globalThis.armor0=F[0].stats.armor;globalThis.range0=F[2].stats.range;startBattle()");
- assert(run('F[0].stats.armor===armor0+20&&F[2].stats.range===range0+1'),'synergy bonuses are applied at the start of the battle');
+ assert(run('F[0].stats.armor===armor0+12&&F[2].stats.range===range0+1'),'synergy bonuses are applied at the start of the battle');
+ for(let k=0;k<20;k++)assert(run("Object.values(teamTraits(enemyLineup())).filter(t=>t.tier).length>=3"),'the enemy squad has at least 3 synergies');
  console.log('PASS: synergies count different heroes and apply their bonuses');
 }

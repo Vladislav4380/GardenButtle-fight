@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "onion",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 228,
+      "h": 217
+    },
+    "feet": {
+      "x": 98,
+      "y": 215
+    },
+    "height": 212,
+    "portrait": {
+      "x": 24,
+      "y": 17,
+      "w": 159,
+      "h": 198
+    }
+  },
+  "sources": {
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/onion/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

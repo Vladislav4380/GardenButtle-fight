@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "cucumber",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 229,
+      "h": 209
+    },
+    "feet": {
+      "x": 113,
+      "y": 207
+    },
+    "portrait": {
+      "x": 32,
+      "y": 16,
+      "w": 160,
+      "h": 191
+    },
+    "height": 197
+  },
+  "sources": {
+    "sheet": "Generated sprite sheet (art/cucumber/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

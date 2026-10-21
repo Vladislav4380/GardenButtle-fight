@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "potato",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 247,
+      "h": 204
+    },
+    "feet": {
+      "x": 103,
+      "y": 202
+    },
+    "height": 183,
+    "portrait": {
+      "x": 13,
+      "y": 28,
+      "w": 180,
+      "h": 174
+    }
+  },
+  "sources": {
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/potato/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

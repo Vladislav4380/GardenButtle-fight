@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "eggplant",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 263,
+      "h": 222
+    },
+    "feet": {
+      "x": 115,
+      "y": 220
+    },
+    "height": 207,
+    "portrait": {
+      "x": 13,
+      "y": 23,
+      "w": 189,
+      "h": 197
+    }
+  },
+  "sources": {
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/eggplant/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

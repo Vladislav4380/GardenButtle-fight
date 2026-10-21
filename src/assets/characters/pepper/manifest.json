@@ -71,7 +71,6 @@
   },
   "notes": [],
   "sheet": {
-    "file": "sprites/sheet.png",
     "rows": [
       "front",
       "front34",
@@ -88,6 +87,22 @@
       "attack",
       "attack"
     ],
-    "facing": "right"
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 269,
+      "h": 205
+    },
+    "feet": {
+      "x": 98,
+      "y": 203
+    },
+    "height": 200,
+    "portrait": {
+      "x": 23,
+      "y": 8,
+      "w": 157,
+      "h": 195
+    }
   }
 }

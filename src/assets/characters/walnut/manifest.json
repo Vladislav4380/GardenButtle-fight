@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "walnut",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 219,
+      "h": 234
+    },
+    "feet": {
+      "x": 102,
+      "y": 232
+    },
+    "height": 194,
+    "portrait": {
+      "x": 15,
+      "y": 62,
+      "w": 168,
+      "h": 170
+    }
+  },
+  "sources": {
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/walnut/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

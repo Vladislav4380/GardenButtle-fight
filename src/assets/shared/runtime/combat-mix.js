@@ -115,12 +115,9 @@ function mixedSnapshot(f) {
   return image && { image, ax: p.anchor.x * z, ay: p.anchor.y * z, w: Math.max(p.canvas.width, image.naturalWidth) * z, h: p.canvas.height * z, flip: mixedFlip(f) };
 }
 // A small picture of the hero for buttons and the header: the sheet's idle front frame, or the front sprite.
-const portraitCache = {};
 function characterPortrait(id) {
-  if (portraitCache[id]) return portraitCache[id];
-  const frame = mixedSheets[id]?.["idle/front"]?.[0];
-  if (!frame) return "/assets/characters/" + id + "/sprites/front/idle.png";
-  return (portraitCache[id] = frame.canvas.toDataURL());
+  if (!useSheets) return "/assets/characters/" + id + "/sprites/front/idle.png";
+  return mixedSheets[id]?.portrait || BLANK_PICTURE;
 }
 function mixedPose(f) {
   const state = f.cast > 0 ? "attack" : f.moving ? "walk" : "idle",
@@ -161,7 +158,7 @@ function drawMixedFighter(f) {
     if (f.hit) g.filter = "brightness(1.35)";
     if (!f.moving && f.cast <= 0) g.scale(1, 1 + 0.004 * Math.sin((performance.now() / 1000) * 2 + (f.lane || 0)));
     // Enemies are tinted purple: rings and health bars alone did not tell the teams apart in a crowd.
-    g.drawImage(f.team === 1 ? sheetEnemyTint(s.fr.canvas) : s.fr.canvas, -s.fr.ax * s.z, -s.fr.ay * s.z, s.fr.canvas.width * s.z, s.fr.canvas.height * s.z);
+    drawSheetFrame(g, s.fr, s.z, f.team === 1);
     g.restore();
     return;
   }

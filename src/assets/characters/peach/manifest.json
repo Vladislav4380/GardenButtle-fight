@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "peach",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 232,
+      "h": 216
+    },
+    "feet": {
+      "x": 96,
+      "y": 214
+    },
+    "height": 193,
+    "portrait": {
+      "x": 13,
+      "y": 45,
+      "w": 180,
+      "h": 169
+    }
+  },
+  "sources": {
+    "sheet": "ChatGPT, one prompt for the whole sheet (art/peach/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

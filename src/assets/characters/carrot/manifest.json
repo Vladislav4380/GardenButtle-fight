@@ -84,7 +84,6 @@
     "Attack frames (front and back): cast.png = wind-up, cast-b.png = thrust; canvas widened to the right (anchor unchanged)."
   ],
   "sheet": {
-    "file": "sprites/sheet.png",
     "rows": [
       "front",
       "front34",
@@ -101,6 +100,22 @@
       "attack",
       "attack"
     ],
-    "facing": "right"
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 251,
+      "h": 209
+    },
+    "feet": {
+      "x": 88,
+      "y": 207
+    },
+    "height": 197,
+    "portrait": {
+      "x": 17,
+      "y": 22,
+      "w": 136,
+      "h": 185
+    }
   }
 }

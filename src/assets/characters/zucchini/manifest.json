@@ -2,10 +2,39 @@
   "schemaVersion": 1,
   "id": "zucchini",
   "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
     "file": "sprites/sheet.png",
-    "rows": ["front", "front34", "side", "back34", "back"],
-    "columns": ["idle", "walk", "walk", "walk", "walk", "attack", "attack"],
-    "facing": "right"
+    "cell": {
+      "w": 225,
+      "h": 206
+    },
+    "feet": {
+      "x": 106,
+      "y": 204
+    },
+    "height": 196,
+    "portrait": {
+      "x": 34,
+      "y": 14,
+      "w": 161,
+      "h": 190
+    }
   },
   "sources": {
     "sheet": "ChatGPT, one prompt for the whole sheet (art/zucchini/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"

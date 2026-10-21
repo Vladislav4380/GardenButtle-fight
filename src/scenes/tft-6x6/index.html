@@ -5,7 +5,7 @@
 <title>Огородная арена · 6×6</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#0b1710;color:#f5f2df;font-family:Inter,system-ui,sans-serif;overflow:hidden}
-.app{position:relative;display:flex;flex-direction:column;height:100dvh;max-width:900px;margin:auto}
+.app{position:relative;display:flex;flex-direction:column;height:100dvh;max-width:1400px;margin:auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:8px 12px;background:#0b1710e6;z-index:2}
 .team{font:800 12px system-ui}.team.enemy{text-align:right}
 .bar{height:8px;margin-top:4px;border-radius:4px;background:#0006;overflow:hidden}.bar i{display:block;height:100%;width:100%}
@@ -13,25 +13,29 @@
 .timer{font:900 20px system-ui;padding:2px 10px;border-radius:8px;background:#000a}
 .field{position:relative;flex:1;min-height:0}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-.hint{position:absolute;left:50%;top:8px;transform:translateX(-50%);padding:6px 12px;border-radius:10px;background:#0b1710d9;font-size:12px;max-width:92%;text-align:center}
-.traits{display:flex;flex-wrap:wrap;align-items:center;gap:3px 12px;padding:5px 10px;background:#122a1c;border-top:1px solid #2b4634;border-bottom:1px solid #2b4634;z-index:2}.traits[hidden]{display:none}.traits>b{font:800 11px system-ui;color:#9fb3a3;text-transform:uppercase;letter-spacing:.05em}.chip{padding:0;border:0;background:none;color:#a9bdaf;font:600 12px system-ui;text-align:left;cursor:pointer}.chip b{color:#d8e8d0}.chip.on,.chip.on b{color:#ffd56b}.info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92%,420px);z-index:5;padding:12px 14px;border-radius:14px;background:#0b1710f2;border:1px solid #9bd96b;font-size:13px;line-height:1.35}.info h3{margin:0 0 6px;font-size:15px}.info p{margin:4px 0}.info p.on{color:#ffe36b}.info .bonus{color:#9bd96b;font-weight:700}.info .close{margin-top:8px;font-size:11px;color:#8fa596;text-align:center}
+.hint{font-size:12px;color:#cfe3c4;text-align:center}.hint[hidden]{display:none}
+.traits:not([hidden]){display:flex}.traits{flex-wrap:wrap;align-items:center;gap:3px 12px;padding:5px 10px;background:#122a1c;border-top:1px solid #2b4634;border-bottom:1px solid #2b4634;z-index:2}.traits[hidden]{display:none}.traits>b{font:800 11px system-ui;color:#9fb3a3;text-transform:uppercase;letter-spacing:.05em}.chip{min-height:36px;padding:4px 2px;border:0;background:none;color:#a9bdaf;font:600 12px system-ui;text-align:left;cursor:pointer}.chip b{color:#d8e8d0}.chip.on,.chip.on b{color:#ffd56b}.info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92%,420px);z-index:5;padding:12px 14px;border-radius:14px;background:#0b1710f2;border:1px solid #9bd96b;font-size:13px;line-height:1.35}.info h3{margin:0 0 6px;font-size:15px}.info p{margin:4px 0}.info p.on{color:#ffe36b}.info .bonus{color:#9bd96b;font-weight:700}.info .close{margin-top:8px;font-size:11px;color:#8fa596;text-align:center}
 .result{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);padding:18px 28px;border-radius:16px;background:#0b1710ee;border:1px solid #9bd96b;text-align:center}
 .result strong{display:block;font-size:28px}.result span{font-size:13px;color:#cfe3c4}
 .bottom{display:flex;flex-direction:column;gap:6px;padding:8px 10px 10px;background:#0b1710e6;z-index:2}
 .actions{display:flex;gap:6px;align-items:center}
-.actions button{height:38px;padding:0 14px;border:0;border-radius:10px;font:800 14px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}
+.actions button{height:40px;min-width:40px;padding:0 14px;border:0;border-radius:10px;font:800 14px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}
 .actions .ghost{background:#1a140a;color:#ffe9b0;border:1px solid #936c15}
 #energy{margin-right:auto;font:800 13px system-ui;color:#9fe3ff}
 .slots{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
 .slot{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;border-radius:10px;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 10px system-ui}
-.slot{position:relative}.slot .tags{position:absolute;top:2px;right:3px;display:flex;flex-direction:column;gap:1px;font-size:11px;line-height:1}.slot .tags i{font-style:normal}.slot img{height:64px;max-width:100%;object-fit:contain}.slot .copy{font:700 9px system-ui;color:#ffb35a;line-height:1.1}.slot .thumb{display:block;width:34px;height:34px;background-repeat:no-repeat;background-position:0 0}.slot:disabled{opacity:.6}
+.slot{position:relative}.slot .tags{order:3;display:flex;justify-content:center;gap:3px;line-height:0}
+/* Drawn group badges: default size next to text, larger on the hero buttons and in the cards. */
+.ti{width:1.6em;height:1.6em;vertical-align:-.45em;flex:none;object-fit:contain}.slot .tags .ti{width:26px;height:26px}
+.hero-card .tags .ti{width:36px;height:36px;vertical-align:-12px;margin-right:4px}.pick-traits .ti{width:32px;height:32px;vertical-align:-10px;margin-right:2px}
+.info .ti{width:30px;height:30px;vertical-align:-9px}.info h3 .ti{width:40px;height:40px;vertical-align:-12px}.slot .tags i{font-style:normal}.slot img{height:64px;max-width:100%;object-fit:contain}.slot .copy{font:700 9px system-ui;color:#ffb35a;line-height:1.1}.slot .thumb{display:block;width:34px;height:34px;background-repeat:no-repeat;background-position:0 0}.slot:disabled{opacity:.6}
 .back{position:absolute;top:52px;left:10px;z-index:3;color:#d5e9ca;font-size:11px;text-decoration:none;background:#0b1710b3;padding:3px 8px;border-radius:8px}
 /* Squad picker: a full screen over the board, large type. */
 .picker{position:absolute;inset:0;z-index:20;overflow:auto;padding:14px;background:#0b1710}
 .picker h2{margin:0 0 6px;font-size:22px}.picker .goal{margin:0 0 12px;font-size:14px;line-height:1.45;color:#cfe3c4}
-.pick-squad{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px}
-.pick-slot{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:96px;padding:4px;border-radius:12px;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 12px system-ui;cursor:pointer}
-.pick-slot img{height:56px;max-width:100%;object-fit:contain}.pick-slot small{color:#8fa596;font-weight:500}.pick-slot em{font:700 10px system-ui;color:#ffb35a;font-style:normal}
+.pick-squad{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.pick-slot{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;min-height:96px;padding:4px;overflow:hidden;border-radius:12px;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 12px system-ui;cursor:pointer}
+.pick-slot img{height:56px;max-width:100%;object-fit:contain}.pick-slot span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pick-slot .x{position:absolute;top:2px;right:4px;font-size:14px;color:#c7a0a0}.pick-slot em{font:700 10px system-ui;color:#ffb35a;font-style:normal}
 .pick-slot.empty{justify-content:center;border-style:dashed;color:#6f8a77}
 .pick-traits{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 14px;margin-bottom:12px;font-size:13px;color:#a9bdaf}.pick-traits .on,.pick-traits .on b{color:#ffd56b}.pick-traits small{color:#8fa596;font-size:12px}
 .pick-heroes{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
@@ -40,12 +44,22 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .hero-card h4{margin:0 0 2px;font-size:18px}.hero-card h4 span{font-size:13px;color:#9fb3a3;font-weight:600}.hero-card p{margin:3px 0}.hero-card .tags{color:#ffe9b0}.hero-card .add{color:#9bd96b;font-weight:700}
 .pick-go{position:sticky;bottom:0;padding:10px 0 2px;background:linear-gradient(#0b171000,#0b1710 40%)}
 .pick-go button{width:100%;height:46px;border:0;border-radius:12px;font:800 16px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.pick-go button:disabled{opacity:.5}
+/* A narrow phone: the squad in two rows of three, smaller type. */
+.chip .short{display:none}
+/* A phone: the synergy strip turns into a compact grid, details on tap, so the board keeps its height. */
+@media (max-width:600px){.traits:not([hidden]){display:grid}.traits{grid-template-columns:repeat(3,1fr);gap:0 6px;padding:2px 8px}.traits>b{display:none}.chip{min-height:32px;font-size:11px}.chip .long{display:none}.chip .short{display:inline}}
+@media (max-width:420px){.pick-squad{grid-template-columns:repeat(3,minmax(0,1fr))}.picker{padding:10px}.picker h2{font-size:19px}.hero-card{font-size:13px}}
 /* A phone turned sideways: the controls move to a column on the right so the board keeps the whole height. */
 @media (orientation:landscape) and (max-height:540px){
-.app{display:grid;grid-template-columns:1fr 230px;grid-template-rows:auto auto 1fr;max-width:none}
-.top{grid-column:1/3;padding:4px 10px}.traits{grid-column:1;grid-row:2}.field{grid-column:1;grid-row:3}
-.bottom{grid-column:2;grid-row:2/4;overflow:auto;justify-content:flex-start}
-.slots{grid-template-columns:repeat(3,1fr)}.actions{flex-wrap:wrap}.actions button{height:32px;padding:0 10px}
+.app{display:grid;grid-template-columns:1fr 250px;grid-template-rows:auto auto 1fr;max-width:none}
+.top{grid-column:1/3;padding:2px 10px}.top .bar{margin-top:2px}.timer{font-size:16px}
+.traits{grid-column:2;grid-row:2;gap:0 8px;padding:4px 8px;border:0}.traits>b{display:none}.chip{min-height:30px;font-size:11px}
+.field{grid-column:1;grid-row:2/4}
+.bottom{grid-column:2;grid-row:3;overflow:auto;justify-content:flex-start}
+.slots{grid-template-columns:repeat(3,1fr)}.actions{flex-wrap:wrap}.actions button{height:40px;padding:0 10px}
+.traits:not([hidden]){display:grid;grid-template-columns:repeat(2,1fr)}.chip .long{display:none}.chip .short{display:inline}
+.hint{display:none}.bottom{gap:4px;padding:4px 8px}.slot img{height:40px}.slot{font-size:9px;padding:2px}.slot .tags .ti{width:20px;height:20px}
+.actions #start{flex:1}
 }
 </style>
 </head>
@@ -55,14 +69,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 <div class="timer" id="timer">01:00</div>
 <div class="team enemy">Соперник<div class="bar"><i id="hp1"></i></div></div>
 </header>
-<div class="traits" id="traits"></div>
 <section class="field">
-<canvas id="cv"></canvas>
-<div class="hint" id="hint">Перетащите бойцов по клеткам своей половины. Нажмите на героя — его умение и синергии. Кнопка «Состав» — выбор героев.</div>
+<canvas id="cv" role="img" aria-label="Игровое поле: ваш отряд внизу, соперник вверху"></canvas>
 <div class="info" id="info" hidden></div>
 <div class="result" id="result" hidden><strong id="resultText"></strong><span id="resultDetail"></span></div>
 </section>
 <footer class="bottom">
+<div class="hint" id="hint">Тяните бойцов по клеткам своей половины · нажмите на героя — его умение</div>
 <div class="actions"><span id="energy"></span><button class="ghost" id="team">Состав</button><button class="ghost" id="reset" title="Новый соперник и расстановка">↻</button><button class="ghost" id="speed">×1</button><button id="start">Начать бой</button></div>
 <div class="slots" id="slots"></div>
 </footer>

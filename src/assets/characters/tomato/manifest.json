@@ -86,7 +86,6 @@
     "front walk + attack (aim, recoil) from one ChatGPT sheet; frames scaled to equal head width; attack socket = muzzle in aim frame"
   ],
   "sheet": {
-    "file": "sprites/sheet.png",
     "rows": [
       "front",
       "front34",
@@ -103,6 +102,22 @@
       "attack",
       "attack"
     ],
-    "facing": "right"
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 251,
+      "h": 204
+    },
+    "feet": {
+      "x": 120,
+      "y": 202
+    },
+    "height": 196,
+    "portrait": {
+      "x": 32,
+      "y": 12,
+      "w": 185,
+      "h": 190
+    }
   }
 }

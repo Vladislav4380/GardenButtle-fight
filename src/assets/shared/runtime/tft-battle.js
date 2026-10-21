@@ -17,11 +17,17 @@ const TEAM_SIZE = 6,
 // TFT-style units. range: hexes; attackSpeed: attacks per second; step: seconds per hex; mana: start / max.
 const TFT_SPECS = {
   tomato: { role: "Страж", max: 950, ad: 70, attackSpeed: 0.6, armor: 55, range: 2, step: 0.65, manaStart: 30, mana: 90 },
-  pepper: { role: "Стрелок", max: 600, ad: 78, attackSpeed: 0.75, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
+  pepper: { role: "Стрелок", max: 680, ad: 78, attackSpeed: 0.75, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
   carrot: { role: "Ассасин", max: 650, ad: 72, attackSpeed: 0.85, armor: 30, range: 1, step: 0.45, manaStart: 0, mana: 60 },
-  corn: { role: "Пушкарь", max: 650, ad: 66, attackSpeed: 0.8, armor: 30, range: 3, step: 0.6, manaStart: 20, mana: 70 },
+  corn: { role: "Пушкарь", max: 720, ad: 74, attackSpeed: 0.8, armor: 30, range: 3, step: 0.6, manaStart: 20, mana: 70 },
   zucchini: { role: "Страж", max: 1000, ad: 58, attackSpeed: 0.65, armor: 60, range: 1, step: 0.65, manaStart: 20, mana: 90 },
   beet: { role: "Воин", max: 820, ad: 68, attackSpeed: 0.75, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
+  potato: { role: "Рыцарь", max: 1000, ad: 60, attackSpeed: 0.6, armor: 60, range: 1, step: 0.7, manaStart: 0, mana: 80 },
+  walnut: { role: "Страж", max: 1080, ad: 56, attackSpeed: 0.6, armor: 70, range: 1, step: 0.75, manaStart: 30, mana: 90 },
+  peach: { role: "Воин", max: 700, ad: 70, attackSpeed: 0.9, armor: 35, range: 1, step: 0.5, manaStart: 0, mana: 60 },
+  onion: { role: "Лучник", max: 580, ad: 74, attackSpeed: 0.85, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
+  eggplant: { role: "Маг", max: 620, ad: 70, attackSpeed: 0.7, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
+  cucumber: { role: "Берсерк", max: 760, ad: 64, attackSpeed: 0.8, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
 };
 const TFT_ABILITIES = {
   tomato: "Щит отряда: союзники в 2 клетках 4 с получают половину урона",
@@ -30,12 +36,31 @@ const TFT_ABILITIES = {
   beet: "Вихрь: 1,6× урона всем врагам в соседних клетках",
   corn: "Залп: выстрел из кукурузной пушки на 2,5× урона",
   zucchini: "Оглушающий удар: 2× урона булавой, цель 1,5 с не действует",
+  potato: "Крепость: 4 с получает половину урона и восстанавливает 15% здоровья",
+  walnut: "Скорлупа: себе и союзникам в соседних клетках 4 с половину урона",
+  peach: "Сладкий сок: лечит себя и союзников в соседних клетках на 120",
+  onion: "Залп стрел: 1,6× урона по цели и стрела каждому из двух ближайших к ней врагов",
+  eggplant: "Тёмная сфера: 2× урона по цели, цель 1 с не действует",
+  cucumber: "Колючая ярость: 1,8× урона дубиной, потом 4 с атакует на 50% чаще",
 };
-const TFT_NAMES = { pepper: "Перец", tomato: "Помидор", carrot: "Морковь", beet: "Свёкла", corn: "Кукуруза", zucchini: "Кабачок" };
+const TFT_NAMES = {
+  pepper: "Перец",
+  tomato: "Помидор",
+  carrot: "Морковь",
+  beet: "Свёкла",
+  corn: "Кукуруза",
+  zucchini: "Кабачок",
+  potato: "Картофель",
+  walnut: "Орех",
+  peach: "Персик",
+  onion: "Лук",
+  eggplant: "Баклажан",
+  cucumber: "Огурец",
+};
 const TFT_ARCHETYPES = { tomato: "wall", pepper: "sniper", carrot: "assassin" };
 const TFT_BONUS = { wall: { sniper: 0.82, assassin: 1.35 }, sniper: { wall: 1.35, assassin: 0.82 }, assassin: { sniper: 1.35, wall: 0.82 } };
-// The beet, the corn and the zucchini have no archetype yet, so the counter triangle treats it as neutral (×1 both ways).
-const CHARACTERS = ["pepper", "tomato", "carrot", "beet", "corn", "zucchini"];
+// Heroes without an archetype are neutral in the counter triangle (×1 both ways).
+const CHARACTERS = ["pepper", "tomato", "carrot", "beet", "corn", "zucchini", "potato", "walnut", "peach", "onion", "eggplant", "cucumber"];
 
 // Board size: 7 columns × 4 rows per side as in TFT on a wide screen; a tall phone screen gets 6 columns and as many
 // rows as fit its height (see initPage), so the board fills the screen instead of a strip in the middle.
@@ -128,11 +153,12 @@ let F = [],
   running = false,
   result = null,
   rate = 1;
-let lineup = ["tomato", "tomato", "carrot", "carrot", "pepper", "pepper"];
+// The starting squad has all six heroes, so a new player sees every synergy switched on.
+let lineup = ["tomato", "zucchini", "carrot", "beet", "pepper", "corn"];
 
 function makeFighter(team, character, index) {
   const stats = { ...TFT_SPECS[character] };
-  return { team, character, index, stats, hp: stats.max, max: stats.max, mana: stats.manaStart, x: 0, y: 0, col: 0, row: 0, target: null, cool: 0, cast: 0, hit: 0, walk: 0, moving: false, move: null, hunt: null, pending: null, shield: 0, dealt: 0 };
+  return { team, character, index, stats, hp: stats.max, max: stats.max, mana: stats.manaStart, x: 0, y: 0, col: 0, row: 0, target: null, cool: 0, cast: 0, hit: 0, walk: 0, moving: false, move: null, hunt: null, pending: null, shield: 0, rage: 0, dealt: 0 };
 }
 function radiusOf() {
   return BODY;
@@ -172,9 +198,20 @@ function defaultSpots(team, chars) {
   }
   return spots;
 }
+// A random enemy squad that has at least 3 synergies switched on, so it plays like a thought-out squad.
+function enemyLineup() {
+  let best = null;
+  for (let tries = 0; tries < 200; tries++) {
+    const pick = Array.from({ length: TEAM_SIZE }, () => CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)]),
+      on = Object.values(teamTraits(pick)).filter((t) => t.tier).length;
+    if (on >= 3) return pick;
+    if (!best || on > best.on) best = { pick, on };
+  }
+  return best.pick;
+}
 function newBattle(keepPlayerSpots) {
   const old = keepPlayerSpots ? F.filter((f) => f.team === 0).map((f) => ({ col: f.homeCol ?? f.col, row: f.homeRow ?? f.row })) : null;
-  const enemy = Array.from({ length: TEAM_SIZE }, () => CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)]);
+  const enemy = enemyLineup();
   F = [];
   const mine = old || defaultSpots(0, lineup),
     theirs = defaultSpots(1, enemy);
@@ -231,15 +268,55 @@ const HERO_TAGS = {
   corn: ["shooter", "grain"],
   carrot: ["fighter", "root"],
   beet: ["fighter", "root"],
+  // The new five: the potato and the onion grow under the ground, the peach and the eggplant are fruits, the walnut is a seed.
+  potato: ["guard", "root"],
+  walnut: ["guard", "grain"],
+  peach: ["fighter", "fruit"],
+  onion: ["shooter", "root"],
+  eggplant: ["shooter", "fruit"],
+  // The cucumber is botanically a fruit, like the zucchini.
+  cucumber: ["fighter", "fruit"],
+};
+// Drawn group badges instead of emoji: a round coloured token with a simple sign, the same on every phone.
+// Their size comes from the page CSS (.ti), so buttons, cards and lists can show them at different sizes.
+const badge = (bg, rim, sign) =>
+  `<svg class="ti" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="${bg}" stroke="${rim}" stroke-width="2"/>${sign}</svg>`;
+const TRAIT_ICONS = {
+  guard: badge("#2f6fb3", "#bfe0ff", '<path d="M16 6l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V9z" fill="#e8f3ff" stroke="#16406b" stroke-width="1.5"/>'),
+  shooter: badge(
+    "#7a4a1d",
+    "#f3c98b",
+    '<path d="M10 7c9 3 12 9 9 18" fill="none" stroke="#f3e2c0" stroke-width="2.2"/><path d="M10 7l9 18" stroke="#c9b08a" stroke-width="1"/><path d="M8 24L23 9" stroke="#fff" stroke-width="2"/><path d="M23 9l-5 1 4 4z" fill="#fff"/>',
+  ),
+  fighter: badge(
+    "#7b2b2b",
+    "#ffb0a0",
+    '<path d="M9 9l14 14M23 9L9 23" stroke="#eef2f6" stroke-width="3" stroke-linecap="round"/><path d="M8 20l4 4M24 20l-4 4" stroke="#d9a441" stroke-width="3" stroke-linecap="round"/>',
+  ),
+  fruit: badge("#3d6b25", "#c8f0a0", '<circle cx="16" cy="18" r="8" fill="#e8322a"/><path d="M16 10c0-3 2-4 4-4-1 2-2 3-4 4z" fill="#7bd14a"/><circle cx="13" cy="15" r="2" fill="#ff9a8a"/>'),
+  root: badge("#5a3a1e", "#ffc27a", '<path d="M11 12l10 0-5 15z" fill="#f08a1c"/><path d="M16 12c-2-4-5-5-6-5 2 2 3 3 5 5M16 12c2-4 5-5 6-5-2 2-3 3-5 5M16 12v-6" stroke="#6fc23a" stroke-width="2" fill="none"/>'),
+  grain: badge("#6b5a16", "#ffe27a", '<path d="M16 27V9" stroke="#e6c04a" stroke-width="1.6"/><g fill="#ffd34a"><ellipse cx="13" cy="12" rx="2.4" ry="3.6"/><ellipse cx="19" cy="12" rx="2.4" ry="3.6"/><ellipse cx="13" cy="18" rx="2.4" ry="3.6"/><ellipse cx="19" cy="18" rx="2.4" ry="3.6"/><ellipse cx="16" cy="7" rx="2.2" ry="3.2"/></g>'),
 };
 const TRAITS = {
-  guard: { icon: "🛡️", name: "Стражи", tiers: [2], text: "все союзники +20 брони" },
-  shooter: { icon: "🏹", name: "Стрелки", tiers: [2], text: "стрелки бьют на 1 клетку дальше" },
-  fighter: { icon: "⚔️", name: "Бойцы", tiers: [2], text: "бойцы атакуют на 30% чаще" },
-  fruit: { icon: "🍎", name: "Плоды", tiers: [2, 3], text: "при 2 плоды лечатся на 15% нанесённого урона, при 3 — на 30%" },
-  root: { icon: "🥕", name: "Корнеплоды", tiers: [2], text: "корнеплоды +25% здоровья" },
-  grain: { icon: "🌾", name: "Зерно", tiers: [2], text: "снаряды зерна пробивают половину брони" },
+  guard: { icon: TRAIT_ICONS.guard, name: "Стражи", tiers: [2, 4], text: "все союзники +12 брони, при 4 — +24" },
+  shooter: { icon: TRAIT_ICONS.shooter, name: "Стрелки", tiers: [2, 4], text: "стрелки бьют на 1 клетку дальше, при 4 — ещё и на 20% сильнее" },
+  fighter: { icon: TRAIT_ICONS.fighter, name: "Бойцы", tiers: [2, 3], text: "бойцы атакуют на 30% чаще, при 3 — на 50%" },
+  fruit: { icon: TRAIT_ICONS.fruit, name: "Плоды", tiers: [2, 4], text: "плоды лечатся на 15% нанесённого урона, при 4 — на 30%" },
+  root: { icon: TRAIT_ICONS.root, name: "Корнеплоды", tiers: [2, 4], text: "корнеплоды +15% здоровья, при 4 — +30%" },
+  grain: { icon: TRAIT_ICONS.grain, name: "Зёрна", tiers: [2], text: "зёрна пробивают половину брони" },
 };
+// The icon is read at drawing time: the painted badges replace the vector ones once their picture is loaded.
+for (const id of Object.keys(TRAITS)) Object.defineProperty(TRAITS[id], "icon", { get: () => TRAIT_ICONS[id] });
+// Painted badges: one row of 112 px cells in the order below, cleaned by tools/cut-sheets.cjs.
+async function loadBadges() {
+  const image = await loadImage("/assets/shared/badges/badges.png");
+  ["guard", "shooter", "fighter", "fruit", "root", "grain"].forEach((id, i) => {
+    const cell = document.createElement("canvas");
+    cell.width = cell.height = 112;
+    cell.getContext("2d").drawImage(image, i * 112, 0, 112, 112, 0, 0, 112, 112);
+    TRAIT_ICONS[id] = `<img class="ti" src="${cell.toDataURL()}" alt="">`;
+  });
+}
 // Tag → { count of different heroes, reached tier (0 = off) } for a team's lineup.
 function teamTraits(chars) {
   const out = {};
@@ -252,18 +329,19 @@ function teamTraits(chars) {
 }
 // The bonuses are applied once, at the start of the battle.
 function applyTraits(team) {
-  const own = F.filter((f) => f.team === team),
+  const own = F.filter((f) => f.team === team && f.hp > 0),
     t = teamTraits(own.map((f) => f.character)),
     has = (f, id) => HERO_TAGS[f.character]?.includes(id);
   for (const f of own) {
-    if (t.guard.tier) f.stats.armor += 20;
+    if (t.guard.tier) f.stats.armor += 12 * t.guard.tier;
     if (t.shooter.tier && has(f, "shooter")) f.stats.range += 1;
-    if (t.fighter.tier && has(f, "fighter")) f.stats.attackSpeed *= 1.3;
+    if (t.fighter.tier && has(f, "fighter")) f.stats.attackSpeed *= t.fighter.tier >= 2 ? 1.5 : 1.3;
+    if (t.shooter.tier >= 2 && has(f, "shooter")) f.stats.ad *= 1.2;
     if (t.fruit.tier && has(f, "fruit")) f.lifesteal = t.fruit.tier >= 2 ? 0.3 : 0.15;
-    if (t.root.tier && has(f, "root")) {
-      f.max = f.hp = Math.round(f.max * 1.25);
-    }
     if (t.grain.tier && has(f, "grain")) f.pierce = 0.5;
+    if (t.root.tier && has(f, "root")) {
+      f.max = f.hp = Math.round(f.max * (t.root.tier >= 2 ? 1.3 : 1.15));
+    }
   }
   return t;
 }
@@ -406,7 +484,7 @@ function drawDeaths(g) {
       g.globalAlpha = 1 - e.age / 0.25;
       g.translate(p.x, p.y);
       g.scale(flip, 1);
-      g.drawImage(tint ? sheetEnemyTint(fr.canvas) : fr.canvas, -fr.ax * z, -fr.ay * z, fr.canvas.width * z, fr.canvas.height * z);
+      drawSheetFrame(g, fr, z, tint);
       g.restore();
     }
     for (const q of e.parts) {
@@ -448,7 +526,8 @@ function teamHealth(team) {
 function attack(f, t, mult = 1, big = false) {
   if (!big) gainMana(f, 10);
   f.cast = 0.42;
-  f.cool = 1 / f.stats.attackSpeed;
+  // The cucumber's fury: attacks half as often again while it lasts.
+  f.cool = 1 / (f.stats.attackSpeed * (f.rage > 0 ? 1.5 : 1));
   f.pending = { to: t, mult, big, t: f.stats.range <= 1 ? 0.2 : 0.16 };
 }
 function releasePending(f, dt) {
@@ -473,7 +552,17 @@ function releasePending(f, dt) {
   const dx = p.to.x - f.x,
     dy = p.to.y - f.y,
     d = Math.hypot(dx, dy) || 1;
-  shots.push({ x: f.x + (dx / d) * 0.45, y: f.y + (dy / d) * 0.45, to: p.to, from: f, kind: f.character, big: p.big, raw: f.stats.ad * p.mult, speed: f.character === "pepper" ? 6.8 : 11 });
+  const x = f.x + (dx / d) * 0.45,
+    y = f.y + (dy / d) * 0.45,
+    speed = f.character === "pepper" || f.character === "eggplant" ? 6.8 : 11;
+  shots.push({ x, y, to: p.to, from: f, kind: f.character, big: p.big, raw: f.stats.ad * p.mult, speed, stun: p.stun });
+  // The onion's volley: one more arrow at each of the two enemies closest to its target.
+  if (p.volley)
+    alive(1 - f.team)
+      .filter((q) => q !== p.to)
+      .sort((a, b) => hexDist(a, p.to) - hexDist(b, p.to))
+      .slice(0, 2)
+      .forEach((q) => shots.push({ x, y, to: q, from: f, kind: f.character, raw: f.stats.ad, speed }));
 }
 // Full mana: the unit casts its ability instead of the next attack; mana starts again from zero.
 function castAbility(f, t) {
@@ -507,6 +596,42 @@ function castAbility(f, t) {
     say(f, "Вихрь");
     return;
   }
+  if (f.character === "potato" || f.character === "walnut" || f.character === "peach") {
+    // Defensive casts: no blow, only the effect around the caster.
+    const near = alive(f.team).filter((q) => q === f || hexDist(f, q) <= 1);
+    if (f.character === "potato") {
+      f.shield = 4;
+      f.hp = Math.min(f.max, f.hp + f.max * 0.15);
+      say(f, "Крепость");
+    } else if (f.character === "walnut") {
+      for (const q of near) q.shield = 4;
+      say(f, "Скорлупа");
+    } else {
+      for (const q of near) q.hp = Math.min(q.max, q.hp + 120);
+      say(f, "Сладкий сок");
+    }
+    f.cast = 0.42;
+    f.cool = 1 / f.stats.attackSpeed;
+    return;
+  }
+  if (f.character === "onion") {
+    attack(f, t, 1.6, true);
+    f.pending.volley = true;
+    say(f, "Залп стрел");
+    return;
+  }
+  if (f.character === "cucumber") {
+    attack(f, t, 1.8, true);
+    f.rage = 4;
+    say(f, "Колючая ярость");
+    return;
+  }
+  if (f.character === "eggplant") {
+    attack(f, t, 2, true);
+    f.pending.stun = 1;
+    say(f, "Тёмная сфера");
+    return;
+  }
   attack(f, t, 2.2, true);
   say(f, "Удар из тени");
 }
@@ -524,6 +649,7 @@ function step(dt) {
     f.cast = Math.max(0, f.cast - dt);
     f.hit = Math.max(0, f.hit - dt);
     f.shield = Math.max(0, f.shield - dt);
+    f.rage = Math.max(0, (f.rage || 0) - dt);
     f.moving = false;
     releasePending(f, dt);
   }
@@ -570,6 +696,7 @@ function updateShots(dt) {
         for (const q of alive(s.to.team)) if (q !== s.to && hexDist(q, s.to) <= 1) hurt(q, s.raw / 2, s.from);
       }
       hurt(s.to, s.raw, s.from);
+      if (s.stun && s.to.hp > 0) s.to.stun = s.stun;
       continue;
     }
     s.x += (dx / d) * move;
@@ -638,13 +765,15 @@ function layoutView(W, H, top, bottom) {
   view.y1 = view.y0 + boardH;
 }
 
-const sprites = { pepper: {}, tomato: {}, carrot: {}, beet: {}, corn: {}, zucchini: {} };
+const sprites = Object.fromEntries(CHARACTERS.map((id) => [id, {}]));
 // Heroes drawn from one generated sheet (rows = directions, columns = poses); see sheet-sprites.js.
 const sheetFrames = {};
 let spritesReady = null;
 function loadSprites() {
-  spritesReady = Promise.all(
-    CHARACTERS.map(async (id) => {
+  spritesReady = Promise.all([
+    // Without the badge picture the vector badges stay.
+    loadBadges().catch(() => {}),
+    ...CHARACTERS.map(async (id) => {
       const profile = characterProfiles[id] || (characterProfiles[id] = await (await fetch("/assets/characters/" + id + "/manifest.json")).json());
       if (profile.sheet) {
         sheetFrames[id] = await loadSheetFrames(id, profile);
@@ -659,7 +788,7 @@ function loadSprites() {
             return image;
           });
     }),
-  );
+  ]);
   return spritesReady;
 }
 function poseImage(f, viewName) {
@@ -693,7 +822,7 @@ function drawSheetFighter(g, f, p, frames) {
   if (f.hit) g.filter = "brightness(1.35)";
   if (!f.moving && f.cast <= 0) g.scale(1, 1 + 0.004 * Math.sin((performance.now() / 1000) * 2 + f.index));
   // Enemies are tinted purple: rings and health bars alone did not tell the teams apart in a crowd.
-  g.drawImage(f.team === 1 ? sheetEnemyTint(fr.canvas) : fr.canvas, -fr.ax * z, -fr.ay * z, fr.canvas.width * z, fr.canvas.height * z);
+  drawSheetFrame(g, fr, z, f.team === 1);
   g.restore();
   // Remembered for the death effect.
   f.pose = { fr, flip: dir.flip, tint: f.team === 1 };
@@ -772,11 +901,6 @@ function drawHealth(g, f) {
   g.fillRect(p.x - w / 2 - 1, y + h + 1, w + 2, mh + 1);
   g.fillStyle = "#4fb6ff";
   g.fillRect(p.x - w / 2, y + h + 1.5, w * (f.mana / f.stats.mana), mh);
-  if (f.shield > 0) {
-    g.strokeStyle = "#ffd65a";
-    g.lineWidth = 2;
-    g.strokeRect(p.x - w / 2 - 2, y - 2, w + 4, h + mh + 5);
-  }
 }
 function hexPath(g, col, row, inset = 0.94) {
   const c = hexCenter(col, row);
@@ -819,7 +943,37 @@ function drawShots(g) {
   for (const s of shots) {
     const p = project(s.x, s.y),
       y = p.y - fighterHeight(p.s) * 0.55;
-    if (s.kind === "corn") {
+    if (s.kind === "onion") {
+      // An arrow along its flight.
+      const a = Math.atan2(project(s.to.x, s.to.y).y - p.y, project(s.to.x, s.to.y).x - p.x),
+        l = view.cell * 0.28 * p.s;
+      g.save();
+      g.translate(p.x, y);
+      g.rotate(a);
+      g.strokeStyle = "#8a5a2b";
+      g.lineWidth = Math.max(1.5, view.cell * 0.03);
+      g.beginPath();
+      g.moveTo(-l, 0);
+      g.lineTo(l * 0.6, 0);
+      g.stroke();
+      g.fillStyle = "#c9ccd1";
+      g.beginPath();
+      g.moveTo(l, 0);
+      g.lineTo(l * 0.55, -l * 0.18);
+      g.lineTo(l * 0.55, l * 0.18);
+      g.fill();
+      g.restore();
+    } else if (s.kind === "eggplant") {
+      const r = view.cell * (s.big ? 0.2 : 0.11) * p.s,
+        q = g.createRadialGradient(p.x, y, 0, p.x, y, r * 2);
+      q.addColorStop(0, "#fbe6ff");
+      q.addColorStop(0.35, "#c04bff");
+      q.addColorStop(1, "#7a1bd000");
+      g.fillStyle = q;
+      g.beginPath();
+      g.arc(p.x, y, r * 2, 0, 7);
+      g.fill();
+    } else if (s.kind === "corn") {
       // A corn kernel: small yellow oval.
       g.fillStyle = "#ffd23a";
       g.strokeStyle = "#b8860b";
@@ -895,7 +1049,10 @@ function initPage() {
   // A tall phone screen: 6 columns and as many rows as fit the height (the board fills the screen to the edges);
   // a wide screen: the TFT board, 7 × 4 per side. Chosen again when the phone is turned, while nobody fights yet.
   function boardFor(w, h) {
-    if (h <= w * 1.3) return { cols: 7, rows: 4, far: 0.74 };
+    // The deep phone board for a phone held upright (decided by the screen, not by the field, whose height changes
+    // with the panels around it); a phone turned sideways and any big screen get the TFT board.
+    const upright = globalThis.innerHeight > globalThis.innerWidth && globalThis.innerWidth < 600;
+    if (!upright) return { cols: 7, rows: 4, far: 0.74 };
     const cell = (w * 0.98) / 6.5,
       depth = (h - cell * 0.9 - 10) / (cell * PHONE_TILT),
       rows = Math.floor((depth - 2 * HEX) / ROW_STEP) + 1;
@@ -919,25 +1076,36 @@ function initPage() {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     // The phone was turned before the battle: take the board that fits the new shape and set the squads again.
     const b = boardFor(r.width, r.height);
-    if (!battleStarted && F.length && (b.cols !== COLS || b.rows !== ROWS_PER_SIDE)) {
+    if (!battleStarted && F.length && (b.cols !== COLS || b.far !== FAR)) {
+      // Keep both squads and the player's placement: each hero goes to the nearest free hex of the same place on the new board.
+      const spots = F.map((f) => ({ f, u: (f.col + 0.5) / COLS, v: f.team ? f.row / ROWS_PER_SIDE : (f.row - ROWS_PER_SIDE) / ROWS_PER_SIDE }));
       useBoard(b);
-      newBattle(false);
+      for (const f of F) f.col = f.row = -1;
+      for (const { f, u, v } of spots) {
+        const row = f.team ? Math.round(v * ROWS_PER_SIDE) : ROWS_PER_SIDE + Math.round(v * ROWS_PER_SIDE),
+          c = hexCenter(Math.round(u * COLS - 0.5), Math.min(ROWS - 1, row)),
+          spot = freeHexNear(f.team, c.x, c.y, f);
+        placeOnHex(f, spot.col, spot.row);
+      }
       renderSlots();
     }
     // Room above the board for the far row, whose bodies stand up over its edge.
     layoutView(r.width, r.height, FAR > 0.8 ? ((r.width * 0.98) / BOARD_W) * 0.9 : r.height * 0.13, 10);
   }
-  // The player's synergies: active ones lit, the others show how many different heroes are still missing.
+  // The player's synergies: active ones lit, each with its count of different heroes.
   function renderTraits() {
     const box = $("#traits");
     if (!box) return;
     const t = teamTraits(F.filter((f) => f.team === 0).map((f) => f.character));
     const mine = new Set(F.filter((f) => f.team === 0).map((f) => f.character));
-    // A strip above the board, apart from the hero buttons: each synergy in words, with who is missing.
     box.innerHTML =
       "<b>Синергии отряда</b>" +
       Object.entries(TRAITS)
-        .map(([id, tr]) => `<button class="chip ${t[id].tier ? "on" : ""}" data-trait="${id}">${tr.icon} <b>${tr.name} ${t[id].count}/${tr.tiers[tr.tiers.length - 1]}</b>: ${traitStatus(id, mine)}</button>`)
+        // Only the count ("Стражи 1/2"); a tap opens what the synergy gives.
+        .map(
+          ([id, tr]) =>
+            `<button class="chip ${t[id].tier ? "on" : ""}" data-trait="${id}">${tr.icon} <b>${tr.name} ${t[id].count}/${tr.tiers[tr.tiers.length - 1]}</b>${t[id].tier ? " ✓" : ""}</button>`,
+        )
         .join("");
     box.querySelectorAll(".chip").forEach((b) => (b.onclick = () => showTrait(b.dataset.trait, mine)));
   }
@@ -947,23 +1115,6 @@ function initPage() {
     card.innerHTML = html + '<div class="close">нажмите, чтобы закрыть</div>';
     card.hidden = false;
     card.onclick = () => (card.hidden = true);
-  }
-  // "включено", "нужен кабачок", "нужны морковь и свёкла", or "пока недоступно" when the game has too few heroes of the group.
-  const FEMININE = new Set(["carrot", "beet", "corn"]);
-  function traitStatus(id, mine) {
-    const tr = TRAITS[id],
-      members = CHARACTERS.filter((c) => HERO_TAGS[c]?.includes(id)),
-      missing = members.filter((c) => !mine.has(c)),
-      count = members.length - missing.length,
-      tier = tr.tiers.filter((n) => count >= n).length,
-      next = tr.tiers[tier],
-      names = (list) => list.map((c) => TFT_NAMES[c].toLowerCase()).join(" и ");
-    if (next === undefined) return "включено";
-    if (members.length < next) return tier ? "включено" : "пока недоступно: в игре мало таких героев";
-    const need = missing.slice(0, next - count),
-      word = need.length > 1 ? "нужны" : FEMININE.has(need[0]) ? "нужна" : "нужен",
-      text = `${word} ${names(need)}${missing.length > need.length ? " (или другой из группы)" : ""}`;
-    return tier ? `включено; для ${next} ${text}` : text;
   }
   function traitLine(id, count) {
     const tr = TRAITS[id],
@@ -986,13 +1137,13 @@ function initPage() {
       has = (id) => HERO_TAGS[f.character]?.includes(id),
       // What the active synergies add to this hero, shown next to the base value (applied when the battle starts).
       plus = (on, text) => (on ? ` <span class="bonus">${text}</span>` : ""),
-      hp = Math.round(st.max * (t.root.tier && has("root") ? 1.25 : 1));
+      hp = Math.round(st.max * (t.root.tier && has("root") ? 1.15 : 1));
     showCard(
       `<h3>${f.team ? "Соперник: " : ""}${TFT_NAMES[f.character]} · ${st.role}</h3>` +
-        `<p>❤️ здоровье ${hp}${plus(t.root.tier && has("root"), "(+25% Корнеплоды)")} · ⚔️ урон ${st.ad} · 🕑 ударов в секунду ${
+        `<p>❤️ здоровье ${hp}${plus(t.root.tier && has("root"), "(+15% Корнеплоды)")} · ⚔️ урон ${st.ad} · 🕑 ударов в секунду ${
           Math.round(st.attackSpeed * (t.fighter.tier && has("fighter") ? 1.3 : 1) * 100) / 100
         }${plus(t.fighter.tier && has("fighter"), "(+30% Бойцы)")}</p>` +
-        `<p>🛡 броня ${st.armor + (t.guard.tier ? 20 : 0)}${plus(t.guard.tier, "(+20 Стражи)")} · 🎯 дальность ${st.range + (t.shooter.tier && has("shooter") ? 1 : 0)} кл.${plus(
+        `<p>🛡 броня ${st.armor + (t.guard.tier ? 12 : 0)}${plus(t.guard.tier, "(+12 Стражи)")} · 🎯 дальность ${st.range + (t.shooter.tier && has("shooter") ? 1 : 0)} кл.${plus(
           t.shooter.tier && has("shooter"),
           "(+1 Стрелки)",
         )}${t.fruit.tier && has("fruit") ? ` · 🩹 лечение ${t.fruit.tier >= 2 ? 30 : 15}% урона <span class="bonus">(Плоды)</span>` : ""}</p>` +
@@ -1005,9 +1156,7 @@ function initPage() {
     renderTraits();
     $("#slots").innerHTML = lineup
       .map((c, i) => {
-        // The cut-out idle frame facing the camera (no white sheet background); the old front sprite until it loads.
-        const frame = sheetFrames[c]?.["idle/front"]?.[0],
-          pic = `<img src="${frame ? (frame.url ||= frame.canvas.toDataURL()) : `/assets/characters/${c}/sprites/front/idle.png`}" alt="">`;
+        const pic = `<img src="${portraitUrl(c)}" alt="">`;
         // The hero's two synergy tags as icons, so the lineup can be built toward a synergy.
         const tags = (HERO_TAGS[c] || []).map((id) => `<i title="${TRAITS[id].name}">${TRAITS[id].icon}</i>`).join("");
         return `<button class="slot" data-i="${i}" ${battleStarted ? "disabled" : ""}><span class="tags">${tags}</span>${pic}<span>${TFT_NAMES[c]}</span></button>`;
@@ -1018,9 +1167,9 @@ function initPage() {
   }
   // ---------- Squad picker: a screen before the board to choose the six heroes and read about each in large type ----------
   let draft = [...lineup];
+  // The idle frame facing the camera; empty until the sheet has loaded.
   function portraitUrl(c) {
-    const frame = sheetFrames[c]?.["idle/front"]?.[0];
-    return frame ? (frame.url ||= frame.canvas.toDataURL()) : `/assets/characters/${c}/sprites/front/idle.png`;
+    return sheetFrames[c]?.portrait || BLANK_PICTURE;
   }
   function renderPicker() {
     const box = $("#picker");
@@ -1031,23 +1180,20 @@ function initPage() {
       full = chosen.length === TEAM_SIZE;
     const squad = Array.from({ length: TEAM_SIZE }, (_, i) =>
       draft[i]
-        ? `<button class="pick-slot" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span><small>убрать ✕</small></button>`
+        ? `<button class="pick-slot" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span><i class="x" aria-label="убрать">✕</i></button>`
         : `<button class="pick-slot empty" data-i="${i}">пусто</button>`,
     ).join("");
     const traits = Object.entries(TRAITS)
       .map(
         ([id, tr]) =>
-          `<div class="${t[id].tier ? "on" : ""}">${tr.icon} <b>${tr.name} ${t[id].count}/${tr.tiers[tr.tiers.length - 1]}</b>: ${traitStatus(id, mine)}<br><small>даёт: ${tr.text}</small></div>`,
+          `<div class="${t[id].tier ? "on" : ""}">${tr.icon} <b>${tr.name} ${t[id].count}/${tr.tiers[tr.tiers.length - 1]}</b><br><small>даёт: ${tr.text}</small></div>`,
       )
       .join("");
     const cards = CHARACTERS.map((c) => {
       const st = TFT_SPECS[c],
         // For each group of the hero: who else is in it and what the group gives, so the bonus is known in advance.
         tags = (HERO_TAGS[c] || [])
-          .map((id) => {
-            const others = CHARACTERS.filter((o) => o !== c && HERO_TAGS[o]?.includes(id)).map((o) => TFT_NAMES[o].toLowerCase());
-            return `${TRAITS[id].icon} <b>${TRAITS[id].name}</b>${others.length ? " (вместе с: " + others.join(", ") + ")" : " (других героев группы пока нет)"} — ${TRAITS[id].text}`;
-          })
+          .map((id) => `${TRAITS[id].icon} <b>${TRAITS[id].name}</b> — ${TRAITS[id].text}`)
           .join("<br>");
       return `<button class="hero-card ${mine.has(c) ? "in" : ""}" data-c="${c}"><img src="${portraitUrl(c)}" alt=""><div>
         <h4>${TFT_NAMES[c]} <span>${st.role}</span></h4><p class="tags">${tags}</p>
@@ -1057,7 +1203,7 @@ function initPage() {
     }).join("");
     box.innerHTML = `<h2>Выбор отряда</h2>
       <p class="goal"><b>Цель:</b> уничтожить отряд соперника. После старта бой идёт сам — побеждают состав и расстановка.
-      Разные герои одной группы включают синергии: 🛡️ стражи держат фронт, 🏹 стрелки бьют издалека, ⚔️ бойцы бегут в тыл.
+      Разные герои одной группы включают синергии: ${TRAIT_ICONS.guard} стражи держат фронт, ${TRAIT_ICONS.shooter} стрелки бьют издалека, ${TRAIT_ICONS.fighter} бойцы бегут в тыл.
       Двое одинаковых героев — это двойная сила самих героев, но в синергии такой герой считается один раз.</p>
       <div class="pick-squad">${squad}</div><div class="pick-traits">${traits}</div><div class="pick-heroes">${cards}</div>
       <div class="pick-go"><button id="pickGo" ${full ? "" : "disabled"}>${full ? "К расстановке →" : "Выберите ещё " + (TEAM_SIZE - chosen.length)}</button></div>`;
@@ -1091,9 +1237,8 @@ function initPage() {
     $("#hp1").style.width = 100 * teamHealth(1) + "%";
     $("#energy").textContent = battleStarted && time < FINAL_TIME ? "Овертайм: урон ×2" : "";
     $("#start").textContent = !battleStarted ? "Начать бой" : result ? "Новый бой" : running ? "Пауза" : "Продолжить";
-    $("#hint").hidden = battleStarted;
-    // The synergy strip helps to build the squad; in the battle it only takes room from the board.
-    $("#traits").hidden = battleStarted;
+    // The hint goes away once the player has touched a hero.
+    $("#hint").hidden = battleStarted || hintSeen;
   }
   onBattleEnd = (r) => {
     $("#result").hidden = false;
@@ -1121,7 +1266,8 @@ function initPage() {
     const r = canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
-  let press = null;
+  let press = null,
+    hintSeen = false;
   canvas.addEventListener("pointerdown", (e) => {
     const m = point(e);
     // Pick the fighter whose body is under the pointer (nearest to the camera first). A tap shows its card;
@@ -1131,10 +1277,11 @@ function initPage() {
       .find((f) => {
         const p = project(f.x, f.y),
           h = fighterHeight(p.s);
-        return Math.abs(m.x - p.x) < h * 0.35 && m.y < p.y + h * 0.15 && m.y > p.y - h;
+        return Math.abs(m.x - p.x) < h * 0.45 && m.y < p.y + h * 0.3 && m.y > p.y - h * 1.1;
       });
     if (!hit) return;
     press = { f: hit, x: m.x, y: m.y, moved: false };
+    hintSeen = true;
     if (battleStarted || hit.team !== 0) return;
     const p = project(hit.x, hit.y);
     drag = { f: hit, dx: p.x - m.x, dy: p.y - m.y, from: { col: hit.col, row: hit.row } };
@@ -1172,9 +1319,20 @@ function initPage() {
     drag = null;
   });
   addEventListener("resize", resize);
+  // Some phones report the new size only after the turn has finished.
+  addEventListener("orientationchange", () => setTimeout(resize, 250));
   resize();
   newBattle(false);
   renderSlots();
+  // Now the panels around the field are filled in: count the phone board rows again for the real field height.
+  const box1 = canvas.getBoundingClientRect(),
+    b1 = boardFor(box1.width, box1.height);
+  if (b1.rows !== ROWS_PER_SIDE || b1.cols !== COLS) {
+    useBoard(b1);
+    newBattle(false);
+    renderSlots();
+    resize();
+  }
   // Slot pictures come from the sheets, which are known once the manifests are loaded.
   loadSprites().then(() => {
     renderSlots();

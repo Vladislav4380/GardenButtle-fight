@@ -2,10 +2,39 @@
   "schemaVersion": 1,
   "id": "corn",
   "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
     "file": "sprites/sheet.png",
-    "rows": ["front", "front34", "side", "back34", "back"],
-    "columns": ["idle", "walk", "walk", "walk", "walk", "attack", "attack"],
-    "facing": "right"
+    "cell": {
+      "w": 232,
+      "h": 211
+    },
+    "feet": {
+      "x": 79,
+      "y": 209
+    },
+    "height": 203,
+    "portrait": {
+      "x": 13,
+      "y": 27,
+      "w": 137,
+      "h": 182
+    }
   },
   "sources": {
     "sheet": "ChatGPT, one prompt for the whole sheet (art/corn/sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
