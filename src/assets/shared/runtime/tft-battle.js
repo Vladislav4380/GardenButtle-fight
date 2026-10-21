@@ -1316,8 +1316,9 @@ function initPage() {
     const cards = CHARACTERS.map((c) => {
       const st = TFT_SPECS[c],
         // For each group of the hero: who else is in it and what the group gives, so the bonus is known in advance.
+        // The first tag is the role, the second the kind: named as in the header above.
         tags = (HERO_TAGS[c] || [])
-          .map((id) => `${TRAITS[id].icon} <b>${TRAITS[id].name}</b> — ${TRAITS[id].text}`)
+          .map((id, i) => `<span class="kind">${i ? "Вид" : "Роль"}:</span> ${TRAITS[id].icon} <b>${TRAITS[id].name}</b> — ${TRAITS[id].text}`)
           .join("<br>");
       return `<button class="hero-card ${mine.has(c) ? "in" : ""}" data-c="${c}"><img src="${portraitUrl(c)}" alt=""><div>
         <h4>${TFT_NAMES[c]} <span>${st.role}</span></h4><p class="tags">${tags}</p>
@@ -1326,9 +1327,9 @@ function initPage() {
         <p class="add">${full ? "отряд полон — уберите героя сверху" : mine.has(c) ? "+ ещё один" : "+ добавить в отряд"}</p></div></button>`;
     }).join("");
     box.innerHTML = `<h2>Выбор отряда</h2>
-      <p class="goal"><b>Цель:</b> уничтожить отряд соперника. После старта бой идёт сам — побеждают состав и расстановка.
-      Разные герои одной группы включают синергии: ${TRAIT_ICONS.guard} стражи держат фронт, ${TRAIT_ICONS.shooter} стрелки бьют издалека, ${TRAIT_ICONS.fighter} бойцы бегут в тыл.
-      Двое одинаковых героев — это двойная сила самих героев, но в синергии такой герой считается один раз.</p>
+      <p class="goal"><b>Собирай команду и усиливай героев!</b><br>
+      У каждого героя есть роль и вид. Объединяй двух разных героев одной группы, чтобы активировать её бонус.
+      Один герой может усиливать сразу две группы. Повторные герои не учитываются.</p>
       <div class="pick-squad">${squad}</div><div class="pick-traits">${traits}</div><div class="pick-heroes">${cards}</div>
       <div class="pick-go"><button id="pickGo" ${full ? "" : "disabled"}>${full ? "К расстановке →" : "Выберите ещё " + (TEAM_SIZE - chosen.length)}</button></div>`;
     box.querySelectorAll(".pick-slot").forEach((b) => (b.onclick = () => ((draft[+b.dataset.i] = null), renderPicker())));
