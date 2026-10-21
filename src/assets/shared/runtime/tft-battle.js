@@ -148,6 +148,7 @@ let F = [],
   shots = [],
   floaters = [],
   blasts = [],
+  impacts = [],
   time = BATTLE_TIME,
   battleStarted = false,
   running = false,
@@ -228,6 +229,7 @@ function newBattle(keepPlayerSpots) {
   shots = [];
   floaters = [];
   blasts = [];
+  impacts = [];
   deaths = [];
   time = BATTLE_TIME;
   battleStarted = false;
@@ -539,8 +541,9 @@ function releasePending(f, dt) {
   if (f.hp <= 0 || p.to.hp <= 0) return;
   if (f.stats.range <= 1) {
     // Melee: the beet's whirl hits every enemy next to it, any other blow hits the target if it is still there.
-    if (p.whirl) for (const q of alive(1 - f.team)) hexDist(f, q) <= 1 && hurt(q, f.stats.ad * p.mult, f);
+    if (p.whirl) for (const q of alive(1 - f.team)) hexDist(f, q) <= 1 && (impact(q, f, true), hurt(q, f.stats.ad * p.mult, f));
     else if (hexDist(f, p.to) <= f.stats.range) {
+      impact(p.to, f, p.big);
       hurt(p.to, f.stats.ad * p.mult, f);
       // The zucchini's mace stuns: the target neither moves nor attacks for a moment.
       if (p.stun && p.to.hp > 0) p.to.stun = p.stun;
@@ -677,6 +680,8 @@ function step(dt) {
   floaters = floaters.filter((p) => p.t > 0);
   for (const b of blasts) b.t -= dt;
   blasts = blasts.filter((b) => b.t > 0);
+  for (const e of impacts) e.t -= dt;
+  impacts = impacts.filter((e) => e.t > 0);
   if (!alive(0).length || !alive(1).length || time <= 0) finish();
 }
 function updateShots(dt) {
@@ -695,6 +700,7 @@ function updateShots(dt) {
         blasts.push({ x: s.to.x, y: s.to.y, t: 0.45, life: 0.45, r: 1.2 });
         for (const q of alive(s.to.team)) if (q !== s.to && hexDist(q, s.to) <= 1) hurt(q, s.raw / 2, s.from);
       }
+      impact(s.to, s.from, s.big);
       hurt(s.to, s.raw, s.from);
       if (s.stun && s.to.hp > 0) s.to.stun = s.stun;
       continue;
@@ -752,16 +758,19 @@ function layoutView(W, H, top, bottom) {
     view.y1 = top + BOARD_D * tilt * cell;
     return;
   }
-  const availH = H - top - bottom,
-    // The board is seen at about 50° (depth on screen ~0.62 of its width); on a tall phone screen the camera
-    // looks down more steeply so the board fills the height instead of leaving empty space.
+  // Above the far row only its heroes' heads and bars stand out: about 0.6 of a cell, not a fixed share of the screen,
+  // so the board takes all the height it can.
+  const HEAD = 0.6,
     wide = (W * 0.98) / BOARD_W,
-    tilt = Math.max(0.62, Math.min(1, (availH * 0.9) / (BOARD_D * wide))),
-    cell = Math.max(1, Math.min(wide, (availH * 0.9) / (BOARD_D * tilt)));
+    // The board is seen at about 50° (depth on screen ~0.62 of its width); on a tall screen the camera looks down
+    // more steeply so the board fills the height instead of leaving empty space.
+    tilt = Math.max(0.62, Math.min(1, (H - top - bottom - HEAD * wide) / (BOARD_D * wide))),
+    cell = Math.max(1, Math.min(wide, (H - top - bottom) / (BOARD_D * tilt + HEAD))),
+    boardH = BOARD_D * tilt * cell,
+    spare = H - top - bottom - HEAD * cell - boardH;
   view.cell = cell;
   view.cx = W / 2;
-  const boardH = BOARD_D * tilt * cell;
-  view.y0 = top + (availH - boardH) * 0.55;
+  view.y0 = top + HEAD * cell + spare * 0.5;
   view.y1 = view.y0 + boardH;
 }
 
@@ -1013,13 +1022,118 @@ function drawShots(g) {
     g.stroke();
   }
 }
+// Hit effects: a short mark on the target, by weapon. Small and quick (a quarter second), so a crowded fight stays readable.
+const WEAPON = {
+  pepper: "fire",
+  eggplant: "magic",
+  tomato: "juice",
+  onion: "arrow",
+  corn: "kernel",
+  carrot: "thrust",
+  beet: "slash",
+  peach: "slash",
+  zucchini: "blunt",
+  cucumber: "blunt",
+  potato: "blunt",
+  walnut: "blunt",
+};
+function impact(t, src, big) {
+  const kind = WEAPON[src?.character] || "blunt",
+    life = kind === "fire" || kind === "magic" ? 0.32 : 0.24;
+  impacts.push({ x: t.x, y: t.y, kind, big, t: life, life, ang: Math.atan2(t.y - src.y, t.x - src.x), seed: Math.random() * 6.28 });
+}
+function drawImpacts(g) {
+  for (const e of impacts) {
+    const p = project(e.x, e.y),
+      h = fighterHeight(p.s),
+      k = 1 - e.t / e.life,
+      a = e.t / e.life,
+      r = h * (e.big ? 0.55 : 0.4),
+      x = p.x,
+      y = p.y - h * 0.45,
+      // Screen direction of the blow: depth is squeezed by the camera tilt.
+      dx = Math.cos(e.ang),
+      dy = Math.sin(e.ang) * 0.6;
+    g.save();
+    g.lineCap = "round";
+    if (e.kind === "fire" || e.kind === "magic" || e.kind === "kernel") {
+      // A soft flash that swells and fades, with a few embers or motes.
+      const [core, mid] = e.kind === "fire" ? ["255,250,220", "255,140,30"] : e.kind === "magic" ? ["245,225,255", "170,80,255"] : ["255,250,210", "255,215,70"],
+        R = r * (e.kind === "kernel" ? 0.7 : 1) * (0.6 + k * 0.6),
+        q = g.createRadialGradient(x, y, 0, x, y, R);
+      q.addColorStop(0, `rgba(${core},${(0.9 * a).toFixed(2)})`);
+      q.addColorStop(0.45, `rgba(${mid},${(0.6 * a).toFixed(2)})`);
+      q.addColorStop(1, `rgba(${mid},0)`);
+      g.fillStyle = q;
+      g.beginPath();
+      g.arc(x, y, R, 0, 7);
+      g.fill();
+      g.fillStyle = `rgba(${mid},${a.toFixed(2)})`;
+      for (let i = 0; i < 5; i++) {
+        const t = e.seed + i * 1.26,
+          d = r * (0.4 + k * 0.9);
+        g.beginPath();
+        g.arc(x + Math.cos(t) * d, y + Math.sin(t) * d * 0.8, Math.max(1.5, r * 0.09 * (0.5 + a * 0.5)), 0, 7);
+        g.fill();
+      }
+    } else if (e.kind === "juice") {
+      // Tomato juice: a few red drops thrown back from the hit.
+      g.fillStyle = `rgba(220,30,25,${(0.9 * a).toFixed(2)})`;
+      for (let i = 0; i < 7; i++) {
+        const t = Math.atan2(dy, dx) + (i - 3) * 0.6 + Math.sin(e.seed + i * 2.1) * 0.25,
+          d = r * (0.25 + k * 0.85) * (0.6 + ((i * 37) % 10) / 15);
+        g.beginPath();
+        g.arc(x + Math.cos(t) * d, y + Math.sin(t) * d + k * k * r * 0.5, Math.max(2, r * 0.16 * (1 - k * 0.5)), 0, 7);
+        g.fill();
+      }
+    } else if (e.kind === "slash") {
+      // A blade: a bright crescent swept across the body, drawn quickly then fading.
+      const sweep = Math.min(1, k * 3),
+        tilt = e.seed > 3.14 ? 0.5 : -0.5,
+        from = Math.PI + 0.3,
+        to = from + (Math.PI - 0.6) * sweep;
+      g.translate(x, y);
+      g.rotate(tilt);
+      g.fillStyle = `rgba(255,255,240,${(0.85 * a).toFixed(2)})`;
+      g.beginPath();
+      g.ellipse(0, 0, r * 1.1, r * 0.55, 0, from, to);
+      g.ellipse(0, -r * 0.14, r * 0.95, r * 0.3, 0, to, from, true);
+      g.fill();
+    } else {
+      // A thrust (spear, arrow) or a blunt blow (mace, club, hammer): short rays from the point of impact.
+      const rays = e.kind === "blunt" ? 7 : 4,
+        len = r * (e.kind === "blunt" ? 0.75 : 0.55) * (0.5 + k * 0.7);
+      g.strokeStyle = e.kind === "blunt" ? `rgba(255,236,170,${(0.9 * a).toFixed(2)})` : `rgba(255,255,255,${(0.85 * a).toFixed(2)})`;
+      g.lineWidth = Math.max(2, r * 0.1);
+      for (let i = 0; i < rays; i++) {
+        const t = e.kind === "blunt" ? e.seed + (i * 6.28) / rays : Math.atan2(-dy, -dx) + (i - (rays - 1) / 2) * 0.55,
+          c = Math.cos(t),
+          s = Math.sin(t);
+        g.beginPath();
+        g.moveTo(x + c * len * 0.35, y + s * len * 0.35);
+        g.lineTo(x + c * len, y + s * len);
+        g.stroke();
+      }
+      if (e.kind === "blunt") {
+        // A small dust ring at the feet for the heavy blows.
+        g.strokeStyle = `rgba(200,170,120,${(0.5 * a).toFixed(2)})`;
+        g.lineWidth = 2;
+        g.beginPath();
+        g.ellipse(p.x, p.y, r * (0.6 + k), r * (0.25 + k * 0.35), 0, 0, 7);
+        g.stroke();
+      }
+    }
+    g.restore();
+  }
+}
 function drawFloaters(g) {
   g.textAlign = "center";
   for (const f of floaters) {
     const p = project(f.x, f.y),
       rise = (0.8 - Math.min(0.8, f.t)) * view.cell * 0.6;
     g.globalAlpha = Math.min(1, f.t / 0.5);
-    g.font = `900 ${Math.round(view.cell * 0.22 * (f.size || 1))}px system-ui`;
+    // Never below 14 px, so the numbers and ability names stay readable on a small phone board.
+    g.font = `900 ${Math.round(Math.max(14, view.cell * 0.22) * (f.size || 1))}px system-ui`;
     g.lineWidth = 3;
     g.strokeStyle = "#000b";
     const y = p.y - fighterHeight(p.s) * (f.lift || 1.15) - rise;
@@ -1035,6 +1149,7 @@ function render(g, dragHex) {
   for (const f of live) drawFighter(g, f);
   drawDeaths(g);
   drawShots(g);
+  drawImpacts(g);
   for (const f of live) drawHealth(g, f);
   drawFloaters(g);
 }
@@ -1054,7 +1169,7 @@ function initPage() {
     const upright = globalThis.innerHeight > globalThis.innerWidth && globalThis.innerWidth < 600;
     if (!upright) return { cols: 7, rows: 4, far: 0.74 };
     const cell = (w * 0.98) / 6.5,
-      depth = (h - cell * 0.9 - 10) / (cell * PHONE_TILT),
+      depth = (h - cell * 0.6 - 8) / (cell * PHONE_TILT),
       rows = Math.floor((depth - 2 * HEX) / ROW_STEP) + 1;
     return { cols: 6, rows: Math.max(4, Math.min(7, Math.floor(rows / 2))), far: 0.88 };
   }
@@ -1090,7 +1205,7 @@ function initPage() {
       renderSlots();
     }
     // Room above the board for the far row, whose bodies stand up over its edge.
-    layoutView(r.width, r.height, FAR > 0.8 ? ((r.width * 0.98) / BOARD_W) * 0.9 : r.height * 0.13, 10);
+    layoutView(r.width, r.height, FAR > 0.8 ? ((r.width * 0.98) / BOARD_W) * 0.6 : 4, 8);
   }
   // The player's synergies: active ones lit, each with its count of different heroes.
   function renderTraits() {
@@ -1164,7 +1279,16 @@ function initPage() {
       .join("");
     // A tap on a hero button opens the squad picker.
     document.querySelectorAll(".slot").forEach((b) => (b.onclick = openPicker));
+    fitSlotNames();
   }
+  // A long name on a narrow phone ("Картофель") gets a slightly smaller font instead of being cut: 12 px down to 10.
+  function fitSlotNames() {
+    for (const name of document.querySelectorAll(".slot > span:not(.tags)")) {
+      name.style.fontSize = "";
+      for (let size = 12; size > 10 && name.scrollWidth > name.clientWidth; size -= 0.5) name.style.fontSize = size - 0.5 + "px";
+    }
+  }
+  addEventListener("resize", fitSlotNames);
   // ---------- Squad picker: a screen before the board to choose the six heroes and read about each in large type ----------
   let draft = [...lineup];
   // The idle frame facing the camera; empty until the sheet has loaded.
