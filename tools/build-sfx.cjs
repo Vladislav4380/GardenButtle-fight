@@ -11,26 +11,26 @@ const root = path.join(__dirname, ".."),
   out = path.join(root, "src/assets/audio/sfx"),
   C = "art/sfx-cc0/",
   takes = (pattern, ns) => ns.map((n) => C + pattern.replace("#", n));
+// Each hero's own blow: art/sfx-cc0/heroes/<hero>_0…2 (see SOURCES.md for how they were chosen), how long it is
+// and, where it differs from the blows' LOUDNESS, how loud. The pepper's fire is short and quieter: it was too much.
+const HEROES = { potato: 0.45, walnut: 0.45, zucchini: 0.4, cucumber: 0.35, beet: 0.45, peach: 0.5, carrot: 0.35, onion: 0.35, corn: 0.35, tomato: 0.45, pepper: [0.35, -34], eggplant: 0.5 };
+const heroFiles = (hero) =>
+  fs
+    .readdirSync(path.join(root, C, "heroes"))
+    .filter((f) => f.startsWith(hero + "_"))
+    .sort()
+    .map((f) => C + "heroes/" + f);
 // cue → [files, seconds kept, loudness (LUFS) if not the blows' LOUDNESS, extra ffmpeg filter]
 const PICK = {
-  // Blows, by weapon.
-  blunt: [takes("wood_0#.ogg", [1, 2, 3]), 0.4],
-  slash: [takes("sword_#.ogg", [1, 2, 3, 4]), 0.45],
-  thrust: [takes("blade_0#.ogg", [1, 2, 3]), 0.35],
-  arrow: [[...takes("wood_0#.ogg", [4, 5]), C + "item_wood_01.ogg"], 0.35],
-  kernel: [takes("item_stone_0#.ogg", [1, 2, 3]), 0.35],
-  splat: [takes("squish_0#.mp3", [1, 2, 3, 4]), 0.45],
-  fire: [takes("spell_fire_0#.ogg", [1, 2, 3]), 0.6],
-  // The bow's string as an arrow leaves: quieter than the blows. Other shots, the eggplant's magic, abilities and
-  // falls have no sound.
-  bow: [takes("swish_#.wav", [1, 2, 3, 4]), 0.25, -30],
-  // Moving: steps (quiet, there are many) and a sprint's rush of air. The leap, the round's end and the result
-  // have no sound.
-  step: [takes("footstep_grass_#.ogg", [0, 1, 2, 3, 4]), 0.3, -34],
-  dash: [takes("swish_#.wav", [8, 9, 10]), 0.3, -28],
+  ...Object.fromEntries(Object.entries(HEROES).map(([hero, how]) => [`hero-${hero}`, [heroFiles(hero), ...[how].flat()]])),
+  // The bow's string as an arrow leaves: quieter than the blows. Other shots, abilities, falls, moving and the
+  // round's events have no sound.
+  bow: [takes("swish_#.wav", [1, 2, 3, 4]), 0.25, -32],
 };
-// Loudness each blow is levelled to (LUFS): quiet enough that a crowd of blows does not drown the rest.
-const LOUDNESS = -24;
+// Loudness each blow is levelled to (LUFS): quiet, so a crowd of blows does not drown the rest. The low end is
+// cut (below 150 Hz): no booming bass.
+const LOUDNESS = -28,
+  LOW_CUT = "highpass=f=150";
 // A sound cut short fades out over its last 0.1–0.2 s.
 const fade = (secs) => Math.min(1, Math.max(0.1, secs * 0.3));
 
@@ -39,7 +39,7 @@ fs.mkdirSync(out, { recursive: true });
 const list = {};
 for (const [name, [files, secs, loud = LOUDNESS, extra]] of Object.entries(PICK)) {
   files.forEach((file, i) => {
-    const filters = [extra, `afade=t=out:st=${(secs - fade(secs)).toFixed(3)}:d=${fade(secs).toFixed(3)}`, `loudnorm=I=${loud}:TP=-4`].filter(Boolean).join(",");
+    const filters = [LOW_CUT, extra, `afade=t=out:st=${(secs - fade(secs)).toFixed(3)}:d=${fade(secs).toFixed(3)}`, `loudnorm=I=${loud}:TP=-4`].filter(Boolean).join(",");
     execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-i", path.join(root, file), "-t", String(secs), "-af", filters, "-ar", "44100", "-ac", "1", "-b:a", "96k", path.join(out, `${name}-${i}.mp3`)]);
   });
   list[name] = files.length;

@@ -1,6 +1,6 @@
-// Battle sounds: one file per cue in assets/audio/sfx (the game's own sound set, loudness levelled), played at a
-// slightly random pitch so repeats do not sound mechanical. Until a file has loaded, and for the draw tune that has
-// none, the cue is made on the fly with Web Audio. BattleSfx.play(name, { kind, big }) plays one cue; the same cue is
+// Battle sounds: a few takes per cue in assets/audio/sfx (the game's own CC0 set, loudness levelled), one picked at
+// random at a slightly random pitch so repeats do not sound mechanical. Until a file has loaded, the cue is made on
+// the fly with Web Audio. BattleSfx.play(name, { kind, big }) plays one cue; the same cue is
 // not repeated within GAP seconds, so a crowd of blows sounds like a fight, not a buzz.
 // The sound starts after the first tap (browsers keep audio silent until then); "muted" is remembered on the device.
 (function () {
@@ -142,19 +142,13 @@
     juice: (k) => (noise("lowpass", 2200 * k, 500, 0.12, 0.55), noise("bandpass", 900, 600, 0.08, 0.3, 0.02, 2)),
     fire: (k) => (noise("lowpass", 3500 * k, 700, 0.28, 0.55), [0.03, 0.08, 0.14].forEach((t) => click(0.2, t))),
   };
-  // Weapon (WEAPON in tft-battle.js) → its file for a blow. The eggplant's magic, abilities and falls are silent,
-  // and of the shots only the bow sounds: their sounds were the worst.
-  const HIT_FILE = { blunt: "blunt", slash: "slash", thrust: "thrust", arrow: "arrow", kernel: "kernel", juice: "splat", fire: "fire" };
+  // Of the shots only the bow sounds; abilities, falls, moving and the round's events are silent.
   const CUES = {
-    // Blows are many: quiet, an ability's blow a little louder and lower.
-    hit: ({ kind, big }) =>
-      HIT_FILE[kind] && (sample(HIT_FILE[kind], big ? 0.75 : 0.5, big ? 0.9 : 1) || HIT[kind](big ? 0.8 : 0.9 + Math.random() * 0.25)),
+    // Every hero has its own blow (hero-<id>). Blows are many: quiet, an ability's blow a little louder and lower.
+    // Until the file has loaded, a made sound of the weapon.
+    hit: ({ kind, big, who }) => sample(`hero-${who}`, big ? 0.6 : 0.4, big ? 0.9 : 1) || HIT[kind]?.(big ? 0.8 : 0.9 + Math.random() * 0.25),
     // The bow's string as the arrow leaves.
     shoot: ({ kind }) => kind === "arrow" && (sample("bow", 0.35) || (noise("highpass", 2500, 6000, 0.09, 0.22), tone("triangle", 196, 190, 0.07, 0.12))),
-    // Moving: steps are quiet and only some of them sound, and a sprint's rush of air. Without the files these stay
-    // silent.
-    step: () => Math.random() < 0.4 && sample("step", 0.6),
-    dash: () => sample("dash", 0.7),
   };
 
   window.BattleSfx = {

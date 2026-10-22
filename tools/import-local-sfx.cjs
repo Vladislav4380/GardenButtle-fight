@@ -11,24 +11,27 @@ const lib = process.argv[2] || "D:/HomeProjects/sounds/dota2-main/sounds",
   out = path.join(__dirname, "../src/assets/audio/sfx-local"),
   H = "weapons/hero/";
 // cue → [files in the library, seconds kept, loudness (LUFS) if not the blows' LOUDNESS]
+const from = (dir, names) => names.map((n) => H + dir + "/" + n);
 const PICK = {
-  // Blows, by weapon.
-  blunt: [[H + "axe/attack01.wav", H + "axe/attack02.wav", H + "axe/attack03.wav"], 0.5],
-  slash: [[H + "juggernaut/attack01.wav", H + "juggernaut/attack02.wav", H + "juggernaut/attack03.wav"], 0.5],
-  thrust: [[H + "phantom_assassin/phantom_assassin_swing1.wav", H + "phantom_assassin/stifling_dagger_target.wav"], 0.5],
-  arrow: [[H + "drow_ranger/arrow_impact_1.wav", H + "drow_ranger/arrow_impact_2.wav", H + "drow_ranger/arrow_impact_3.wav"], 0.5],
-  kernel: [[H + "sniper/projectile_impact01.wav", H + "sniper/projectile_impact02.wav"], 0.5],
-  splat: [[H + "venomancer/attack_impact1.wav", H + "venomancer/attack_impact2.wav", H + "venomancer/attack_impact3.wav"], 0.4],
-  fire: [[H + "lina/projectile_impact.wav"], 0.6],
-  // The bow's string as an arrow leaves. Other shots, the eggplant's magic, abilities and falls have no sound.
+  // Each hero's own blow (cue hero-<id>): a hero of the library with a like weapon.
+  "hero-potato": [from("tiny", ["tiny_attack.wav", "tiny_attack2.wav", "tiny_attack3.wav"]), 0.5],
+  "hero-walnut": [from("earthshaker", ["fist_swing_impact1.wav", "fist_swing_impact2.wav", "fist_swing_impact3.wav"]), 0.5],
+  "hero-zucchini": [from("axe", ["attack01.wav", "attack02.wav", "attack03.wav"]), 0.5],
+  "hero-cucumber": [from("ursa", ["ursa_attack_01.wav", "ursa_attack_02.wav", "ursa_attack_03.wav"]), 0.45],
+  "hero-beet": [from("juggernaut", ["attack01.wav", "attack02.wav", "attack03.wav"]), 0.5],
+  "hero-peach": [from("sven", ["attack01.wav", "attack02.wav", "attack03.wav"]), 0.5],
+  "hero-carrot": [from("phantom_lancer", ["attack01.wav", "attack02.wav", "attack03.wav"]), 0.5],
+  "hero-onion": [from("drow_ranger", ["arrow_impact_1.wav", "arrow_impact_2.wav", "arrow_impact_3.wav"]), 0.5],
+  "hero-corn": [from("sniper", ["projectile_impact01.wav", "projectile_impact02.wav"]), 0.5],
+  "hero-tomato": [from("venomancer", ["attack_impact1.wav", "attack_impact2.wav", "attack_impact3.wav"]), 0.4],
+  "hero-pepper": [from("lina", ["projectile_impact.wav"]), 0.6],
+  "hero-eggplant": [from("witch_doctor", ["projectile_impact.wav"]), 0.5],
+  // The bow's string as an arrow leaves. Other shots, the eggplant's magic, abilities, falls, moving and the round's
+  // events have no sound.
   bow: [[H + "drow_ranger/arrow_1.wav", H + "drow_ranger/arrow_2.wav", H + "drow_ranger/arrow_3.wav", H + "drow_ranger/arrow_4.wav"], 0.5, -28],
-  // Moving: steps (quiet, there are many) and a sprint's rush of air. The leap, the round's end and the result
-  // have no sound.
-  step: [["physics/footsteps/hero/axe/foley01.wav", "physics/footsteps/hero/axe/foley02.wav", "physics/footsteps/hero/axe/foley03.wav", "physics/footsteps/hero/axe/foley04.wav"], 0.3, -34],
-  dash: [["weapons/creep/shared/whoosh01.wav", "weapons/creep/shared/whoosh02.wav", "weapons/creep/shared/whoosh03.wav", "weapons/creep/shared/whoosh04.wav"], 0.4, -28],
 };
-// Loudness each blow is levelled to (LUFS): quiet enough that a crowd of blows does not drown the rest.
-const LOUDNESS = -26;
+// Loudness each blow is levelled to (LUFS): quiet, so a crowd of blows does not drown the rest.
+const LOUDNESS = -30;
 // A sound cut short fades out over its last 0.12–0.3 s.
 const fade = (secs) => Math.min(1, Math.max(0.12, secs * 0.35));
 

@@ -23,28 +23,29 @@ button small{display:block;color:#9fb3a3;font-weight:500;font-size:13px}
 <script>
 // Every cue of battle-sfx.js on its own button, to judge them one by one.
 const GROUPS = [
-  ["Удары", [
-    ["hit", { kind: "blunt" }, "кабачок, картофель, орех, огурец"],
-    ["hit", { kind: "slash" }, "свёкла, персик"],
-    ["hit", { kind: "thrust" }, "морковь"],
-    ["hit", { kind: "arrow" }, "стрела лука"],
-    ["hit", { kind: "kernel" }, "зерно кукурузы"],
-    ["hit", { kind: "juice" }, "помидор"],
-    ["hit", { kind: "fire" }, "огонь перца"],
-    ["hit", { kind: "blunt", big: true }, "сильный удар (умение)"],
+  ["Удары героев", [
+    ["hit", { kind: "blunt", who: "potato" }, "картофель"],
+    ["hit", { kind: "blunt", who: "walnut" }, "орех"],
+    ["hit", { kind: "blunt", who: "zucchini" }, "кабачок"],
+    ["hit", { kind: "blunt", who: "cucumber" }, "огурец"],
+    ["hit", { kind: "slash", who: "beet" }, "свёкла"],
+    ["hit", { kind: "slash", who: "peach" }, "персик"],
+    ["hit", { kind: "thrust", who: "carrot" }, "морковь"],
+    ["hit", { kind: "arrow", who: "onion" }, "лук (стрела)"],
+    ["hit", { kind: "kernel", who: "corn" }, "кукуруза (зерно)"],
+    ["hit", { kind: "juice", who: "tomato" }, "помидор"],
+    ["hit", { kind: "fire", who: "pepper" }, "перец (огонь)"],
+    ["hit", { kind: "magic", who: "eggplant" }, "баклажан (магия)"],
+    ["hit", { kind: "blunt", who: "potato", big: true }, "сильный удар (умение)"],
   ]],
   ["Выстрелы", [
     ["shoot", { kind: "arrow" }, "лук"],
-  ]],
-  ["Движение", [
-    ["step", {}, "шаг (звучит не каждый)"],
-    ["dash", {}, "рывок"],
   ]],
 ];
 let n = 0;
 document.getElementById("list").innerHTML = GROUPS.map(([title, cues]) =>
   `<h2>${title}</h2><div class="grid">${cues.map(([name, opts, label]) =>
-    `<button data-cue='${JSON.stringify([name, opts])}'>${++n}. ${label}<small>${name}${opts.kind ? " · " + opts.kind : ""}</small></button>`).join("")}</div>`).join("");
+    `<button data-cue='${JSON.stringify([name, opts])}'>${++n}. ${label}<small>${name}${opts.who ? " · " + opts.who : opts.kind ? " · " + opts.kind : ""}</small></button>`).join("")}</div>`).join("");
 document.querySelectorAll("button").forEach((b) => (b.onclick = () => {
   const [name, opts] = JSON.parse(b.dataset.cue);
   // The first tap starts the audio and loads the samples: give them a moment before the first cue.

@@ -481,7 +481,6 @@ function startMove(f, h, sprint) {
   const c = hexCenter(h.col, h.row);
   // The hex is taken at once, so nobody else steps into it.
   f.move = { fromX: f.x, fromY: f.y, toX: c.x, toY: c.y, t: 0, dur: f.stats.step * (f.hunt ? HUNT_STEP : 1) * (sprint ? sprint.k : 1), trail: sprint?.trail };
-  sfx(sprint ? "dash" : "step", { who: f.character });
   f.col = h.col;
   f.row = h.row;
 }

@@ -6,3 +6,4 @@ dist/
 
 # Sounds from libraries on this computer only (tools/import-local-sfx.cjs): never published.
 src/assets/audio/sfx-local/
+src/assets/audio/source/
