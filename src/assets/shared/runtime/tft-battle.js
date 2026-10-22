@@ -1655,6 +1655,8 @@ function initPage() {
     renderPicker();
   }
   function hud() {
+    // The distant battle: loud while many heroes stand and fight, thinning out as they fall, silent outside a fight.
+    if (globalThis.BattleSfx) BattleSfx.fight = battleStarted && running && !result ? Math.min(1, (alive(0).length + alive(1).length) / (2 * TEAM_SIZE) + 0.15) : 0;
     $("#timer").textContent = formatTime(time);
     $("#timer").style.color = battleStarted && time < FINAL_TIME ? "#ff5a3c" : "";
     $("#hp0").style.width = 100 * teamHealth(0) + "%";
