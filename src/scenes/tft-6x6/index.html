@@ -139,6 +139,22 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     app.ready();
     app.expand();
     if (app.disableVerticalSwipes) app.disableVerticalSwipes();
+    // iPhone: Telegram closes the app on a pull down whenever the page itself is scrolled to its very top, whatever an
+    // inner list does. Keep the page a little scrolled down (an extra strip above it), so it never is at the top.
+    if (window.top === window) {
+      var extra = 100, b = document.body;
+      b.style.marginTop = extra + "px";
+      b.style.height = window.innerHeight + extra + "px";
+      b.style.paddingBottom = extra + "px";
+      document.documentElement.style.overflowY = "auto";
+      window.scrollTo(0, extra);
+      addEventListener("scroll", function () { if (window.scrollY < extra) window.scrollTo(0, extra); });
+    }
+    // Temporary: what Telegram reports, to find why the app can still be swiped closed.
+    var d = document.createElement("div");
+    d.style.cssText = "position:fixed;left:4px;bottom:4px;z-index:99;padding:2px 6px;border-radius:6px;background:#000a;color:#ffd56b;font:11px system-ui;pointer-events:none";
+    d.textContent = "TG " + app.version + " · " + app.platform + " · свайп " + (app.isVerticalSwipesEnabled === false ? "выкл" : app.isVerticalSwipesEnabled === true ? "ВКЛ" : "?") + " · сцена";
+    document.body.appendChild(d);
   };
   document.head.appendChild(s);
 })();
