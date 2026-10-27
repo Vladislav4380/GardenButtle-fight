@@ -1789,7 +1789,8 @@ function initPage() {
       renderSlots();
     };
   }
-  // A pull down at the very top of the squad list does nothing, so it cannot reach Telegram (swipe to close).
+  // A pull past either end of the squad list does nothing: no iPhone rubber band, and nothing reaches Telegram (whose
+  // swipe down closes the app).
   {
     const box = $("#picker");
     let y0 = 0;
@@ -1797,7 +1798,10 @@ function initPage() {
     box?.addEventListener(
       "touchmove",
       (e) => {
-        if (box.scrollTop <= 0 && e.touches[0].clientY > y0) e.preventDefault();
+        const down = e.touches[0].clientY > y0,
+          atTop = box.scrollTop <= 0,
+          atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 1;
+        if ((atTop && down) || (atBottom && !down)) e.preventDefault();
       },
       { passive: false },
     );

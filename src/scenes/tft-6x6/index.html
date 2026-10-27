@@ -50,8 +50,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .info .ti{width:30px;height:30px;vertical-align:-9px}.info h3 .ti{width:40px;height:40px;vertical-align:-12px}.slot .tags i{font-style:normal}.slot img{height:64px;max-width:100%;object-fit:contain}.slot .copy{font:700 12px system-ui;color:#ffb35a;line-height:1.1}.slot .thumb{display:block;width:34px;height:34px;background-repeat:no-repeat;background-position:0 0}.slot:disabled{opacity:.6}
 .back{position:absolute;top:52px;left:10px;z-index:3;color:#d5e9ca;font-size:13px;text-decoration:none;background:#0b1710b3;padding:3px 8px;border-radius:8px}
 /* Squad picker: a full screen over the board, large type. */
-/* The squad list scrolls inside itself: pulling past its top must not reach Telegram, which would close the app. */
-.picker{position:absolute;inset:0;z-index:20;overflow:auto;overscroll-behavior:contain;padding:14px;background:#0b1710}
+/* The squad list scrolls inside itself and does not spring past its ends (an iPhone's rubber band): a pull past
+   the top must not reach Telegram, which would close the app. */
+.picker{position:absolute;inset:0;z-index:20;overflow-x:hidden;overflow-y:auto;overscroll-behavior:none;padding:14px;background:#0b1710}
 .picker h2{margin:0 0 6px;font-size:24px}.picker .goal{margin:0 0 12px;font-size:17px;line-height:1.45;color:#dcebd4}
 /* The chosen squad stays pinned at the top while the hero list scrolls under it. */
 .pick-squad{position:sticky;top:-14px;z-index:5;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:0 -14px 10px;padding:8px 14px;background:#0b1710;box-shadow:0 8px 12px -6px #000c}
@@ -65,7 +66,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .hero-card h4{margin:0 0 2px;font-size:22px}.hero-card h4 span{font-size:13px;color:#9fb3a3;font-weight:600}.hero-card p{margin:3px 0}.hero-card .tags{color:#ffe9b0}
 /* Group badges lit when the squad has that bonus on; the count of the squad in the group next to its name. */
 .tb{display:inline-block;border-radius:50%;line-height:0}.tb.on{box-shadow:0 0 0 2px #ffd56b,0 0 12px 2px #ffd56b99}.tb:not(.on){filter:saturate(.55) brightness(.85)}
-.cnt{display:inline-block;padding:1px 7px;border-radius:9px;background:#0006;color:#b5c8b9;font-size:.85em;font-weight:800;white-space:nowrap}.cnt.on{background:#ffd56b;color:#2a1600}
+.cnt{display:inline;padding:1px 7px;border-radius:9px;background:#0006;color:#b5c8b9;font-size:.85em;font-weight:800;-webkit-box-decoration-break:clone;box-decoration-break:clone}.cnt.on{background:#ffd56b;color:#2a1600}
 /* A group's progress: a dot per hero, lit when that many are in the squad, a gap after each step of the bonus. */
 .dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}.dot{width:11px;height:11px;border-radius:50%;background:#ffffff26;border:1px solid #ffffff40}.dot.on{background:#ffd56b;border-color:#ffd56b}.dot.step{margin-right:6px}.dot.step:last-child{margin-right:0}
 .pick-census{grid-column:1/-1;margin:0 0 6px;color:#9fb3a3;font-size:14px}.cnt.next{background:#2f5a2a;color:#c8f0a0}.hero-card .kind{color:#b5c8b9;font-weight:600}.hero-card .add{color:#9bd96b;font-weight:700}
@@ -139,22 +140,6 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
     app.ready();
     app.expand();
     if (app.disableVerticalSwipes) app.disableVerticalSwipes();
-    // iPhone: Telegram closes the app on a pull down whenever the page itself is scrolled to its very top, whatever an
-    // inner list does. Keep the page a little scrolled down (an extra strip above it), so it never is at the top.
-    if (window.top === window) {
-      var extra = 100, b = document.body;
-      b.style.marginTop = extra + "px";
-      b.style.height = window.innerHeight + extra + "px";
-      b.style.paddingBottom = extra + "px";
-      document.documentElement.style.overflowY = "auto";
-      window.scrollTo(0, extra);
-      addEventListener("scroll", function () { if (window.scrollY < extra) window.scrollTo(0, extra); });
-    }
-    // Temporary: what Telegram reports, to find why the app can still be swiped closed.
-    var d = document.createElement("div");
-    d.style.cssText = "position:fixed;left:4px;bottom:4px;z-index:99;padding:2px 6px;border-radius:6px;background:#000a;color:#ffd56b;font:11px system-ui;pointer-events:none";
-    d.textContent = "TG " + app.version + " · " + app.platform + " · свайп " + (app.isVerticalSwipesEnabled === false ? "выкл" : app.isVerticalSwipesEnabled === true ? "ВКЛ" : "?") + " · сцена";
-    document.body.appendChild(d);
   };
   document.head.appendChild(s);
 })();
