@@ -64,7 +64,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .hero-card h4{margin:0 0 2px;font-size:22px}.hero-card h4 span{font-size:13px;color:#9fb3a3;font-weight:600}.hero-card p{margin:3px 0}.hero-card .tags{color:#ffe9b0}
 /* Group badges lit when the squad has that bonus on; the count of the squad in the group next to its name. */
 .tb{display:inline-block;border-radius:50%;line-height:0}.tb.on{box-shadow:0 0 0 2px #ffd56b,0 0 12px 2px #ffd56b99}.tb:not(.on){filter:saturate(.55) brightness(.85)}
-.cnt{display:inline-block;padding:1px 7px;border-radius:9px;background:#0006;color:#b5c8b9;font-size:.85em;font-weight:800;white-space:nowrap}.cnt.on{background:#ffd56b;color:#2a1600}.cnt.next{background:#2f5a2a;color:#c8f0a0}.hero-card .kind{color:#b5c8b9;font-weight:600}.hero-card .add{color:#9bd96b;font-weight:700}
+.cnt{display:inline-block;padding:1px 7px;border-radius:9px;background:#0006;color:#b5c8b9;font-size:.85em;font-weight:800;white-space:nowrap}.cnt.on{background:#ffd56b;color:#2a1600}
+/* A group's progress: a dot per hero, lit when that many are in the squad, a gap after each step of the bonus. */
+.dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}.dot{width:11px;height:11px;border-radius:50%;background:#ffffff26;border:1px solid #ffffff40}.dot.on{background:#ffd56b;border-color:#ffd56b}.dot.step{margin-right:6px}.dot.step:last-child{margin-right:0}
+.pick-census{grid-column:1/-1;margin:0 0 6px;color:#9fb3a3;font-size:14px}.cnt.next{background:#2f5a2a;color:#c8f0a0}.hero-card .kind{color:#b5c8b9;font-weight:600}.hero-card .add{color:#9bd96b;font-weight:700}
 .pick-go{position:sticky;bottom:0;padding:10px 0 2px;background:linear-gradient(#0b171000,#0b1710 40%)}
 .pick-go button{width:100%;height:46px;border:0;border-radius:12px;font:800 16px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.pick-go button:disabled{opacity:.5}
 /* A narrow phone: the squad in two rows of three, smaller type. */

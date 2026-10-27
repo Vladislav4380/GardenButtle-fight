@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "cherry",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 228,
+      "h": 208
+    },
+    "feet": {
+      "x": 108,
+      "y": 206
+    },
+    "portrait": {
+      "x": 14,
+      "y": 4,
+      "w": 194,
+      "h": 202
+    },
+    "height": 203
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Two-Headed Cherry Warrior Sprite Sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

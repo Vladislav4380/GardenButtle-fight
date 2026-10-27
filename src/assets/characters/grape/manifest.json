@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "grape",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 280,
+      "h": 178
+    },
+    "feet": {
+      "x": 106,
+      "y": 176
+    },
+    "portrait": {
+      "x": 31,
+      "y": 4,
+      "w": 146,
+      "h": 172
+    },
+    "height": 172
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Grape Warrior Sprite Sheet Turnaround.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

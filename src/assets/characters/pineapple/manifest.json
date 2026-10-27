@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "pineapple",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 296,
+      "h": 216
+    },
+    "feet": {
+      "x": 127,
+      "y": 214
+    },
+    "portrait": {
+      "x": 21,
+      "y": 28,
+      "w": 184,
+      "h": 186
+    },
+    "height": 208
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Pineapple Warrior Animation Sprite Sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

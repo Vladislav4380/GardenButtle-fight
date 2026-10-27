@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "cabbage",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 240,
+      "h": 207
+    },
+    "feet": {
+      "x": 127,
+      "y": 205
+    },
+    "portrait": {
+      "x": 42,
+      "y": 34,
+      "w": 176,
+      "h": 171
+    },
+    "height": 182
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Cabbage Knight Animation Sprite Sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

@@ -38,50 +38,7 @@
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    // The distant battle: blows heard far off, muffled (no highs) and in a wide room (a decaying-noise echo).
-    distant = ctx.createGain();
-    distant.gain.value = 0;
-    const muffle = ctx.createBiquadFilter(),
-      room = ctx.createConvolver(),
-      wet = ctx.createGain(),
-      tail = ctx.createBuffer(2, ctx.sampleRate * 1.6, ctx.sampleRate);
-    muffle.type = "lowpass";
-    muffle.frequency.value = 2200;
-    for (let c = 0; c < 2; c++) {
-      const t = tail.getChannelData(c);
-      for (let i = 0; i < t.length; i++) t[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / t.length, 3);
-    }
-    room.buffer = tail;
-    wet.gain.value = 0.6;
-    distant.connect(muffle);
-    muffle.connect(master);
-    muffle.connect(room).connect(wet).connect(master);
     loadSamples();
-    setInterval(rumble, 70);
-  }
-
-  // The distant battle under the heroes' own blows: every 70 ms, with a chance that grows with how hard the fight is
-  // (BattleSfx.fight, 0…1), a random blow of any hero, quiet, somewhere left or right, a little lower or higher. It
-  // swells in and fades out with the fight.
-  let distant = null,
-    fight = 0;
-  function rumble() {
-    if (!distant || muted || ctx.state !== "running") return;
-    distant.gain.setTargetAtTime(fight > 0 ? 1 : 0, ctx.currentTime, fight > 0 ? 0.6 : 1.2);
-    if (fight <= 0 || Math.random() > fight * 0.55) return;
-    const names = Object.keys(buffers).filter((n) => n.startsWith("hero-"));
-    if (!names.length) return;
-    const takes = buffers[names[Math.floor(Math.random() * names.length)]],
-      s = ctx.createBufferSource(),
-      g = ctx.createGain(),
-      pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    s.buffer = takes[Math.floor(Math.random() * takes.length)];
-    s.playbackRate.value = 0.8 + Math.random() * 0.35;
-    g.gain.value = 0.05 + Math.random() * 0.1;
-    s.connect(g);
-    if (pan) (pan.pan.value = Math.random() * 1.6 - 0.8), g.connect(pan).connect(distant);
-    else g.connect(distant);
-    s.start(ctx.currentTime + Math.random() * 0.05);
   }
 
   // The bundled sounds are assets/audio/sfx (built by tools/build-sfx.cjs); sounds put in assets/audio/sfx-local by
@@ -186,10 +143,13 @@
     fire: (k) => (noise("lowpass", 3500 * k, 700, 0.28, 0.55), [0.03, 0.08, 0.14].forEach((t) => click(0.2, t))),
   };
   // Of the shots only the bow sounds; abilities, falls, moving and the round's events are silent.
+  // Heroes without blows of their own yet borrow those of a hero with a like weapon.
+  const SOUNDS_LIKE = { cabbage: "zucchini", pineapple: "potato", parsley: "cucumber", grape: "beet", banana: "peach", cherry: "carrot", dill: "beet" };
   const CUES = {
     // Every hero has its own blow (hero-<id>). Blows are many: quiet, an ability's blow a little louder and lower.
     // Until the file has loaded, a made sound of the weapon.
-    hit: ({ kind, big, who }) => sample(`hero-${who}`, big ? 0.6 : 0.4, big ? 0.9 : 1) || HIT[kind]?.(big ? 0.8 : 0.9 + Math.random() * 0.25),
+    hit: ({ kind, big, who }) =>
+      sample(`hero-${buffers[`hero-${who}`] ? who : SOUNDS_LIKE[who] || who}`, big ? 0.6 : 0.4, big ? 0.9 : 1) || HIT[kind]?.(big ? 0.8 : 0.9 + Math.random() * 0.25),
     // The bow's string as the arrow leaves.
     shoot: ({ kind }) => kind === "arrow" && (sample("bow", 0.35) || (noise("highpass", 2500, 6000, 0.09, 0.22), tone("triangle", 196, 190, 0.07, 0.12))),
   };
@@ -205,10 +165,6 @@
       CUES[name](opts);
     },
     heard,
-    // How hard the fight is now, 0 (no fight) … 1: the distant battle follows it.
-    set fight(v) {
-      fight = Math.max(0, Math.min(1, v));
-    },
     get muted() {
       return muted;
     },

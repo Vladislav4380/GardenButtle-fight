@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "parsley",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 243,
+      "h": 207
+    },
+    "feet": {
+      "x": 130,
+      "y": 205
+    },
+    "portrait": {
+      "x": 30,
+      "y": 18,
+      "w": 200,
+      "h": 187
+    },
+    "height": 202
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Leafy Nunchaku Warrior Sprite Sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

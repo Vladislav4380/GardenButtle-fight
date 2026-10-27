@@ -48,8 +48,8 @@ function sheetFrame(frames, state, row, phase) {
   if (!list?.length) return null;
   return list[state === "idle" ? 0 : Math.min(list.length - 1, Math.floor(phase * list.length))];
 }
-// Enemy look for sheet heroes: a light purple tint (about a third, so a tomato still reads red and a zucchini green)
-// and a purple outline around the figure. The result is ENEMY_PAD pixels larger on each side; drawSheetFrame places it.
+// Enemy look for sheet heroes: a faint purple tint (about a seventh, so every hero keeps its own colours) and a thin,
+// half-transparent purple outline around the figure; the red health bar does the rest. The result is ENEMY_PAD pixels larger on each side; drawSheetFrame places it.
 const sheetTintCache = new WeakMap(),
   ENEMY_PAD = 7;
 function sheetEnemyTint(source) {
@@ -71,11 +71,13 @@ function sheetEnemyTint(source) {
   out.height = h;
   const t = out.getContext("2d");
   // The outline: the purple silhouette stamped around the figure.
-  for (let a = 0; a < 16; a++) t.drawImage(shape, Math.cos((a / 16) * Math.PI * 2) * 5, Math.sin((a / 16) * Math.PI * 2) * 5);
+  t.globalAlpha = 0.6;
+  for (let a = 0; a < 16; a++) t.drawImage(shape, Math.cos((a / 16) * Math.PI * 2) * 3, Math.sin((a / 16) * Math.PI * 2) * 3);
+  t.globalAlpha = 1;
   t.drawImage(source, pad, pad);
   // The light tint on the figure only.
   t.globalCompositeOperation = "source-atop";
-  t.globalAlpha = 0.35;
+  t.globalAlpha = 0.15;
   t.fillStyle = "#8a3cff";
   t.fillRect(pad, pad, source.width, source.height);
   out.pad = pad;

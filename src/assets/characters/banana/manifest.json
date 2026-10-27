@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "banana",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 265,
+      "h": 201
+    },
+    "feet": {
+      "x": 128,
+      "y": 199
+    },
+    "portrait": {
+      "x": 36,
+      "y": 5,
+      "w": 178,
+      "h": 194
+    },
+    "height": 194
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Banana Warrior Sprite Sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}

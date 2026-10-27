@@ -18,7 +18,7 @@ const TEAM_SIZE = 6,
 const TFT_SPECS = {
   tomato: { role: "Страж", max: 950, ad: 70, attackSpeed: 0.6, armor: 55, range: 2, step: 0.65, manaStart: 30, mana: 90 },
   pepper: { role: "Стрелок", max: 690, ad: 78, attackSpeed: 0.75, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
-  carrot: { role: "Ассасин", max: 720, ad: 80, attackSpeed: 0.95, armor: 30, range: 1, step: 0.45, manaStart: 0, mana: 60 },
+  carrot: { role: "Ассасин", max: 760, ad: 84, attackSpeed: 0.95, armor: 30, range: 1, step: 0.45, manaStart: 0, mana: 60 },
   corn: { role: "Пушкарь", max: 720, ad: 74, attackSpeed: 0.8, armor: 30, range: 3, step: 0.6, manaStart: 20, mana: 70 },
   zucchini: { role: "Страж", max: 1000, ad: 58, attackSpeed: 0.65, armor: 60, range: 1, step: 0.65, manaStart: 20, mana: 90 },
   beet: { role: "Воин", max: 820, ad: 64, attackSpeed: 0.75, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
@@ -28,6 +28,15 @@ const TFT_SPECS = {
   onion: { role: "Лучник", max: 580, ad: 74, attackSpeed: 0.85, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
   eggplant: { role: "Маг", max: 700, ad: 80, attackSpeed: 0.7, armor: 20, range: 4, step: 0.6, manaStart: 20, mana: 70 },
   cucumber: { role: "Берсерк", max: 760, ad: 60, attackSpeed: 0.8, armor: 40, range: 1, step: 0.55, manaStart: 0, mana: 70 },
+  // The seven of October 27: three guards (the pineapple is armoured) and four close fighters with a sword, nunchaku,
+  // two daggers (the cherry) and two blades (the dill).
+  cabbage: { role: "Страж", max: 960, ad: 58, attackSpeed: 0.62, armor: 62, range: 1, step: 0.68, manaStart: 20, mana: 90 },
+  grape: { role: "Страж", max: 900, ad: 62, attackSpeed: 0.65, armor: 55, range: 1, step: 0.62, manaStart: 30, mana: 90 },
+  pineapple: { role: "Страж", max: 940, ad: 62, attackSpeed: 0.62, armor: 60, range: 1, step: 0.64, manaStart: 10, mana: 80 },
+  banana: { role: "Воин", max: 780, ad: 68, attackSpeed: 0.75, armor: 38, range: 1, step: 0.55, manaStart: 0, mana: 70 },
+  cherry: { role: "Ассасин", max: 700, ad: 72, attackSpeed: 0.95, armor: 30, range: 1, step: 0.5, manaStart: 0, mana: 60 },
+  parsley: { role: "Боец", max: 760, ad: 62, attackSpeed: 0.9, armor: 35, range: 1, step: 0.5, manaStart: 0, mana: 70 },
+  dill: { role: "Боец", max: 740, ad: 68, attackSpeed: 0.85, armor: 30, range: 1, step: 0.5, manaStart: 0, mana: 65 },
 };
 const TFT_ABILITIES = {
   tomato: "Щит отряда: союзники в 2 клетках 4 с получают половину урона",
@@ -42,6 +51,13 @@ const TFT_ABILITIES = {
   onion: "Залп стрел: 1,6× урона по цели и стрела каждому из двух ближайших к ней врагов",
   eggplant: "Тёмная сфера: 2,4× урона по цели, цель 1,5 с не действует",
   cucumber: "Колючая ярость: 1,8× урона дубиной, потом 4 с атакует на 50% чаще",
+  cabbage: "Кочан: 3 с получает половину урона, враги рядом 1 с не действуют",
+  grape: "Лоза: себе и самому раненому союзнику в 2 клетках 4 с половину урона",
+  pineapple: "Колючая броня: 4 с каждый, кто бьёт ананас, получает 40% этого урона",
+  banana: "Банановый разрез: 1,6× урона по цели и половина этого врагам рядом с ней",
+  cherry: "Двойной удар: 1,4× урона и сразу второй удар",
+  parsley: "Вихрь нунчаков: 1,2× урона всем врагам рядом, потом 3 с атакует на 50% чаще",
+  dill: "Свежий срез: 1,7× урона и лечит себя на половину нанесённого",
 };
 const TFT_NAMES = {
   pepper: "Перец",
@@ -56,11 +72,18 @@ const TFT_NAMES = {
   onion: "Лук",
   eggplant: "Баклажан",
   cucumber: "Огурец",
+  cabbage: "Капуста",
+  grape: "Виноград",
+  pineapple: "Ананас",
+  banana: "Банан",
+  cherry: "Вишня",
+  parsley: "Петрушка",
+  dill: "Укроп",
 };
 const TFT_ARCHETYPES = { tomato: "wall", pepper: "sniper", carrot: "assassin" };
 const TFT_BONUS = { wall: { sniper: 0.82, assassin: 1.35 }, sniper: { wall: 1.35, assassin: 0.82 }, assassin: { sniper: 1.35, wall: 0.82 } };
 // Heroes without an archetype are neutral in the counter triangle (×1 both ways).
-const CHARACTERS = ["pepper", "tomato", "carrot", "beet", "corn", "zucchini", "potato", "walnut", "peach", "onion", "eggplant", "cucumber"];
+const CHARACTERS = ["pepper", "tomato", "carrot", "beet", "corn", "zucchini", "potato", "walnut", "peach", "onion", "eggplant", "cucumber", "cabbage", "grape", "pineapple", "banana", "cherry", "parsley", "dill"];
 
 // Board size: 7 columns × 4 rows per side as in TFT on a wide screen; a tall phone screen gets 6 columns and as many
 // rows as fit its height (see initPage), so the board fills the screen instead of a strip in the middle.
@@ -300,6 +323,14 @@ const HERO_TAGS = {
   eggplant: ["shooter", "fruit"],
   // The cucumber is botanically a fruit, like the zucchini.
   cucumber: ["fighter", "fruit"],
+  // Leaves eaten green — the cabbage, the parsley and the dill — make a group of their own.
+  cabbage: ["guard", "greens"],
+  grape: ["guard", "fruit"],
+  pineapple: ["guard", "fruit"],
+  banana: ["fighter", "fruit"],
+  cherry: ["fighter", "fruit"],
+  parsley: ["fighter", "greens"],
+  dill: ["fighter", "greens"],
 };
 // Drawn group badges instead of emoji: a round coloured token with a simple sign, the same on every phone.
 // Their size comes from the page CSS (.ti), so buttons, cards and lists can show them at different sizes.
@@ -319,15 +350,18 @@ const TRAIT_ICONS = {
   ),
   fruit: badge("#3d6b25", "#c8f0a0", '<circle cx="16" cy="18" r="8" fill="#e8322a"/><path d="M16 10c0-3 2-4 4-4-1 2-2 3-4 4z" fill="#7bd14a"/><circle cx="13" cy="15" r="2" fill="#ff9a8a"/>'),
   root: badge("#5a3a1e", "#ffc27a", '<path d="M11 12l10 0-5 15z" fill="#f08a1c"/><path d="M16 12c-2-4-5-5-6-5 2 2 3 3 5 5M16 12c2-4 5-5 6-5-2 2-3 3-5 5M16 12v-6" stroke="#6fc23a" stroke-width="2" fill="none"/>'),
+  greens: badge("#2c6b3a", "#b8f0b0", '<path d="M9 24c0-9 6-15 15-16-1 9-7 15-15 16z" fill="#7bd14a" stroke="#2f6b1e" stroke-width="1.4"/><path d="M10 23l10-11" stroke="#2f6b1e" stroke-width="1.4"/>'),
   grain: badge("#6b5a16", "#ffe27a", '<path d="M16 27V9" stroke="#e6c04a" stroke-width="1.6"/><g fill="#ffd34a"><ellipse cx="13" cy="12" rx="2.4" ry="3.6"/><ellipse cx="19" cy="12" rx="2.4" ry="3.6"/><ellipse cx="13" cy="18" rx="2.4" ry="3.6"/><ellipse cx="19" cy="18" rx="2.4" ry="3.6"/><ellipse cx="16" cy="7" rx="2.2" ry="3.2"/></g>'),
 };
 const TRAITS = {
   guard: { icon: TRAIT_ICONS.guard, name: "Стражи", tiers: [2, 4], text: "все союзники +12 брони, при 4 — +24" },
   shooter: { icon: TRAIT_ICONS.shooter, name: "Стрелки", tiers: [2, 4], text: "стрелки бьют на 10% сильнее, при 4 — на 30%" },
-  fighter: { icon: TRAIT_ICONS.fighter, name: "Бойцы", tiers: [2, 3], text: "бойцы атакуют на 25% чаще, при 3 — на 45%" },
+  // Fighters are the most numerous role, so their bonus needs more of them.
+  fighter: { icon: TRAIT_ICONS.fighter, name: "Бойцы", tiers: [3, 5], text: "при 3 бойцы атакуют на 25% чаще, при 5 — на 45%" },
   fruit: { icon: TRAIT_ICONS.fruit, name: "Плоды", tiers: [2, 4], text: "плоды лечатся на 15% нанесённого урона, при 4 — на 30%" },
   root: { icon: TRAIT_ICONS.root, name: "Корнеплоды", tiers: [2, 4], text: "корнеплоды +15% здоровья, при 4 — +30%" },
   grain: { icon: TRAIT_ICONS.grain, name: "Зёрна", tiers: [2], text: "зёрна пробивают половину брони" },
+  greens: { icon: TRAIT_ICONS.greens, name: "Зелень", tiers: [2, 3], text: "зелень восстанавливает 1,5% здоровья в секунду, при 3 — 3%" },
 };
 // The icon is read at drawing time: the painted badges replace the vector ones once their picture is loaded.
 for (const id of Object.keys(TRAITS)) Object.defineProperty(TRAITS[id], "icon", { get: () => TRAIT_ICONS[id] });
@@ -368,6 +402,7 @@ function applyTraits(team) {
     if (t.fighter.tier && has(f, "fighter")) f.stats.attackSpeed *= FIGHTER_SPEED[t.fighter.tier];
     if (t.fruit.tier && has(f, "fruit")) f.lifesteal = t.fruit.tier >= 2 ? 0.3 : 0.15;
     if (t.grain.tier && has(f, "grain")) f.pierce = 0.5;
+    if (t.greens.tier && has(f, "greens")) f.regen = t.greens.tier >= 2 ? 0.03 : 0.015;
     if (t.root.tier && has(f, "root")) {
       f.max = f.hp = Math.round(f.max * (t.root.tier >= 2 ? 1.3 : 1.15));
     }
@@ -605,6 +640,8 @@ function hurt(f, raw, src) {
   gainMana(f, Math.min(42.5, raw * 0.01 + d * 0.07));
   // Fruit synergy: the attacker heals by part of the damage it dealt.
   if (src?.lifesteal && src.hp > 0) src.hp = Math.min(src.max, src.hp + d * src.lifesteal);
+  // The pineapple's spikes: part of the blow goes back to whoever struck (not passed on again).
+  if (f.thorns > 0 && src && src !== f && src.hp > 0) applyDamage(src, Math.max(1, Math.round(d * 0.4)), f);
 }
 function teamHealth(team) {
   return F.filter((f) => f.team === team).reduce((s, f) => s + Math.max(0, f.hp) / f.max, 0) / TEAM_SIZE;
@@ -630,9 +667,14 @@ function releasePending(f, dt) {
     if (p.whirl) for (const q of alive(1 - f.team)) hexDist(f, q) <= 1 && (impact(q, f, true), hurt(q, f.stats.ad * p.mult, f));
     else if (hexDist(f, p.to) <= f.stats.range) {
       impact(p.to, f, p.big);
+      const before = p.to.hp;
       hurt(p.to, f.stats.ad * p.mult, f);
       // The zucchini's mace stuns: the target neither moves nor attacks for a moment.
       if (p.stun && p.to.hp > 0) p.to.stun = p.stun;
+      // The banana's cut: half of the blow to every enemy next to the target.
+      if (p.cleave) for (const q of alive(1 - f.team)) q !== p.to && hexDist(p.to, q) <= 1 && (impact(q, f, false), hurt(q, (f.stats.ad * p.mult) / 2, f));
+      // The dill's fresh cut heals it by half the damage done.
+      if (p.drain) f.hp = Math.min(f.max, f.hp + (before - Math.max(0, p.to.hp)) / 2);
     }
     return;
   }
@@ -644,7 +686,7 @@ function releasePending(f, dt) {
   const x = f.x + (dx / d) * 0.45,
     y = f.y + (dy / d) * 0.45,
     speed = f.character === "pepper" || f.character === "eggplant" ? 6.8 : 11;
-  shots.push({ x, y, to: p.to, from: f, kind: f.character, big: p.big, raw: f.stats.ad * p.mult, speed, stun: p.stun });
+  shots.push({ x, y, to: p.to, from: f, kind: f.character, big: p.big, raw: f.stats.ad * p.mult, speed, stun: p.stun, drain: p.drain });
   if (WEAPON[f.character] === "arrow") sfx("shoot", { kind: "arrow", who: f.character });
   // The onion's volley: one more arrow at each of the two enemies closest to its target.
   if (p.volley)
@@ -722,6 +764,57 @@ function castAbility(f, t) {
     say(f, "Тёмная сфера");
     return;
   }
+  if (f.character === "cabbage") {
+    f.shield = 3;
+    for (const q of alive(1 - f.team)) if (hexDist(f, q) <= 1) q.stun = 1;
+    f.cast = 0.42;
+    f.cool = 1 / f.stats.attackSpeed;
+    say(f, "Кочан");
+    return;
+  }
+  if (f.character === "grape") {
+    const hurtMost = alive(f.team)
+      .filter((q) => q !== f && hexDist(f, q) <= 2)
+      .sort((a, b) => a.hp / a.max - b.hp / b.max)[0];
+    f.shield = 4;
+    if (hurtMost) hurtMost.shield = 4;
+    f.cast = 0.42;
+    f.cool = 1 / f.stats.attackSpeed;
+    say(f, "Лоза");
+    return;
+  }
+  if (f.character === "pineapple") {
+    f.thorns = 4;
+    attack(f, t, 1, true);
+    say(f, "Колючая броня");
+    return;
+  }
+  if (f.character === "banana") {
+    attack(f, t, 1.6, true);
+    f.pending.cleave = true;
+    say(f, "Банановый разрез");
+    return;
+  }
+  if (f.character === "cherry") {
+    attack(f, t, 1.4, true);
+    // The second blade follows at once.
+    f.cool = 0.25;
+    say(f, "Двойной удар");
+    return;
+  }
+  if (f.character === "parsley") {
+    attack(f, t, 1.2, true);
+    f.pending.whirl = true;
+    f.rage = 3;
+    say(f, "Вихрь нунчаков");
+    return;
+  }
+  if (f.character === "dill") {
+    attack(f, t, 1.7, true);
+    f.pending.drain = true;
+    say(f, "Свежий срез");
+    return;
+  }
   attack(f, t, 2.8, true);
   say(f, "Удар из тени");
 }
@@ -748,6 +841,9 @@ function step(dt) {
     f.hit = Math.max(0, f.hit - dt);
     f.shield = Math.max(0, f.shield - dt);
     f.rage = Math.max(0, (f.rage || 0) - dt);
+    f.thorns = Math.max(0, (f.thorns || 0) - dt);
+    // Greens synergy: health comes back a little every second.
+    if (f.regen) f.hp = Math.min(f.max, f.hp + f.max * f.regen * dt);
     f.moving = false;
     releasePending(f, dt);
   }
@@ -800,8 +896,11 @@ function updateShots(dt) {
         for (const q of alive(s.to.team)) if (q !== s.to && hexDist(q, s.to) <= 1) hurt(q, s.raw / 2, s.from);
       }
       impact(s.to, s.from, s.big);
+      const before = s.to.hp;
       hurt(s.to, s.raw, s.from);
       if (s.stun && s.to.hp > 0) s.to.stun = s.stun;
+      // The dill's fresh leaf heals it by half the damage done.
+      if (s.drain && s.from.hp > 0) s.from.hp = Math.min(s.from.max, s.from.hp + (before - Math.max(0, s.to.hp)) / 2);
       continue;
     }
     // The last positions make the streak drawn behind the shot.
@@ -1069,7 +1168,7 @@ function drawBoard(g, dragHex) {
 // A streak behind every shot, so a small arrow or tomato is easy to follow on a phone: a glowing line that thins
 // and fades toward its tail, in the shot's own colour.
 const SHOT_TRAIL = 9,
-  TRAIL_COLOR = { onion: "255,244,200", tomato: "255,110,80", corn: "255,222,90", eggplant: "205,110,255", pepper: "255,160,50" };
+  TRAIL_COLOR = { onion: "255,244,200", tomato: "255,110,80", corn: "255,222,90", eggplant: "205,110,255", pepper: "255,160,50", cherry: "255,90,110", dill: "150,240,120" };
 function drawShotTrail(g, s) {
   if (!s.path || s.path.length < 2) return;
   const pts = [...s.path, { x: s.x, y: s.y }].map((q) => {
@@ -1153,6 +1252,25 @@ function drawShots(g) {
       g.ellipse(p.x, y, view.cell * (s.big ? 0.11 : 0.07) * p.s, view.cell * (s.big ? 0.08 : 0.05) * p.s, 0, 0, 7);
       g.fill();
       g.stroke();
+    } else if (s.kind === "cherry" || s.kind === "dill") {
+      // A thrown blade spinning in flight: the cherry's curved dagger, the dill's leaf.
+      const l = view.cell * (s.big ? 0.26 : 0.2) * p.s,
+        spin = performance.now() / 60;
+      g.save();
+      g.translate(p.x, y);
+      g.rotate(spin);
+      g.strokeStyle = "#2a1a0c";
+      g.lineWidth = 1.2;
+      g.fillStyle = s.kind === "cherry" ? "#e9e3d2" : "#7bd14a";
+      g.beginPath();
+      g.moveTo(-l, 0);
+      g.quadraticCurveTo(0, -l * 0.55, l, 0);
+      g.quadraticCurveTo(0, -l * 0.2, -l, 0);
+      g.fill();
+      g.stroke();
+      g.fillStyle = s.kind === "cherry" ? "#b8862f" : "#3f8a22";
+      g.fillRect(-l * 0.25, -l * 0.08, l * 0.5, l * 0.16);
+      g.restore();
     } else if (s.kind === "tomato") {
       // A cherry tomato: bigger than before, with a dark edge and a shine so it reads against the ground.
       const r = view.cell * 0.12 * p.s;
@@ -1268,6 +1386,13 @@ const WEAPON = {
   cucumber: "blunt",
   potato: "blunt",
   walnut: "blunt",
+  cabbage: "blunt",
+  pineapple: "blunt",
+  parsley: "blunt",
+  grape: "slash",
+  banana: "slash",
+  cherry: "slash",
+  dill: "slash",
 };
 function impact(t, src, big) {
   const kind = WEAPON[src?.character] || "blunt",
@@ -1519,7 +1644,7 @@ function initPage() {
     return sheetFrames[c]?.portrait || BLANK_PICTURE;
   }
   // Under a chosen hero: its role and kind as badges and words ("страж · плод"), so the squad's make-up is seen at once.
-  const ONE = { guard: "страж", shooter: "стрелок", fighter: "боец", fruit: "плод", root: "корнеплод", grain: "зерно" };
+  const ONE = { guard: "страж", shooter: "стрелок", fighter: "боец", fruit: "плод", root: "корнеплод", grain: "зерно", greens: "зелень" };
   // A badge lit (gold glow) when that group's bonus is on in the squad being chosen (t: teamTraits of the draft).
   const badge = (id, t) => `<span class="tb${t?.[id].tier ? " on" : ""}">${TRAITS[id].icon}</span>`;
   // A second copy of a hero adds nothing to the groups: its badges stay dark and it says so.
@@ -1568,6 +1693,15 @@ function initPage() {
     }
     return out.map((c) => c || fresh.shift());
   }
+  // How many heroes of the game belong to a group.
+  const inGroup = (id) => CHARACTERS.filter((c) => HERO_TAGS[c]?.includes(id)).length;
+  // A group's progress as dots: one per hero up to the top step, lit for those in the squad, a gap after each step.
+  function steps(id, count) {
+    const tiers = TRAITS[id].tiers;
+    let out = "";
+    for (let n = 1; n <= tiers[tiers.length - 1]; n++) out += `<i class="dot${n <= count ? " on" : ""}${tiers.includes(n) ? " step" : ""}"></i>`;
+    return `<span class="dots" title="бонус при ${tiers.join(" и ")}">${out}</span>`;
+  }
   function renderPicker() {
     const box = $("#picker");
     if (!box || box.hidden) return;
@@ -1588,12 +1722,18 @@ function initPage() {
         ? `<button class="pick-slot${locked(i) ? " locked" : ""}${repeat(i) ? " repeat" : ""}" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span>${groupsLine(draft[i], t, repeat(i))}${locked(i) ? "" : '<i class="x" aria-label="убрать">✕</i>'}</button>`
         : `<button class="pick-slot empty" data-i="${i}">пусто</button>`,
     ).join("");
-    const traits = Object.entries(TRAITS)
-      .map(
-        ([id, tr]) =>
-          `<div class="${t[id].tier ? "on" : ""}">${tr.icon} <b>${tr.name} ${t[id].count}/${tr.tiers[tr.tiers.length - 1]}</b><br><small>даёт: ${tr.text}</small></div>`,
-      )
-      .join("");
+    // Each group: how many different heroes of it are in the squad as steps (a lit dot per hero, a gap before each
+    // step of the bonus), when the bonus comes, and how many heroes of the group the game has.
+    const traits =
+      `<p class="pick-census">Героев в игре — роли: ${["guard", "fighter", "shooter"].map((id) => `${TRAITS[id].name} ${inGroup(id)}`).join(" · ")}; виды: ${["fruit", "root", "greens", "grain"]
+        .map((id) => `${TRAITS[id].name} ${inGroup(id)}`)
+        .join(" · ")}</p>` +
+      Object.entries(TRAITS)
+        .map(
+          ([id, tr]) =>
+            `<div class="${t[id].tier ? "on" : ""}">${tr.icon} <b>${tr.name}</b> ${steps(id, t[id].count)}<br><small>в отряде ${t[id].count}, бонус при ${tr.tiers.join(" и ")} разных · героев в игре: ${inGroup(id)}<br>даёт: ${tr.text}</small></div>`,
+        )
+        .join("");
     const cards = CHARACTERS.map((c) => {
       const st = TFT_SPECS[c],
         // For each group of the hero: who else is in it and what the group gives, so the bonus is known in advance.
@@ -1604,7 +1744,7 @@ function initPage() {
         tags = (HERO_TAGS[c] || [])
           .map((id, i) => {
             const tr = TRAITS[id],
-              count = `<span class="cnt${t[id].tier ? " on" : withHero[id].tier > t[id].tier && !full ? " next" : ""}">${t[id].count}/${tr.tiers[tr.tiers.length - 1]}${
+              count = `<span class="cnt${t[id].tier ? " on" : withHero[id].tier > t[id].tier && !full ? " next" : ""}">в отряде ${t[id].count}, бонус при ${tr.tiers.join(" и ")}${
                 withHero[id].tier > t[id].tier && !full ? (t[id].tier ? " · +1 усилит" : " · +1 включит") : ""
               }</span>`;
             return `<span class="kind">${i ? "Вид" : "Роль"}:</span> ${badge(id, t)} <b>${tr.name}</b> ${count} — ${tr.text}`;
@@ -1655,8 +1795,6 @@ function initPage() {
     renderPicker();
   }
   function hud() {
-    // The distant battle: loud while many heroes stand and fight, thinning out as they fall, silent outside a fight.
-    if (globalThis.BattleSfx) BattleSfx.fight = battleStarted && running && !result ? Math.min(1, (alive(0).length + alive(1).length) / (2 * TEAM_SIZE) + 0.15) : 0;
     $("#timer").textContent = formatTime(time);
     $("#timer").style.color = battleStarted && time < FINAL_TIME ? "#ff5a3c" : "";
     $("#hp0").style.width = 100 * teamHealth(0) + "%";

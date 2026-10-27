@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "dill",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "attack",
+      "attack"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 222,
+      "h": 202
+    },
+    "feet": {
+      "x": 96,
+      "y": 200
+    },
+    "portrait": {
+      "x": 5,
+      "y": 12,
+      "w": 188,
+      "h": 188
+    },
+    "height": 198
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Leaf Warrior Sprite Sheet.png): 5 directions x (idle, walk 4, wind-up, strike)"
+  }
+}
