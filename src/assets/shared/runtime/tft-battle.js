@@ -1765,9 +1765,13 @@ function initPage() {
       между раундами можно заменить до ${MATCH_SWAPS} героев.<br>
       У каждого героя есть роль и вид. Объединяй двух разных героев одной группы, чтобы активировать её бонус.
       Один герой может усиливать сразу две группы. Повторные герои не учитываются.</p>`;
+    // Rewriting the list empties it for a moment and the scroll jumps to the top: keep where the player was. (At the
+    // top, a pull down was taken by Telegram as the swipe that closes the app.)
+    const scrolled = box.scrollTop;
     box.innerHTML = `${head}
       <div class="pick-squad">${squad}</div><div class="pick-traits">${traits}</div><div class="pick-heroes">${cards}</div>
       <div class="pick-go"><button id="pickGo" ${full ? "" : "disabled"}>${full ? "Расставить отряд →" : "Выберите ещё " + (TEAM_SIZE - chosen.length)}</button></div>`;
+    box.scrollTop = scrolled;
     box.querySelectorAll(".pick-slot").forEach((b) => (b.onclick = () => locked(+b.dataset.i) || ((draft[+b.dataset.i] = null), renderPicker())));
     box.querySelectorAll(".hero-card").forEach(
       (b) =>
@@ -1784,6 +1788,19 @@ function initPage() {
       box.hidden = true;
       renderSlots();
     };
+  }
+  // A pull down at the very top of the squad list does nothing, so it cannot reach Telegram (swipe to close).
+  {
+    const box = $("#picker");
+    let y0 = 0;
+    box?.addEventListener("touchstart", (e) => (y0 = e.touches[0].clientY), { passive: true });
+    box?.addEventListener(
+      "touchmove",
+      (e) => {
+        if (box.scrollTop <= 0 && e.touches[0].clientY > y0) e.preventDefault();
+      },
+      { passive: false },
+    );
   }
   function openPicker() {
     if (battleStarted && !result) return;
