@@ -54,38 +54,61 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
    the top must not reach Telegram, which would close the app. */
 .picker{position:absolute;inset:0;z-index:20;overflow-x:hidden;overflow-y:auto;overscroll-behavior:none;padding:14px;background:#0b1710}
 .picker h2{margin:0 0 6px;font-size:24px}.picker .goal{margin:0 0 12px;font-size:17px;line-height:1.45;color:#dcebd4}
-/* The chosen squad stays pinned at the top while the hero list scrolls under it. */
-.pick-squad{position:sticky;top:-14px;z-index:5;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:0 -14px 10px;padding:8px 14px;background:#0b1710;box-shadow:0 8px 12px -6px #000c}
-.pick-slot{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;min-height:96px;padding:4px;overflow:hidden;border-radius:12px;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 14px system-ui;cursor:pointer}
-.pick-slot img{height:56px;max-width:100%;object-fit:contain}.pick-slot .groups{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px 3px;font-style:normal;line-height:1.1}.pick-slot .groups .ti{width:24px;height:24px}.pick-slot .groups small{flex-basis:100%;font:600 13px system-ui;color:#ffe9b0;white-space:nowrap}.pick-slot span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pick-slot .x{position:absolute;top:2px;right:4px;font-size:14px;color:#c7a0a0}.pick-slot em{font:700 10px system-ui;color:#ffb35a;font-style:normal}
-.pick-slot.repeat{border-style:dashed;border-color:#7a5a2a}.pick-slot.repeat .groups small{color:#e0a060}.pick-slot.locked{opacity:.55;cursor:default}.pick-slot.empty{justify-content:center;border-style:dashed;color:#6f8a77}
 .pick-traits{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 14px;margin-bottom:12px;font-size:17px;color:#c3d4c6}.pick-traits .on,.pick-traits .on b{color:#ffd56b}.pick-traits small{color:#b5c8b9;font-size:15px}
-.pick-heroes{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
-.hero-card{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:14px;border:1px solid #395e45;background:#132619;color:#edf7ec;text-align:left;font-size:16px;line-height:1.4;cursor:pointer}
-.hero-card.in{border-color:#9bd96b}.hero-card img{width:84px;height:110px;object-fit:contain;flex:none}
-.hero-card h4{margin:0 0 2px;font-size:22px}.hero-card h4 span{font-size:13px;color:#9fb3a3;font-weight:600}.hero-card p{margin:3px 0}.hero-card .tags{color:#ffe9b0}
 /* Group badges lit when the squad has that bonus on; the count of the squad in the group next to its name. */
 .tb{display:inline-block;border-radius:50%;line-height:0}.tb.on{box-shadow:0 0 0 2px #ffd56b,0 0 12px 2px #ffd56b99}.tb:not(.on){filter:saturate(.55) brightness(.85)}
 .cnt{display:inline;padding:1px 7px;border-radius:9px;background:#0006;color:#b5c8b9;font-size:.85em;font-weight:800;-webkit-box-decoration-break:clone;box-decoration-break:clone}.cnt.on{background:#ffd56b;color:#2a1600}
 /* A group's progress: a dot per hero, lit when that many are in the squad, a gap after each step of the bonus. */
 .dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}.dot{width:11px;height:11px;border-radius:50%;background:#ffffff26;border:1px solid #ffffff40}.dot.on{background:#ffd56b;border-color:#ffd56b}.dot.step{margin-right:6px}.dot.step:last-child{margin-right:0}
-.pick-census{grid-column:1/-1;margin:0 0 6px;color:#9fb3a3;font-size:14px}.cnt.next{background:#2f5a2a;color:#c8f0a0}.hero-card .kind{color:#b5c8b9;font-weight:600}.hero-card .add{color:#9bd96b;font-weight:700}
+/* The pinned top: a title line, the squad in one row, the bonus row and a line of explanation. */
+.pk-top{position:sticky;top:-14px;z-index:5;margin:-14px -14px 10px;padding:8px 14px;background:#0b1710;box-shadow:0 8px 12px -6px #000c}
+.pk-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:17px}.pk-q{flex:none;height:32px;padding:0 12px;border-radius:16px;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 14px system-ui}
+.pk-squad{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.pk-slot{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;height:72px;padding:3px 2px 2px;border-radius:10px;border:1px solid #395e45;background:#16301f;font:700 11px system-ui;cursor:pointer}
+.pk-slot img{height:46px;max-width:100%;object-fit:contain}.pk-slot span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-slot .x{position:absolute;top:-5px;right:-5px;width:22px;height:22px;padding:0;border-radius:50%;border:1px solid #7a3a3a;background:#3a1717;color:#ffb0b0;font:700 11px system-ui}
+.pk-slot .lock{position:absolute;top:0;right:2px;font-size:12px;font-style:normal}.pk-slot.locked{opacity:.6}
+.pk-slot.idle{border-color:#e08a2c;box-shadow:inset 0 0 0 1px #e08a2c}.pk-slot.hl{border-color:#ffd56b;box-shadow:0 0 0 2px #ffd56b}
+.pk-slot.empty{justify-content:center;border-style:dashed;color:#6f8a77;cursor:default}
+.pk-bonus{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.pk-pill{display:inline-flex;align-items:center;gap:3px;height:30px;padding:0 9px 0 3px;border-radius:15px;border:1px solid #395e45;background:#16301f;color:#b5c8b9;font:700 13px system-ui;white-space:nowrap}.pk-pill .ti{width:24px;height:24px}
+.pk-pill.zero{opacity:.55}.pk-pill.on{background:#2f6a2a;border-color:#7cc95a;color:#e6ffd2}.pk-pill.max{background:#ffd56b;border-color:#ffd56b;color:#2a1600}.pk-pill.sel{outline:2px solid #fff;outline-offset:1px}
+.pk-note{margin:6px 0 0;font-size:14px;line-height:1.35;color:#c3d4c6}.pk-note b{color:#ffe9b0}.pk-note.warn{color:#ffb35a;font-weight:700}
+/* The heroes as tiles, three across: a green ribbon on those that would switch a bonus on, dim for the rest. */
+.pk-heroes{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
+.pk-tile{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;padding:22px 4px 8px;border-radius:12px;border:1px solid #395e45;background:#132619;text-align:center;cursor:pointer}
+.pk-tile img{height:72px;max-width:100%;object-fit:contain}.pk-tile b{font-size:15px}.pk-tile small{font-size:12px;color:#b5c8b9}
+.pk-tile.gain{border-color:#9bd96b;box-shadow:0 0 0 1px #9bd96b,0 0 12px #9bd96b44}.pk-tile.dull{opacity:.6}.pk-tile.in{border-color:#5a7a62}
+.pk-tile .rb{position:absolute;top:0;left:0;right:0;padding:2px 4px;border-radius:11px 11px 0 0;font:800 11px/1.3 system-ui;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rb.gain{background:#2f6a2a;color:#e6ffd2}.rb.in{background:#0006;color:#9bd96b}
+.pk-i{position:absolute;top:24px;right:4px;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid #5a7a62;background:#1d3a26;color:#dcebd4;font:italic 700 14px Georgia,serif}
+/* A hero's details and the rules: a card over the list. */
+.pk-sheet{position:fixed;left:0;right:0;top:0;height:var(--visible-h,100dvh);z-index:30;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 8px max(12px,env(safe-area-inset-bottom));box-sizing:border-box;background:#000a}
+.pk-card{position:relative;width:min(560px,100%);max-height:100%;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;padding:16px;border-radius:18px;background:#132619;font-size:16px;line-height:1.45}
+.pk-card h3{margin:0 0 4px;font-size:22px}.pk-card p{margin:6px 0}.pk-card .ti{width:28px;height:28px;vertical-align:-8px;margin-right:2px}
+.pk-card-top{display:flex;gap:12px;align-items:center}.pk-card-top img{width:80px;height:100px;object-fit:contain}.pk-card-top p{color:#b5c8b9}
+.pk-close{position:absolute;z-index:2;top:max(8px,env(safe-area-inset-top));right:8px;width:36px;height:36px;border-radius:50%;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 16px system-ui}
+.pk-act{width:100%;height:48px;margin-top:8px;border:0;border-radius:12px;font:800 17px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.pk-act.out{background:#3a1717;color:#ffb0b0;border:1px solid #7a3a3a}
+/* A hero's details over the whole screen: the picture large on top, the text under it. */
+.pk-sheet.hero{padding:0;background:#0b1710}.pk-sheet.hero .pk-card{width:100%;max-width:700px;height:100%;max-height:none;border-radius:0;padding:max(12px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:#0b1710}
+.pk-big{display:block;width:100%;height:min(32vh,360px);object-fit:contain;margin:0 auto 4px;image-rendering:auto;filter:drop-shadow(0 8px 18px #000a)}
+.pk-sheet.hero h3{text-align:center;font-size:28px;margin:0}.pk-words{text-align:center;color:#b5c8b9;margin:0 0 10px!important}
+/* The bottom of a details card, pinned: the main action and the way back. */
+.pk-foot{position:sticky;bottom:calc(-1 * max(16px,env(safe-area-inset-bottom)));display:flex;flex-direction:column;gap:8px;margin:12px -16px calc(-1 * max(16px,env(safe-area-inset-bottom)));padding:10px 16px max(12px,env(safe-area-inset-bottom));background:linear-gradient(#0b171000,#0b1710 25%)}.pk-foot p{margin:0;text-align:center;color:#ffb35a}.pk-foot .pk-act{margin:0}
+.pk-back{width:100%;height:48px;border-radius:12px;border:1px solid #5a7a62;background:#1d3a26;color:#edf7ec;font:800 17px system-ui}
+.pk-card .pick-traits{display:block;margin-top:10px}.pk-card .pick-traits>div{margin:8px 0}
 .pick-go{position:sticky;bottom:0;padding:10px 0 2px;background:linear-gradient(#0b171000,#0b1710 40%)}
 .pick-go button{width:100%;height:46px;border:0;border-radius:12px;font:800 16px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.pick-go button:disabled{opacity:.5}
 /* A narrow phone: the squad in two rows of three, smaller type. */
 .chip .short{display:none}
 /* A phone: the synergy strip turns into a compact grid, details on tap, so the board keeps its height. */
 @media (max-width:600px){.traits:not([hidden]){display:grid}.traits{grid-template-columns:repeat(3,1fr);gap:0 6px;padding:2px 8px}.traits>b{display:none}.chip{min-height:44px;font-size:13px;line-height:1.15}.chip .ti{width:24px;height:24px}.chip .long{display:none}.chip .short{display:inline}}
-@media (max-width:420px){.pick-squad{grid-template-columns:repeat(3,minmax(0,1fr))}.picker h2{font-size:21px}}
+
 /* The squad picker on any phone, upright or sideways: large type to read without zooming, clear of the notch. */
 @media (max-width:600px),(orientation:landscape) and (max-height:540px){
 .picker{padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))}
-.pick-squad{top:calc(-1 * max(10px,env(safe-area-inset-top)));margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}.pick-slot{min-height:0}.pick-slot img{height:44px}
+.pk-top{top:calc(-1 * max(10px,env(safe-area-inset-top)));margin:calc(-1 * max(10px,env(safe-area-inset-top))) -12px 10px;padding-left:12px;padding-right:12px}
 .picker .goal{font-size:17px}
 .pick-traits{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));font-size:17px}.pick-traits small{font-size:16px}
-.pick-heroes{grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px}
-.hero-card{font-size:17px;line-height:1.45;padding:12px}.hero-card h4{font-size:23px}.hero-card h4 span{font-size:15px}.hero-card img{width:96px;height:124px}
-.pick-slot{font-size:15px}
 .pick-go{padding-bottom:max(6px,env(safe-area-inset-bottom))}.pick-go button{height:50px;font-size:18px}
 }
 /* A phone turned sideways: the board keeps the whole height, the controls stand in a narrow column on the left

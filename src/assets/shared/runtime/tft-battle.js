@@ -1639,21 +1639,14 @@ function initPage() {
   }
   // ---------- Squad picker: a screen before the board to choose the six heroes and read about each in large type ----------
   let draft = [...lineup];
+  // The group whose heroes the list shows (null: all heroes).
+  let pickFilter = null;
   // The idle frame facing the camera; empty until the sheet has loaded.
   function portraitUrl(c) {
     return sheetFrames[c]?.portrait || BLANK_PICTURE;
   }
-  // Under a chosen hero: its role and kind as badges and words ("страж · плод"), so the squad's make-up is seen at once.
+  // A hero's role and kind in words ("страж · плод").
   const ONE = { guard: "страж", shooter: "стрелок", fighter: "боец", fruit: "плод", root: "корнеплод", grain: "зерно", greens: "зелень" };
-  // A badge lit (gold glow) when that group's bonus is on in the squad being chosen (t: teamTraits of the draft).
-  const badge = (id, t) => `<span class="tb${t?.[id].tier ? " on" : ""}">${TRAITS[id].icon}</span>`;
-  // A second copy of a hero adds nothing to the groups: its badges stay dark and it says so.
-  function groupsLine(c, t, repeat) {
-    const tags = HERO_TAGS[c] || [];
-    return `<em class="groups">${tags.map((id) => badge(id, repeat ? null : t)).join("")}<small>${
-      repeat ? "повтор — не в счёт" : tags.map((id) => ONE[id] || TRAITS[id].name.toLowerCase()).join(" · ")
-    }</small></em>`;
-  }
   // ---------- The match: rounds, score and the heroes the player may still replace ----------
   // base: the squad at the start of the round; between rounds the picker may change at most MATCH_SWAPS of its places.
   let match = null;
@@ -1702,6 +1695,43 @@ function initPage() {
     for (let n = 1; n <= tiers[tiers.length - 1]; n++) out += `<i class="dot${n <= count ? " on" : ""}${tiers.includes(n) ? " step" : ""}"></i>`;
     return `<span class="dots" title="бонус при ${tiers.join(" и ")}">${out}</span>`;
   }
+  // The groups whose bonus a hero would switch on or raise a step if taken into the squad.
+  function gainsOf(c, chosen, t) {
+    if (chosen.includes(c)) return [];
+    const w = teamTraits([...chosen, c]);
+    return (HERO_TAGS[c] || []).filter((id) => w[id].tier > t[id].tier);
+  }
+  // What each step of a group's bonus gives, in a few words.
+  const BONUS_SHORT = {
+    guard: ["все союзники +12 брони", "все союзники +24 брони"],
+    shooter: ["стрелки бьют на 10% сильнее", "стрелки бьют на 30% сильнее"],
+    fighter: ["бойцы атакуют на 25% чаще", "бойцы атакуют на 45% чаще"],
+    fruit: ["плоды лечатся на 15% урона", "плоды лечатся на 30% урона"],
+    root: ["корнеплоды +15% здоровья", "корнеплоды +30% здоровья"],
+    grain: ["зёрна пробивают половину брони"],
+    greens: ["зелень лечится 1,5% в секунду", "зелень лечится 3% в секунду"],
+  };
+  // A group's progress as "2/4": heroes in the squad over the next step of the bonus (the top one once reached).
+  function progress(id, t) {
+    const tiers = TRAITS[id].tiers;
+    return `${t[id].count}/${tiers[t[id].tier] || tiers[tiers.length - 1]}`;
+  }
+  // A group in words: what the squad has of it now and what the next step gives.
+  function groupNote(id, t) {
+    const tr = TRAITS[id],
+      { count, tier } = t[id],
+      next = tr.tiers[tier],
+      now = tier ? `<b>${tr.name} ${count}:</b> ${BONUS_SHORT[id][tier - 1]}.` : `<b>${tr.name} ${count}:</b> бонуса пока нет.`,
+      more = next ? ` При ${next} разных (ещё ${next - count}): ${BONUS_SHORT[id][tier]}.` : " Это наибольший бонус.";
+    return now + more;
+  }
+  // A hero of the squad whose groups have no bonus on yet: the first one to think of replacing.
+  const idle = (c, t) => !(HERO_TAGS[c] || []).some((id) => t[id].tier);
+  // Picker state besides the draft: a short message after a tap that could not be done, the hero whose details are
+  // open, and whether the rules are open.
+  let pickNote = "",
+    pickInfo = null,
+    pickHelp = false;
   function renderPicker() {
     const box = $("#picker");
     if (!box || box.hidden) return;
@@ -1714,71 +1744,97 @@ function initPage() {
       kept = keptPlaces(draft),
       left = swapping() ? MATCH_SWAPS - (TEAM_SIZE - kept.filter(Boolean).length) : TEAM_SIZE,
       locked = (i) => swapping() && kept[i] && left <= 0,
-      canAdd = () => draft.some((x) => !x);
-    // Only the first copy of a hero counts for the groups.
-    const repeat = (i) => draft.indexOf(draft[i]) < i;
-    const squad = Array.from({ length: TEAM_SIZE }, (_, i) =>
-      draft[i]
-        ? `<button class="pick-slot${locked(i) ? " locked" : ""}${repeat(i) ? " repeat" : ""}" data-i="${i}"><img src="${portraitUrl(draft[i])}" alt=""><span>${TFT_NAMES[draft[i]]}</span>${groupsLine(draft[i], t, repeat(i))}${locked(i) ? "" : '<i class="x" aria-label="убрать">✕</i>'}</button>`
-        : `<button class="pick-slot empty" data-i="${i}">пусто</button>`,
-    ).join("");
-    // Each group: how many different heroes of it are in the squad as steps (a lit dot per hero, a gap before each
-    // step of the bonus), when the bonus comes, and how many heroes of the group the game has.
-    const traits =
-      `<p class="pick-census">Героев в игре — роли: ${["guard", "fighter", "shooter"].map((id) => `${TRAITS[id].name} ${inGroup(id)}`).join(" · ")}; виды: ${["fruit", "root", "greens", "grain"]
-        .map((id) => `${TRAITS[id].name} ${inGroup(id)}`)
-        .join(" · ")}</p>` +
-      Object.entries(TRAITS)
-        .map(
-          ([id, tr]) =>
-            `<div class="${t[id].tier ? "on" : ""}">${tr.icon} <b>${tr.name}</b> ${steps(id, t[id].count)}<br><small>в отряде ${t[id].count}, бонус при ${tr.tiers.join(" и ")} разных · героев в игре: ${inGroup(id)}<br>даёт: ${tr.text}</small></div>`,
-        )
-        .join("");
-    const cards = CHARACTERS.map((c) => {
-      const st = TFT_SPECS[c],
-        // For each group of the hero: who else is in it and what the group gives, so the bonus is known in advance.
-        // The first tag is the role, the second the kind: named as in the header above.
-        // How far the squad is in each of the hero's groups ("2/4"), lit when the bonus is on; "+1" when taking this
-        // hero would switch the bonus on ("включит") or raise it a step ("усилит").
-        withHero = teamTraits([...chosen, c]),
-        tags = (HERO_TAGS[c] || [])
-          .map((id, i) => {
-            const tr = TRAITS[id],
-              count = `<span class="cnt${t[id].tier ? " on" : withHero[id].tier > t[id].tier && !full ? " next" : ""}">в отряде ${t[id].count}, бонус при ${tr.tiers.join(" и ")}${
-                withHero[id].tier > t[id].tier && !full ? (t[id].tier ? " · +1 усилит" : " · +1 включит") : ""
-              }</span>`;
-            return `<span class="kind">${i ? "Вид" : "Роль"}:</span> ${badge(id, t)} <b>${tr.name}</b> ${count} — ${tr.text}`;
-          })
-          .join("<br>");
-      return `<button class="hero-card ${mine.has(c) ? "in" : ""}" data-c="${c}"><img src="${portraitUrl(c)}" alt=""><div>
-        <h4>${TFT_NAMES[c]}</h4><p class="tags">${tags}</p>
-        <p>❤️ здоровье ${st.max} · ⚔️ урон ${st.ad} · 🛡 броня ${st.armor} · 🎯 дальность ${st.range} кл.</p>
-        <p><b>Умение</b> (при полной мане): ${TFT_ABILITIES[c]}</p>
-        <p class="add">${full ? "" : mine.has(c) ? "+ ещё один (группы не усилит)" : "+ добавить в отряд"}</p></div></button>`;
+      words = (c) => (HERO_TAGS[c] || []).map((id) => ONE[id]).join(" · ");
+    const head = `<div class="pk-head"><b>${
+      swapping() ? `Раунд ${match.round} из ${MATCH_ROUNDS} · замен осталось ${Math.max(0, left)} из ${MATCH_SWAPS}` : `Отряд ${chosen.length}/${TEAM_SIZE}`
+    }</b><button class="pk-q" data-help>? Правила</button></div>`;
+    // The squad in one row; only the ✕ takes a hero out, a tap elsewhere opens its details.
+    const squad = Array.from({ length: TEAM_SIZE }, (_, i) => {
+      const c = draft[i];
+      if (!c) return `<div class="pk-slot empty">пусто</div>`;
+      // A second copy adds nothing to the groups: it is marked like a hero without a bonus.
+      const cls = [locked(i) && "locked", (idle(c, t) || draft.indexOf(c) < i) && "idle", pickFilter && HERO_TAGS[c]?.includes(pickFilter) && "hl"].filter(Boolean).join(" ");
+      return `<div class="pk-slot ${cls}" data-info="${c}"><img src="${portraitUrl(c)}" alt=""><span>${TFT_NAMES[c]}</span>${
+        locked(i) ? '<i class="lock">🔒</i>' : `<button class="x" data-out="${i}" aria-label="убрать">✕</button>`
+      }</div>`;
     }).join("");
-    const head = swapping()
-      ? `<h2>Раунд ${match.round} из ${MATCH_ROUNDS}: замена героев</h2>
-      <p class="goal"><b>${left > 0 ? `Можно заменить ещё ${left} из ${MATCH_SWAPS}.` : "Замены на этот раунд использованы."}</b> Уберите героя сверху и выберите другого из списка —
-      новый встанет на место убранного.</p>`
-      : `<h2>Выбор отряда</h2>
-      <p class="goal"><b>Собирай команду и усиливай героев!</b> Матч — ${MATCH_ROUNDS} раунда против одного соперника,
-      между раундами можно заменить до ${MATCH_SWAPS} героев.<br>
-      У каждого героя есть роль и вид. Объединяй двух разных героев одной группы, чтобы активировать её бонус.
-      Один герой может усиливать сразу две группы. Повторные герои не учитываются.</p>`;
+    // The bonus row: every group with its progress; grey without a bonus, green with one, gold at the top step.
+    const bonus = Object.entries(TRAITS)
+      .map(([id, tr]) => {
+        const { count, tier } = t[id],
+          state = !count ? "zero" : tier === tr.tiers.length ? "max" : tier ? "on" : "off";
+        return `<button class="pk-pill ${state}${pickFilter === id ? " sel" : ""}" data-f="${id}">${tr.icon}${tr.name} ${progress(id, t)}</button>`;
+      })
+      .join("");
+    const note = pickNote
+      ? `<p class="pk-note warn">${pickNote}</p>`
+      : pickFilter
+        ? `<p class="pk-note">${groupNote(pickFilter, t)} Ниже — только эта группа; нажмите ещё раз, чтобы показать всех.</p>`
+        : `<p class="pk-note">Бонус группы включается, когда в отряде 2 разных героя этой группы. Нажмите на группу — узнаете, что она даёт.</p>`;
+    const shown = CHARACTERS.filter((c) => !pickFilter || HERO_TAGS[c]?.includes(pickFilter));
+    const tiles = shown
+      .map((c) => {
+        const g = full ? [] : gainsOf(c, chosen, t),
+          copies = draft.filter((x) => x === c).length,
+          // A hero may be taken more than once; another copy adds nothing to the groups.
+          ribbon = copies ? `<em class="rb in">в отряде${copies > 1 ? " ×" + copies : ""}</em>` : g.length ? `<em class="rb gain">+ ${g.map((id) => TRAITS[id].name).join(", ")}</em>` : "";
+        return `<div class="pk-tile${copies ? " in" : g.length ? " gain" : full ? "" : " dull"}" data-add="${c}">${ribbon}<img src="${portraitUrl(c)}" alt=""><b>${TFT_NAMES[c]}</b><small>${words(c)}</small><button class="pk-i" data-info="${c}" aria-label="подробнее">i</button></div>`;
+      })
+      .join("");
+    // The details of one hero, over the list: groups in words, numbers, ability, and the button to take it (a hero
+    // leaves the squad only by its ✕ in the squad row).
+    let info = "";
+    if (pickInfo) {
+      const c = pickInfo,
+        st = TFT_SPECS[c],
+        i = draft.indexOf(c),
+        action =
+          i >= 0
+            ? full
+              ? ""
+              : `<button class="pk-act" data-add="${c}">+ Взять ещё одного</button>`
+            : full
+              ? "<p>Отряд полон — сначала уберите героя (✕).</p>"
+              : `<button class="pk-act" data-add="${c}">Добавить в отряд</button>`;
+      // The whole screen: the hero large on top, its description under it.
+      info = `<div class="pk-sheet hero" data-close><div class="pk-card">
+        <img class="pk-big" src="${portraitUrl(c)}" alt=""><h3>${TFT_NAMES[c]}</h3><p class="pk-words">${words(c)}</p>
+        ${(HERO_TAGS[c] || []).map((id, k) => `<p>${k ? "Вид" : "Роль"}: ${TRAITS[id].icon}<b>${TRAITS[id].name}</b> — ${TRAITS[id].text}.</p>`).join("")}
+        <p>❤️ здоровье ${st.max} · ⚔️ урон ${st.ad} · 🛡 броня ${st.armor} · 🎯 дальность ${st.range} кл.</p>
+        <p><b>Умение</b> (когда наберётся мана): ${TFT_ABILITIES[c]}</p>
+        <div class="pk-foot">${action}<button class="pk-back" data-close>← Назад к выбору</button></div></div></div>`;
+    }
+    // The rules and every group in full, behind the "?".
+    const help = pickHelp
+      ? `<div class="pk-sheet" data-close><div class="pk-card"><h3>Как собрать отряд</h3>
+        <p>Матч — ${MATCH_ROUNDS} раунда против одного соперника; между раундами можно заменить до ${MATCH_SWAPS} героев.</p>
+        <p>У каждого героя есть <b>роль</b> (страж, боец, стрелок) и <b>вид</b> (плод, корнеплод, зерно, зелень). Когда в отряде
+        2 разных героя одной группы, включается её бонус; у многих групп при 4 он сильнее. Один герой может включить сразу две группы.</p>
+        <p>Зелёная метка «+ …» на герое — он включит или усилит бонус. Оранжевая рамка в отряде — герой, который пока не даёт бонуса.</p>
+        <div class="pick-traits">${Object.entries(TRAITS)
+          .map(([id, tr]) => `<div class="${t[id].tier ? "on" : ""}">${tr.icon} <b>${tr.name}</b> ${steps(id, t[id].count)}<br><small>бонус при ${tr.tiers.join(" и ")} разных · всего в игре ${inGroup(id)}<br>${tr.text}</small></div>`)
+          .join("")}</div><div class="pk-foot"><button class="pk-back" data-close>← Назад к выбору</button></div></div></div>`
+      : "";
     // Rewriting the list empties it for a moment and the scroll jumps to the top: keep where the player was. (At the
     // top, a pull down was taken by Telegram as the swipe that closes the app.)
     const scrolled = box.scrollTop;
-    box.innerHTML = `${head}
-      <div class="pick-squad">${squad}</div><div class="pick-traits">${traits}</div><div class="pick-heroes">${cards}</div>
-      <div class="pick-go"><button id="pickGo" ${full ? "" : "disabled"}>${full ? "Расставить отряд →" : "Выберите ещё " + (TEAM_SIZE - chosen.length)}</button></div>`;
+    box.innerHTML = `<div class="pk-top">${head}<div class="pk-squad">${squad}</div><div class="pk-bonus">${bonus}</div>${note}</div>
+      <div class="pk-heroes">${tiles}</div>
+      <div class="pick-go"><button id="pickGo" ${full ? "" : "disabled"}>${full ? "Расставить отряд →" : "Выберите ещё " + (TEAM_SIZE - chosen.length)}</button></div>${info}${help}`;
     box.scrollTop = scrolled;
-    box.querySelectorAll(".pick-slot").forEach((b) => (b.onclick = () => locked(+b.dataset.i) || ((draft[+b.dataset.i] = null), renderPicker())));
-    box.querySelectorAll(".hero-card").forEach(
-      (b) =>
-        (b.onclick = () => {
-          if (canAdd()) (draft[draft.findIndex((x) => !x)] = b.dataset.c), renderPicker();
-        }),
-    );
+    pickNote = "";
+    const on = (sel, fn) => box.querySelectorAll(sel).forEach((b) => (b.onclick = (e) => (e.stopPropagation(), fn(b), renderPicker())));
+    on("[data-f]", (b) => (pickFilter = pickFilter === b.dataset.f ? null : b.dataset.f));
+    on("[data-info]", (b) => (pickInfo = b.dataset.info));
+    on("[data-help]", () => (pickHelp = true));
+    on("[data-close]", () => ((pickInfo = null), (pickHelp = false)));
+    box.querySelectorAll(".pk-card").forEach((b) => (b.onclick = (e) => e.stopPropagation()));
+    on("[data-out]", (b) => ((draft[+b.dataset.out] = null), (pickInfo = null)));
+    on("[data-add]", (b) => {
+      const c = b.dataset.add;
+      if (full) pickNote = "Отряд полон — уберите героя кнопкой ✕ сверху.";
+      else (draft[draft.findIndex((x) => !x)] = c), (pickInfo = null);
+    });
     $("#pickGo").onclick = () => {
       if (!full) return;
       // Between rounds the new heroes take the places of the removed ones; otherwise a new match starts.
