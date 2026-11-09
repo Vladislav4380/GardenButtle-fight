@@ -63,13 +63,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 /* The pinned top: a title line, the squad in one row, the bonus row and a line of explanation. */
 .pk-top{position:sticky;top:-14px;z-index:5;margin:-14px -14px 10px;padding:8px 14px;background:#0b1710;box-shadow:0 8px 12px -6px #000c}
 .pk-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:17px}.pk-q{flex:none;height:32px;padding:0 12px;border-radius:16px;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 14px system-ui}
-.pk-squad{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
-.pk-slot{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;height:72px;padding:3px 2px 2px;border-radius:10px;border:1px solid #395e45;background:#16301f;font:700 11px system-ui;cursor:pointer}
-.pk-slot img{height:46px;max-width:100%;object-fit:contain}.pk-slot span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-squad{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.pk-slot{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;height:118px;padding:4px 2px 3px;border-radius:12px;border:1px solid #395e45;background:#16301f;font:700 14px system-ui;cursor:pointer}
+.pk-slot img{height:88px;max-width:100%;object-fit:contain}.pk-slot span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pk-slot .x{position:absolute;top:-5px;right:-5px;width:22px;height:22px;padding:0;border-radius:50%;border:1px solid #7a3a3a;background:#3a1717;color:#ffb0b0;font:700 11px system-ui}
 .pk-slot .lock{position:absolute;top:0;right:2px;font-size:12px;font-style:normal}.pk-slot.locked{opacity:.6}
 .pk-slot.idle{border-color:#e08a2c;box-shadow:inset 0 0 0 1px #e08a2c}.pk-slot.hl{border-color:#ffd56b;box-shadow:0 0 0 2px #ffd56b}
 .pk-slot.empty{justify-content:center;border-style:dashed;color:#6f8a77;cursor:default}
+/* A phone upright: the squad in two rows of three, so each hero is large enough to see. */
+@media (max-width:600px){.pk-squad{grid-template-columns:repeat(3,minmax(0,1fr))}.pk-slot{height:104px}.pk-slot img{height:76px}}
 .pk-bonus{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .pk-pill{display:inline-flex;align-items:center;gap:3px;height:30px;padding:0 9px 0 3px;border-radius:15px;border:1px solid #395e45;background:#16301f;color:#b5c8b9;font:700 13px system-ui;white-space:nowrap}.pk-pill .ti{width:24px;height:24px}
 .pk-pill.zero{opacity:.55}.pk-pill.on{background:#2f6a2a;border-color:#7cc95a;color:#e6ffd2}.pk-pill.max{background:#ffd56b;border-color:#ffd56b;color:#2a1600}.pk-pill.sel{outline:2px solid #fff;outline-offset:1px}
