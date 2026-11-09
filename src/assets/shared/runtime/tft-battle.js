@@ -1748,14 +1748,15 @@ function initPage() {
     const head = `<div class="pk-head"><b>${
       swapping() ? `Раунд ${match.round} из ${MATCH_ROUNDS} · замен осталось ${Math.max(0, left)} из ${MATCH_SWAPS}` : `Отряд ${chosen.length}/${TEAM_SIZE}`
     }</b><button class="pk-q" data-help>? Правила</button></div>`;
-    // The squad in one row; only the ✕ takes a hero out, a tap elsewhere opens its details.
+    // The squad: a tap anywhere on a hero takes it out (the ✕ in its corner only says so); a locked one opens its
+    // details instead.
     const squad = Array.from({ length: TEAM_SIZE }, (_, i) => {
       const c = draft[i];
       if (!c) return `<div class="pk-slot empty">пусто</div>`;
       // A second copy adds nothing to the groups: it is marked like a hero without a bonus.
       const cls = [locked(i) && "locked", (idle(c, t) || draft.indexOf(c) < i) && "idle", pickFilter && HERO_TAGS[c]?.includes(pickFilter) && "hl"].filter(Boolean).join(" ");
-      return `<div class="pk-slot ${cls}" data-info="${c}"><img src="${portraitUrl(c)}" alt=""><span>${TFT_NAMES[c]}</span>${
-        locked(i) ? '<i class="lock">🔒</i>' : `<button class="x" data-out="${i}" aria-label="убрать">✕</button>`
+      return `<div class="pk-slot ${cls}" ${locked(i) ? `data-info="${c}"` : `data-out="${i}" role="button" aria-label="убрать ${TFT_NAMES[c]}"`}><img src="${portraitUrl(c)}" alt=""><span>${TFT_NAMES[c]}</span>${
+        locked(i) ? '<i class="lock">🔒</i>' : '<i class="x">✕</i>'
       }</div>`;
     }).join("");
     // The bonus row: every group with its progress; grey without a bonus, green with one, gold at the top step.

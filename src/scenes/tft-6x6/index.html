@@ -66,7 +66,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .pk-squad{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 .pk-slot{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;height:118px;padding:4px 2px 3px;border-radius:12px;border:1px solid #395e45;background:#16301f;font:700 14px system-ui;cursor:pointer}
 .pk-slot img{height:88px;max-width:100%;object-fit:contain}.pk-slot span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pk-slot .x{position:absolute;top:-5px;right:-5px;width:22px;height:22px;padding:0;border-radius:50%;border:1px solid #7a3a3a;background:#3a1717;color:#ffb0b0;font:700 11px system-ui}
+.pk-slot .x{position:absolute;top:3px;right:3px;display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:1px solid #7a3a3a;background:#3a1717;color:#ffb0b0;font:700 13px system-ui;font-style:normal;pointer-events:none}
+/* No grey flash on a tapped button on a phone. */
+.picker,.picker *{-webkit-tap-highlight-color:transparent}
 .pk-slot .lock{position:absolute;top:0;right:2px;font-size:12px;font-style:normal}.pk-slot.locked{opacity:.6}
 .pk-slot.idle{border-color:#e08a2c;box-shadow:inset 0 0 0 1px #e08a2c}.pk-slot.hl{border-color:#ffd56b;box-shadow:0 0 0 2px #ffd56b}
 .pk-slot.empty{justify-content:center;border-style:dashed;color:#6f8a77;cursor:default}
@@ -76,12 +78,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .pk-pill{display:inline-flex;align-items:center;gap:3px;height:30px;padding:0 9px 0 3px;border-radius:15px;border:1px solid #395e45;background:#16301f;color:#b5c8b9;font:700 13px system-ui;white-space:nowrap}.pk-pill .ti{width:24px;height:24px}
 .pk-pill.zero{opacity:.55}.pk-pill.on{background:#2f6a2a;border-color:#7cc95a;color:#e6ffd2}.pk-pill.max{background:#ffd56b;border-color:#ffd56b;color:#2a1600}.pk-pill.sel{outline:2px solid #fff;outline-offset:1px}
 .pk-note{margin:6px 0 0;font-size:14px;line-height:1.35;color:#c3d4c6}.pk-note b{color:#ffe9b0}.pk-note.warn{color:#ffb35a;font-weight:700}
-/* The heroes as tiles, three across: a green ribbon on those that would switch a bonus on, dim for the rest. */
+/* The heroes as tiles, three across, all alike; a quiet line on top says what one would add or that it is in the squad. */
 .pk-heroes{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
 .pk-tile{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;padding:22px 4px 8px;border-radius:12px;border:1px solid #395e45;background:#132619;text-align:center;cursor:pointer}
 .pk-tile img{height:72px;max-width:100%;object-fit:contain}.pk-tile b{font-size:15px}.pk-tile small{font-size:12px;color:#b5c8b9}
-.pk-tile.gain{border-color:#9bd96b;box-shadow:0 0 0 1px #9bd96b,0 0 12px #9bd96b44}.pk-tile.dull{opacity:.6}.pk-tile.in{border-color:#5a7a62}
-.pk-tile .rb{position:absolute;top:0;left:0;right:0;padding:2px 4px;border-radius:11px 11px 0 0;font:800 11px/1.3 system-ui;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rb.gain{background:#2f6a2a;color:#e6ffd2}.rb.in{background:#0006;color:#9bd96b}
+.pk-tile .rb{position:absolute;top:0;left:0;right:0;padding:2px 4px;border-radius:11px 11px 0 0;font:800 11px/1.3 system-ui;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rb.gain{background:#0006;color:#c8f0a0}.rb.in{background:#0006;color:#b5c8b9}
 .pk-i{position:absolute;top:24px;right:4px;width:26px;height:26px;padding:0;border-radius:50%;border:1px solid #5a7a62;background:#1d3a26;color:#dcebd4;font:italic 700 14px Georgia,serif}
 /* A hero's details and the rules: a card over the list. */
 .pk-sheet{position:fixed;left:0;right:0;top:0;height:var(--visible-h,100dvh);z-index:30;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 8px max(12px,env(safe-area-inset-bottom));box-sizing:border-box;background:#000a}
