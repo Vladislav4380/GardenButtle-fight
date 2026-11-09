@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Огород</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#0b1710;color:#f5f2df;font-family:Inter,system-ui,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.app{position:relative;height:var(--visible-h,100dvh);overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;background:#1c3a1e}
+/* The top: gold, the speed of time (for the test) and starting over. */
+.top{position:absolute;top:max(8px,env(safe-area-inset-top));left:10px;right:10px;z-index:2;display:flex;align-items:center;gap:8px;pointer-events:none}
+.top>*{pointer-events:auto}
+.gold{display:flex;align-items:center;gap:6px;height:42px;padding:0 14px 0 4px;border-radius:21px;background:#0b1710d9;font:800 19px system-ui;color:#ffd56b}.gold img{width:36px;height:36px}
+.top .sp{flex:1}
+.pill{height:38px;padding:0 12px;border-radius:19px;border:1px solid #395e45;background:#0b1710d9;color:#edf7ec;font:700 14px system-ui}.pill.on{background:#ffd56b;border-color:#ffd56b;color:#2a1600}
+/* A line of help over the map. */
+.hint{position:absolute;left:50%;top:calc(max(8px,env(safe-area-inset-top)) + 52px);transform:translateX(-50%);z-index:2;width:max-content;max-width:92%;padding:7px 14px;border-radius:12px;background:#0b1710e0;font-size:15px;color:#e4f0dc;text-align:center;pointer-events:none}.hint:empty{display:none}
+/* The three big buttons at the bottom. */
+.bottom{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;justify-content:center;gap:10px;padding:10px 10px max(10px,env(safe-area-inset-bottom));background:linear-gradient(#0b171000,#0b1710cc 45%)}
+.bottom[hidden]{display:none}
+.big{display:flex;flex-direction:column;align-items:center;gap:2px;width:96px;padding:4px 0 6px;border:0;border-radius:16px;background:#16301fe6;color:#edf7ec;font:800 14px system-ui;box-shadow:0 4px 12px #0008}.big img{width:56px;height:56px}
+.big.on{background:#ffd56b;color:#2a1600}
+/* The two buttons stand in the bottom corners, as in such games. */
+.bottom{justify-content:space-between;background:none;pointer-events:none}.bottom .big{pointer-events:auto}
+/* The menu by the finger: the crops to sow (with how many are in the barn and how long they grow), or the sickle. */
+.menu{position:absolute;z-index:4;max-width:calc(100% - 16px);padding:8px 10px 10px;border-radius:18px;background:#0b1710ee;box-shadow:0 6px 18px #000a;touch-action:none;user-select:none;-webkit-user-select:none}.menu[hidden]{display:none}
+.menu p{margin:0 0 6px;font:700 13px system-ui;color:#c3d4c6;text-align:center}
+.seeds{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.seed{position:relative;display:flex;flex-direction:column;align-items:center;width:62px;padding:4px 2px;border:1px solid #395e45;border-radius:14px;background:#16301f;color:#edf7ec;touch-action:none}
+.seed .face{width:46px;height:48px;object-fit:contain;pointer-events:none}.seed b{position:absolute;top:2px;right:4px;font:900 14px system-ui;color:#ffd56b}.seed small{font:600 11px system-ui;color:#b5c8b9}
+.seed.none{opacity:.4}.seed.sickle{width:76px}.seed.sickle .face{width:60px;height:60px}
+.tip{display:flex;align-items:center;gap:8px;text-align:left!important;font-size:15px!important;color:#edf7ec!important}.tip .face{width:44px;height:46px;object-fit:contain}
+.row.soon{opacity:.5}
+/* Placing a bed: confirm or cancel. */
+.place{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:10px;padding:10px 12px max(12px,env(safe-area-inset-bottom));background:#0b1710e6}.place[hidden]{display:none}
+.place button{flex:1;height:54px;border:0;border-radius:14px;font:800 17px system-ui}.ok{color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.ok:disabled{opacity:.45}.no{color:#edf7ec;background:#1d3a26;border:1px solid #5a7a62!important}
+/* A panel from the bottom: the shop, the barn, a bed. */
+.sheet{position:absolute;inset:0;z-index:5;display:flex;align-items:flex-end;justify-content:center;background:#000a}.sheet[hidden]{display:none}
+.card{width:min(560px,100%);max-height:88%;overflow-y:auto;overscroll-behavior:contain;padding:16px 16px 0;border-radius:20px 20px 0 0;background:#132619;font-size:16px;line-height:1.4}
+.card h3{margin:0 0 4px;font-size:23px;display:flex;align-items:center;gap:8px}.card h3 img{width:44px;height:44px}.card>p{margin:4px 0 10px;color:#c3d4c6}
+.row{display:flex;align-items:center;gap:10px;padding:8px;margin:6px 0;border-radius:14px;background:#1a3322}
+.row img.face{width:60px;height:62px;object-fit:contain;flex:none}.row .what{flex:1;min-width:0}.row .what b{font-size:17px}.row .what small{display:block;color:#b5c8b9;font-size:13px}
+.row .n{font:900 22px system-ui;color:#ffd56b;min-width:36px;text-align:right}
+.buy{flex:none;min-width:86px;height:44px;padding:0 10px;border:0;border-radius:12px;font:800 15px system-ui;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.buy:disabled{opacity:.4}
+.buy img{width:20px;height:20px;vertical-align:-4px}
+.hero{display:flex;gap:12px;align-items:center}.hero img{width:110px;height:116px;object-fit:contain}.hero h3{margin:0}.hero p{margin:2px 0;color:#c3d4c6}
+.big-n{font:900 30px system-ui;color:#ffd56b}
+.foot{position:sticky;bottom:0;display:flex;flex-direction:column;gap:8px;margin:12px -16px 0;padding:10px 16px max(14px,env(safe-area-inset-bottom));background:linear-gradient(#13261900,#132619 22%)}
+.foot button{height:50px;border-radius:13px;font:800 17px system-ui}.act{border:0;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.act:disabled{opacity:.45}
+.back{border:1px solid #5a7a62;background:#1d3a26;color:#edf7ec}.del{border:1px solid #7a3a3a;background:#3a1717;color:#ffb0b0}
+.empty{color:#9fb3a3;text-align:center;padding:14px 0}
+</style>
+<script>/* The height the browser really shows. */(function(){function f(){var v=window.visualViewport;document.documentElement.style.setProperty("--visible-h",Math.round(v?v.height:innerHeight)+"px")}f();addEventListener("resize",f);if(window.visualViewport)visualViewport.addEventListener("resize",f)})()</script>
+</head>
+<body>
+<main class="app">
+  <canvas id="map"></canvas>
+  <div class="top">
+    <div class="gold"><img src="/assets/garden/icon-gold.png" alt=""><span id="gold">0</span></div>
+    <span class="sp"></span>
+    <button class="pill" id="speed" title="Время для теста">×1</button>
+    <button class="pill" id="reset" title="Начать огород заново">↺</button>
+  </div>
+  <div class="hint" id="hint"></div>
+  <nav class="bottom" id="bottom">
+    <button class="big" id="barnBtn"><img src="/assets/garden/icon-barn.png" alt="">Амбар</button>
+    <button class="big" id="shopBtn"><img src="/assets/garden/icon-build.png" alt="">Магазин</button>
+  </nav>
+  <div class="menu" id="menu" hidden></div>
+  <div class="place" id="place" hidden><button class="no" id="placeNo">Отмена</button><button class="ok" id="placeOk">Поставить</button></div>
+  <section class="sheet" id="sheet" hidden></section>
+</main>
+<script>
+/* Opened as a Telegram Mini App: take the whole screen and switch off the swipe down that closes the app. */
+(function () {
+  if (!/tgWebApp/.test(location.hash + location.search)) return;
+  var s = document.createElement("script");
+  s.src = "https://telegram.org/js/telegram-web-app.js";
+  s.onload = function () {
+    var app = window.Telegram && Telegram.WebApp;
+    if (!app) return;
+    app.ready();
+    app.expand();
+    if (app.disableVerticalSwipes) app.disableVerticalSwipes();
+  };
+  document.head.appendChild(s);
+})();
+</script>
+<script src="garden.js"></script>
+</body>
+</html>

@@ -541,6 +541,10 @@ function cutBadges() {
   console.log("badges: " + cells.filter(Boolean).length);
 }
 
+// tools/cut-garden.cjs reads and writes its pictures with the same code.
+module.exports = { readPng, writePng, shrink };
+if (require.main !== module) return;
+
 const wanted = process.argv.slice(2),
   heroes = fs.readdirSync(path.join(root, "src/assets/characters")).filter((id) => {
     const m = path.join(root, "src/assets/characters", id, "manifest.json");
