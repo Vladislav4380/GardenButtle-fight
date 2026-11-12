@@ -41,6 +41,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .actions .ghost{color:#ffeccb;text-shadow:0 1px 0 #000a;border-color:#2e1a08;background:linear-gradient(#9b6b3c,#6e4524 60%,#55341a);box-shadow:inset 0 2px 0 #ffffff30,0 4px 0 #2e1a08,0 8px 16px #000a}
 /* The buttons keep to the left: the free host shows its banner in the bottom right corner. */
 #energy{order:1;margin-left:auto;font:800 13px system-ui;color:#9fe3ff}
+/* On a phone the three battle buttons share the row evenly: the garden square, then the two wide buttons of the same width, the text wrapping instead of running off the screen. */
+@media (max-width:600px){.actions{display:grid;grid-template-columns:58px 1fr 1fr;gap:8px}.actions #energy{display:none}.actions .garden-link{width:58px}.actions button{min-width:0;padding:0 6px;font-size:16px;line-height:1.1;white-space:normal}}
 .slots{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
 .slot{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;padding:4px 1px;border-radius:10px;border:1px solid #395e45;background:#16301f;color:#edf7ec;font:700 12px system-ui}.slot>span:not(.tags){max-width:100%;letter-spacing:-.03em;white-space:nowrap;overflow:hidden}
 .slot{position:relative}.slot .tags{order:3;display:flex;justify-content:center;gap:3px;line-height:0}
