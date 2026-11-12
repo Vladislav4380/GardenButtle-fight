@@ -90,8 +90,16 @@ function blobs(img, top = 0) {
   return found.sort((a, b) => b.n - a.n);
 }
 
+// The painted farm: the whole scene behind the beds (the barn, the shop and the bazaar are part of it), as a JPEG-like
+// opaque PNG at its own size.
+{
+  const img = readPng(src("Whimsical Forest Farmstead Playfield.png"));
+  writePng(out("farm"), img.width, img.height, img.px);
+  console.log("farm", img.width + "×" + img.height);
+}
 // Ground and fence.
 tile("Colorful Wildflower Grass Texture-1.png", "ground-grass", 512);
+tile("Lush Clover Meadow Texture-2.png", "ground-meadow", 512);
 tile("Seamless Cartoon Dirt Tile with Stones-4.png", "ground-path", 512);
 one("Isometric Wooden Picket Fence Segment-6.png", "fence", 384);
 // The bed as it grows: empty, seedlings, young plants, ready.
@@ -99,6 +107,19 @@ one("Isometric Wooden Garden Bed-9.png", "bed-empty", 384);
 one("Isometric Garden Bed with Sprouts-11.png", "bed-sprouts", 384);
 one("Isometric Garden Bed with Seedlings-10.png", "bed-growing", 384);
 one("Isometric Garden Bed with Green Plants-12.png", "bed-ready", 384);
+// The beds without frames, 2 rows × 4: tilled soil, seedlings, then each crop grown: tomato, carrot, corn, onion,
+// potato, peach.
+{
+  const img = readPng(src("Isometric Garden Crop Sprite Sheet.png")),
+    names = ["plot-soil", "plot-sprouts", "plot-tomato", "plot-carrot", "plot-corn", "plot-onion", "plot-potato", "plot-peach"],
+    cw = img.width / 4,
+    ch = img.height / 2;
+  names.forEach((name, i) => {
+    const x0 = Math.round((i % 4) * cw),
+      y0 = Math.round(Math.floor(i / 4) * ch);
+    save(name, crop(img, box(img, x0, y0, Math.round(x0 + cw), Math.round(y0 + ch))), 384);
+  });
+}
 // Buttons and money.
 one("Golden Sprout Coin Medallion-1.png", "icon-gold", 128);
 one("Seed Sack Garden Badge-2.png", "icon-seed", 128);

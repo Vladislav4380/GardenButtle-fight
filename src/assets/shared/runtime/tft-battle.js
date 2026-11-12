@@ -180,6 +180,31 @@ let F = [],
   rate = 1.5; // the game runs one and a half times faster than real time
 // The starting squad has all six heroes, so a new player sees every synergy switched on.
 let lineup = ["tomato", "zucchini", "carrot", "beet", "pepper", "corn"];
+// Opened from the garden (?from=garden): only the fighters grown there may fight, as many of each as its barn holds
+// (the garden writes the barn to localStorage "garden-barn"). Otherwise every hero, any number of times.
+const GARDEN_BARN = (() => {
+  if (typeof location === "undefined" || !/[?&]from=garden(&|$)/.test(location.search)) return null;
+  try {
+    return JSON.parse(localStorage.getItem("garden-barn")) || {};
+  } catch {
+    return {};
+  }
+})();
+const inBarn = (c) => (GARDEN_BARN ? GARDEN_BARN[c] || 0 : Infinity);
+// A squad cut to the barn: each hero kept only while the barn has that many, the freed places empty.
+function fitToBarn(list) {
+  if (!GARDEN_BARN) return [...list];
+  const used = {};
+  return list.map((c) => (c && (used[c] = (used[c] || 0) + 1) <= inBarn(c) ? c : null));
+}
+// From the garden the first squad is made of what grew: different heroes first, then second copies, up to six.
+if (GARDEN_BARN) {
+  const grown = CHARACTERS.filter((c) => inBarn(c) > 0),
+    picks = [];
+  for (let round = 0; picks.length < 6 && grown.some((c) => inBarn(c) > round); round++)
+    for (const c of grown) if (picks.length < 6 && inBarn(c) > round) picks.push(c);
+  if (picks.length === 6) lineup = picks;
+}
 // A match is MATCH_ROUNDS battles against one opponent; before every round after the first each side may replace up
 // to MATCH_SWAPS heroes.
 const MATCH_ROUNDS = 3,
@@ -1638,7 +1663,7 @@ function initPage() {
     renderTraits();
   }
   // ---------- Squad picker: a screen before the board to choose the six heroes and read about each in large type ----------
-  let draft = [...lineup];
+  let draft = fitToBarn(lineup);
   // The group whose heroes the list shows (null: all heroes).
   let pickFilter = null;
   // The idle frame facing the camera; empty until the sheet has loaded.
@@ -1747,7 +1772,7 @@ function initPage() {
       words = (c) => (HERO_TAGS[c] || []).map((id) => ONE[id]).join(" · ");
     const head = `<div class="pk-head"><b>${
       swapping() ? `Раунд ${match.round} из ${MATCH_ROUNDS} · замен осталось ${Math.max(0, left)} из ${MATCH_SWAPS}` : `Отряд ${chosen.length}/${TEAM_SIZE}`
-    }</b><button class="pk-q" data-help>? Правила</button></div>`;
+    }</b><span class="pk-links"><a class="pk-q pk-garden" href="/garden" target="_top">🌱 Огород</a><button class="pk-q" data-help>? Правила</button></span></div>`;
     // The squad: a tap anywhere on a hero takes it out (the ✕ in its corner only says so); a locked one opens its
     // details instead.
     const squad = Array.from({ length: TEAM_SIZE }, (_, i) => {
@@ -1767,19 +1792,27 @@ function initPage() {
         return `<button class="pk-pill ${state}${pickFilter === id ? " sel" : ""}" data-f="${id}">${tr.icon}${tr.name} ${progress(id, t)}</button>`;
       })
       .join("");
+    // From the garden with too few grown to fill the squad: say how many more to grow, with the way back.
+    const grownLeft = GARDEN_BARN ? CHARACTERS.reduce((n, c) => n + Math.max(0, inBarn(c) - draft.filter((x) => x === c).length), 0) : Infinity,
+      short = TEAM_SIZE - chosen.length - grownLeft;
     const note = pickNote
       ? `<p class="pk-note warn">${pickNote}</p>`
+      : short > 0
+        ? `<p class="pk-note warn">В амбаре не хватает бойцов: вырастите ещё ${short} в огороде. <a href="/garden" target="_top">← В огород</a></p>`
       : pickFilter
         ? `<p class="pk-note">${groupNote(pickFilter, t)} Ниже — только эта группа; нажмите ещё раз, чтобы показать всех.</p>`
         : `<p class="pk-note">Бонус группы включается, когда в отряде 2 разных героя этой группы. Нажмите на группу — узнаете, что она даёт.</p>`;
-    const shown = CHARACTERS.filter((c) => !pickFilter || HERO_TAGS[c]?.includes(pickFilter));
+    // From the garden: only the heroes grown there.
+    const shown = CHARACTERS.filter((c) => inBarn(c) > 0 && (!pickFilter || HERO_TAGS[c]?.includes(pickFilter)));
     const tiles = shown
       .map((c) => {
         const g = full ? [] : gainsOf(c, chosen, t),
           copies = draft.filter((x) => x === c).length,
           // A hero may be taken more than once; another copy adds nothing to the groups.
-          ribbon = copies ? `<em class="rb in">в отряде${copies > 1 ? " ×" + copies : ""}</em>` : g.length ? `<em class="rb gain">+ ${g.map((id) => TRAITS[id].name).join(", ")}</em>` : "";
-        return `<div class="pk-tile${copies ? " in" : g.length ? " gain" : full ? "" : " dull"}" data-add="${c}">${ribbon}<img src="${portraitUrl(c)}" alt=""><b>${TFT_NAMES[c]}</b><small>${words(c)}</small><button class="pk-i" data-info="${c}" aria-label="подробнее">i</button></div>`;
+          ribbon = copies ? `<em class="rb in">в отряде${copies > 1 ? " ×" + copies : ""}</em>` : g.length ? `<em class="rb gain">+ ${g.map((id) => TRAITS[id].name).join(", ")}</em>` : "",
+          // From the garden: how many of this hero are still in the barn, not yet taken.
+          stock = GARDEN_BARN ? `<i class="pk-stock${copies >= inBarn(c) ? " out" : ""}">в амбаре ${inBarn(c) - copies}</i>` : "";
+        return `<div class="pk-tile${copies ? " in" : g.length ? " gain" : full ? "" : " dull"}" data-add="${c}">${ribbon}${stock}<img src="${portraitUrl(c)}" alt=""><b>${TFT_NAMES[c]}</b><small>${words(c)}</small><button class="pk-i" data-info="${c}" aria-label="подробнее">i</button></div>`;
       })
       .join("");
     // The details of one hero, over the list: groups in words, numbers, ability, and the button to take it (a hero
@@ -1834,6 +1867,7 @@ function initPage() {
     on("[data-add]", (b) => {
       const c = b.dataset.add;
       if (full) pickNote = "Отряд полон — уберите героя кнопкой ✕ сверху.";
+      else if (draft.filter((x) => x === c).length >= inBarn(c)) pickNote = `${TFT_NAMES[c]}: все из амбара уже в отряде. Вырастите ещё в огороде.`;
       else (draft[draft.findIndex((x) => !x)] = c), (pickInfo = null);
     });
     $("#pickGo").onclick = () => {
@@ -1868,7 +1902,7 @@ function initPage() {
     // After a round the next one is set up first, so the swaps count from the squad that just fought.
     if (result && !resultShown) return;
     if (result) nextRound(), hideResult();
-    draft = [...lineup];
+    draft = swapping() ? [...lineup] : fitToBarn(lineup);
     $("#picker").hidden = false;
     renderPicker();
   }

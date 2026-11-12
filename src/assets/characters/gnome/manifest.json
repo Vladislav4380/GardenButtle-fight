@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "gnome",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "work",
+      "work"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 180,
+      "h": 202
+    },
+    "feet": {
+      "x": 88,
+      "y": 200
+    },
+    "portrait": {
+      "x": 7,
+      "y": 3,
+      "w": 160,
+      "h": 197
+    },
+    "height": 197
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Chibi Gnome Gardener Sprite Sheet.png): a garden worker, 5 directions x (idle, walk 4, can raised, watering)"
+  }
+}

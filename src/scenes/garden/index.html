@@ -20,20 +20,21 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;backgr
 .bottom[hidden]{display:none}
 .big{display:flex;flex-direction:column;align-items:center;gap:2px;width:96px;padding:4px 0 6px;border:0;border-radius:16px;background:#16301fe6;color:#edf7ec;font:800 14px system-ui;box-shadow:0 4px 12px #0008}.big img{width:56px;height:56px}
 .big.on{background:#ffd56b;color:#2a1600}
-/* The two buttons stand in the bottom corners, as in such games. */
-.bottom{justify-content:space-between;background:none;pointer-events:none}.bottom .big{pointer-events:auto}
+/* The buildings are three buttons along the bottom, not places on the map. */
+.bottom{justify-content:space-around;background:none;pointer-events:none}.bottom .big{pointer-events:auto}
 /* The menu by the finger: the crops to sow (with how many are in the barn and how long they grow), or the sickle. */
 .menu{position:absolute;z-index:4;max-width:calc(100% - 16px);padding:8px 10px 10px;border-radius:18px;background:#0b1710ee;box-shadow:0 6px 18px #000a;touch-action:none;user-select:none;-webkit-user-select:none}.menu[hidden]{display:none}
-.menu p{margin:0 0 6px;font:700 13px system-ui;color:#c3d4c6;text-align:center}
+.menu p{margin:0 auto 6px;max-width:250px;font:700 13px system-ui;line-height:1.3;color:#c3d4c6;text-align:center}
 .seeds{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .seed{position:relative;display:flex;flex-direction:column;align-items:center;width:62px;padding:4px 2px;border:1px solid #395e45;border-radius:14px;background:#16301f;color:#edf7ec;touch-action:none}
 .seed .face{width:46px;height:48px;object-fit:contain;pointer-events:none}.seed b{position:absolute;top:2px;right:4px;font:900 14px system-ui;color:#ffd56b}.seed small{font:600 11px system-ui;color:#b5c8b9}
 .seed.none{opacity:.4}.seed.sickle{width:76px}.seed.sickle .face{width:60px;height:60px}
 .tip{display:flex;align-items:center;gap:8px;text-align:left!important;font-size:15px!important;color:#edf7ec!important}.tip .face{width:44px;height:46px;object-fit:contain}
 .row.soon{opacity:.5}
+.card h4{margin:14px 0 4px;font-size:15px;color:#ffd56b;text-transform:uppercase;letter-spacing:.04em}.del{color:#ffb0b0!important;border-color:#7a3a3a!important;background:#3a1717!important}
 /* Placing a bed: confirm or cancel. */
 .place{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:10px;padding:10px 12px max(12px,env(safe-area-inset-bottom));background:#0b1710e6}.place[hidden]{display:none}
-.place button{flex:1;height:54px;border:0;border-radius:14px;font:800 17px system-ui}.ok{color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.ok:disabled{opacity:.45}.no{color:#edf7ec;background:#1d3a26;border:1px solid #5a7a62!important}
+.place button{flex:1;height:54px;border:0;border-radius:14px;font:800 15px system-ui;line-height:1.15;padding:0 8px}.place .ok{flex:1.4}.ok{color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.ok:disabled{opacity:.45}.no{color:#edf7ec;background:#1d3a26;border:1px solid #5a7a62!important}
 /* A panel from the bottom: the shop, the barn, a bed. */
 .sheet{position:absolute;inset:0;z-index:5;display:flex;align-items:flex-end;justify-content:center;background:#000a}.sheet[hidden]{display:none}
 .card{width:min(560px,100%);max-height:88%;overflow-y:auto;overscroll-behavior:contain;padding:16px 16px 0;border-radius:20px 20px 0 0;background:#132619;font-size:16px;line-height:1.4}
@@ -49,25 +50,91 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;backgr
 .foot button{height:50px;border-radius:13px;font:800 17px system-ui}.act{border:0;color:#2a1600;background:linear-gradient(#ffd56b,#f0a531)}.act:disabled{opacity:.45}
 .back{border:1px solid #5a7a62;background:#1d3a26;color:#edf7ec}.del{border:1px solid #7a3a3a;background:#3a1717;color:#ffb0b0}
 .empty{color:#9fb3a3;text-align:center;padding:14px 0}
+/* The garden's level: a number in a ring and the experience bar to the next one. */
+.lvl{display:flex;align-items:center;gap:6px;height:42px;padding:0 12px 0 4px;border-radius:21px;background:#0b1710d9}
+.lvl b{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:radial-gradient(#5a8a2e,#2c4a16);border:2px solid #ffd56b;font:900 16px system-ui;color:#fff}
+.lvl i{display:block;width:70px;height:10px;border-radius:5px;background:#0006;overflow:hidden}.lvl i span{display:block;height:100%;width:0;background:linear-gradient(90deg,#9bd96b,#d8f59a);transition:width .4s}
+/* Under the top bar: the army and the tasks. */
+.side{position:absolute;left:10px;top:calc(max(8px,env(safe-area-inset-top)) + 50px);z-index:2;display:flex;flex-direction:column;gap:6px;max-width:220px;pointer-events:none}.side>*{pointer-events:auto}
+.army{display:flex;align-items:center;gap:8px;padding:4px 4px 4px 10px;border-radius:16px;background:#0b1710d9;font:800 13px system-ui;color:#edf7ec}
+.fight{padding:5px 10px;border-radius:12px;background:#3a2a10;color:#ffd56b;font:800 13px system-ui;text-decoration:none;border:1px solid #8a6a2a}.fight.ready{background:linear-gradient(#ffd56b,#f0a531);color:#2a1600;animation:pulse 1.2s infinite}
+.quests{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}.quests[hidden]{display:none}
+.qbtn{align-self:flex-start;height:32px;padding:0 12px;border-radius:16px;border:1px solid #395e45;background:#0b1710d9;color:#edf7ec;font:800 13px system-ui}.qbtn b{color:#ffd56b}.qbtn.ready{background:#2f5a1c;border-color:#9bd96b;animation:pulse 1.2s infinite}
+.quests li{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:12px;background:#0b1710cc;font:700 12px system-ui;color:#dfe9d6}.quests li img{width:24px;height:24px;object-fit:contain}.quests li small{color:#ffd56b;margin-left:auto;white-space:nowrap}
+.quests li.done{background:#2f5a1ccc;cursor:pointer}.quests li.done small{color:#fff}
+@keyframes pulse{50%{transform:scale(1.08)}}
+/* ---- The layout: a panel at the top, the field, a panel at the bottom. The panels are dark wood with a bronze rim,
+   like the battle screen's. ---- */
+.app{display:flex;flex-direction:column}
+.hud,.dock{position:relative;z-index:3;flex:none;background:linear-gradient(#2b2013,#1a130b);box-shadow:0 0 0 1px #00000080,inset 0 1px 0 #ffffff14}
+.hud{padding:max(6px,env(safe-area-inset-top)) 10px 6px;border-bottom:3px solid #8a6a2a;display:flex;flex-direction:column;gap:6px}
+.dock{border-top:3px solid #8a6a2a;padding:6px 10px max(8px,env(safe-area-inset-bottom))}
+.hud-row{display:flex;align-items:center;gap:8px}.hud-row .sp{flex:1}
+.stage{position:relative;flex:1;min-height:0;overflow:hidden}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+/* Inside the panels the pieces sit on the wood: no floating dark pills. */
+.hud .gold,.hud .lvl,.hud .army{background:#0000004d;box-shadow:inset 0 0 0 1px #8a6a2a66}
+.hud .gold{height:38px}.hud .lvl{height:38px}.hud .lvl b{width:30px;height:30px}
+.hud .army{padding:6px 12px;border-radius:14px}
+.hud .pill{background:#0000004d;border-color:#8a6a2a88}
+.dock .bottom{position:static;padding:0;justify-content:space-around;pointer-events:auto}
+.dock .big{background:#0000004d;box-shadow:inset 0 0 0 1px #8a6a2a66;width:30%;max-width:120px;padding:4px 0 6px}.dock .big img{width:50px;height:50px}
+.dock .place{position:static;padding:0;background:none}
+/* The tasks open over the top of the field, under the panel. */
+.stage .quests{position:absolute;top:8px;right:8px;z-index:4;max-width:min(320px,calc(100% - 16px))}
+.stage .hint{top:10px}
+/* The drawer: slides out from the right edge; its tab stays in sight. */
+.drawer{position:absolute;top:0;bottom:0;right:0;z-index:4;width:132px;transform:translateX(100%);transition:transform .25s ease;background:linear-gradient(90deg,#2b2013f2,#1a130bf2);border-left:3px solid #8a6a2a;box-shadow:-6px 0 14px #0007}
+.drawer.open{transform:none}
+.drawer-tab{position:absolute;left:-46px;top:12px;width:46px;height:52px;border:3px solid #8a6a2a;border-right:0;border-radius:14px 0 0 14px;background:#2b2013;color:#ffd56b;font-size:24px;box-shadow:-4px 2px 10px #0007}
+.drawer-list{height:100%;overflow-y:auto;overscroll-behavior:contain;padding:8px 8px 20px;display:flex;flex-direction:column;gap:6px}
+.drawer-list h5{margin:8px 2px 0;font:800 11px system-ui;color:#ffd56b;text-transform:uppercase;letter-spacing:.05em}
+.item{position:relative;display:flex;flex-direction:column;align-items:center;padding:6px 4px 4px;border-radius:12px;background:#0000004d;box-shadow:inset 0 0 0 1px #8a6a2a66;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.item img{width:96px;height:62px;object-fit:contain;pointer-events:none}.item span{font:700 11px system-ui;color:#edf7ec;text-align:center;line-height:1.15}
+.item b{position:absolute;top:3px;right:5px;font:900 12px system-ui;color:#ffd56b;text-shadow:0 1px 2px #000}.item.poor{opacity:.45}
+.big.pulse{animation:pulse .35s 2}
 </style>
 <script>/* The height the browser really shows. */(function(){function f(){var v=window.visualViewport;document.documentElement.style.setProperty("--visible-h",Math.round(v?v.height:innerHeight)+"px")}f();addEventListener("resize",f);if(window.visualViewport)visualViewport.addEventListener("resize",f)})()</script>
 </head>
 <body>
 <main class="app">
-  <canvas id="map"></canvas>
-  <div class="top">
-    <div class="gold"><img src="/assets/garden/icon-gold.png" alt=""><span id="gold">0</span></div>
-    <span class="sp"></span>
-    <button class="pill" id="speed" title="Время для теста">×1</button>
-    <button class="pill" id="reset" title="Начать огород заново">↺</button>
-  </div>
-  <div class="hint" id="hint"></div>
-  <nav class="bottom" id="bottom">
-    <button class="big" id="barnBtn"><img src="/assets/garden/icon-barn.png" alt="">Амбар</button>
-    <button class="big" id="shopBtn"><img src="/assets/garden/icon-build.png" alt="">Магазин</button>
-  </nav>
-  <div class="menu" id="menu" hidden></div>
-  <div class="place" id="place" hidden><button class="no" id="placeNo">Отмена</button><button class="ok" id="placeOk">Поставить</button></div>
+  <!-- The control panel at the top, off the field: gold, level, the army and the way to battle, tasks, test buttons. -->
+  <header class="hud">
+    <div class="hud-row">
+      <div class="gold"><img src="/assets/garden/icon-gold.png" alt=""><span id="gold">0</span></div>
+      <div class="lvl" title="Уровень огорода"><b id="lvlN">1</b><i><span id="xpBar"></span></i></div>
+      <span class="sp"></span>
+      <button class="pill" id="speed" title="Время для теста">×1</button>
+      <button class="pill" id="reset" title="Начать огород заново">↺</button>
+    </div>
+    <div class="hud-row">
+      <div class="army"><span id="army">Армия: 0</span></div>
+      <a class="fight" id="fight" href="/duels/tft-6x6?from=garden" target="_top">⚔ В бой</a>
+      <span class="sp"></span>
+      <button class="qbtn" id="qbtn">📜 Задания <b id="qcount">3</b></button>
+    </div>
+  </header>
+  <!-- The field: everything inside it is the game. -->
+  <section class="stage">
+    <canvas id="map"></canvas>
+    <div class="hint" id="hint"></div>
+    <ul class="quests" id="quests" hidden></ul>
+    <div class="menu" id="menu" hidden></div>
+    <!-- The shop as a drawer at the right edge: drag an object from it onto the field to buy and place it. -->
+    <aside class="drawer" id="drawer">
+      <button class="drawer-tab" id="drawerTab" aria-label="Постройки">🛠</button>
+      <div class="drawer-list" id="drawerList"></div>
+    </aside>
+  </section>
+  <!-- The control panel at the bottom: the buildings; while placing, the confirm and cancel buttons instead. -->
+  <footer class="dock">
+    <nav class="bottom" id="bottom">
+      <button class="big" id="barnBtn"><img src="/assets/garden/icon-barn.png" alt="">Амбар</button>
+      <button class="big" id="shopBtn"><img src="/assets/garden/icon-seed.png" alt="">Лавка</button>
+      <button class="big" id="bazaarBtn"><img src="/assets/garden/icon-gold.png" alt="">Базар</button>
+    </nav>
+    <div class="place" id="place" hidden></div>
+  </footer>
   <section class="sheet" id="sheet" hidden></section>
 </main>
 <script>

@@ -1,12 +1,13 @@
-// The garden, test: a farm in the manner of Hay Day. Small beds of one cell stand in rows; a crop is sown by sliding its
-// icon over empty beds and gathered by sliding the sickle over ripe ones. One sowing gives a fixed harvest; the seed is
-// a fighter of that crop taken from the barn (1 sown → 2 gathered). Beds are bought in the shop and dragged onto the
-// map. No avatar yet, no server: everything is kept in this browser.
-// Concept: D:\HomeProjects\GardenBattle\Doc\Огород — концепция модуля.md.
+// The garden, test. An open ground that goes on as far as one scrolls; everything on it is a separate object the
+// player places and moves himself: beds, the armory (barn), the seed tent (shop), the market tent (bazaar), the well
+// and camp decorations. On the beds the army grows: a crop is sown by sliding its icon over empty beds and gathered
+// by sliding the sickle over ripe ones; the seed is a fighter of that crop from the barn (1 sown → 2 gathered).
+// The player's avatar and his helpers do the work, walking round the objects. No server: kept in this browser.
+// Concept: D:\HomeProjects\GardenBattle\Doc\Огород — концепция модуля.md; look: art/garden/concepts/war-garden-2.png.
 (() => {
   const $ = (s) => document.querySelector(s);
-  const canvas = $("#map"),
-    g = canvas.getContext("2d");
+  const canvas = $("#map");
+  let g = canvas.getContext("2d");
 
   // ---------- Rules ----------
   // grow: game minutes from sowing to ripe; yield: fighters gathered from one bed.
@@ -20,41 +21,85 @@
   };
   const START_GOLD = 300,
     START_STOCK = 3,
-    BED_PRICE = 50,
     MINUTE = 60000,
-    SAVE_KEY = "garden-test-v3";
+    SAVE_KEY = "garden-test-v13";
 
-  // ---------- The plot ----------
-  // A square of N×N cells drawn as a diamond: cell (u, v) is at x = (u − v)·TW/2, y = (u + v)·TH/2.
-  const N = 12,
-    TW = 96,
-    TH = 48;
-  const iso = (u, v) => [((u - v) * TW) / 2, ((u + v) * TH) / 2];
-  // The buildings stand around the back corner (the barn in it, the shop and the bazaar along the two back edges), so
-  // all three are in view on a narrow screen; a path runs in front of them as an L.
-  const BUILDINGS = [
-    { kind: "barn", u: 1, v: 1, size: 3, name: "Амбар" },
-    { kind: "shop", u: 5, v: 0, size: 3, name: "Лавка" },
-    { kind: "bazaar", u: 0, v: 5, size: 3, name: "Базар" },
-  ];
-  const PATH = 4,
-    PATH_END = 9;
-  const onPath = (u, v) => (v === PATH && u < PATH_END) || (u === PATH && v < PATH_END);
+  // ---------- Objects ----------
+  // Every kind of object: its picture (assets/garden/obj, cut from art/garden/objects-sheet.png by
+  // tools/cut-objects.cjs; all drawn at one scale, so a picture's pixels are world pixels), its footprint on the
+  // ground (a box round the middle of its bottom: half width, depth up from the bottom), and, for what can be bought,
+  // a price. "unique" ones come with the garden and stand one at a time: razed, one is bought again from the drawer.
+  // "fixed" ones (beds and buildings) stay where they were put: they cannot be moved, only razed (and a new one bought
+  // and placed); the rest (crates,
+  // racks, dummies, plants…) can be picked up and moved at will.
+  const KINDS = {
+    bed: { name: "Грядка", pic: "bed-empty", foot: [172, 150], price: 50, fixed: true },
+    armory: { name: "Амбар", pic: "armory", foot: [150, 130], price: 200, unique: true, fixed: true, opens: "barn" },
+    "seed-tent": { name: "Лавка", pic: "seed-tent", foot: [140, 120], price: 150, unique: true, fixed: true, opens: "shop" },
+    "market-tent": { name: "Базар", pic: "market-tent", foot: [140, 110], price: 150, unique: true, fixed: true, opens: "bazaar" },
+    well: { name: "Колодец", pic: "well", foot: [80, 70], price: 100, fixed: true },
+    "trade-stall": { name: "Прилавок", pic: "trade-stall", foot: [105, 80], price: 120, fixed: true },
+    palisade: { name: "Частокол", pic: "palisade", foot: [135, 30], price: 10 },
+    "palisade-corner": { name: "Угол частокола", pic: "palisade-corner", foot: [65, 50], price: 10 },
+    gate: { name: "Ворота", pic: "gate", foot: [115, 30], price: 30 },
+    "banner-stand": { name: "Знамя на камнях", pic: "banner-stand", foot: [45, 30], price: 25 },
+    banner: { name: "Знамя", pic: "banner", foot: [20, 14], price: 20 },
+    dummy: { name: "Чучело-мишень", pic: "dummy", foot: [25, 18], price: 30 },
+    "spear-rack": { name: "Стойка с копьями", pic: "spear-rack", foot: [60, 45], price: 40 },
+    "shield-rack": { name: "Стойка со щитами", pic: "shield-rack", foot: [85, 45], price: 40 },
+    "crates-barrels": { name: "Ящики", pic: "crates-barrels", foot: [62, 40], price: 15 },
+    barrels: { name: "Бочки", pic: "barrels", foot: [58, 30], price: 10 },
+    "hay-sacks": { name: "Сено и мешки", pic: "hay-sacks", foot: [105, 40], price: 15 },
+    "rocks-big": { name: "Большие камни", pic: "rocks-big", foot: [75, 40], price: 5 },
+    "rocks-small": { name: "Камни", pic: "rocks-small", foot: [52, 26], price: 5 },
+    "rock-moss": { name: "Камень со мхом", pic: "rock-moss", foot: [62, 26], price: 5 },
+    bush: { name: "Куст", pic: "bush", foot: [52, 30], price: 5 },
+    "bush-berries": { name: "Куст с ягодами", pic: "bush-berries", foot: [48, 28], price: 5 },
+    "bush-white": { name: "Куст с цветами", pic: "bush-white", foot: [50, 28], price: 5 },
+    "bush-yellow": { name: "Жёлтые цветы", pic: "bush-yellow", foot: [46, 26], price: 5 },
+    fern: { name: "Папоротник", pic: "fern", foot: [40, 22], price: 5 },
+    fern2: { name: "Папоротник-2", pic: "fern2", foot: [46, 24], price: 5 },
+    stump: { name: "Пень", pic: "stump", foot: [48, 26], price: 5 },
+    logs: { name: "Брёвна", pic: "logs", foot: [58, 32], price: 10 },
+  };
+  // The paths left round every object, wide enough for a person.
+  const GAP = 34;
+
+  // Where the first beds stand: the top left corner of the clearing, under the buildings.
+  const BEDS_X = -1500,
+    BEDS_Y = -1240;
 
   // ---------- Saved state ----------
+  // objects: [{ kind, x, y, flip?, crop?, at? }], x, y the middle of the bottom in world pixels.
   // time: game time in ms, which runs `speed` times faster than real time (×60 for the test) and also runs while the
   // page is closed; real: the real time it was last brought up to date.
   function fresh() {
-    const beds = [];
-    for (let u = 6; u <= 8; u++) for (let v = 6; v <= 7; v++) beds.push({ u, v, crop: null, at: 0 });
-    return {
-      gold: START_GOLD,
-      barn: Object.fromEntries(Object.keys(CROPS).map((id) => [id, START_STOCK])),
-      beds,
-      time: 0,
-      real: Date.now(),
-      speed: 1,
-    };
+    const objects = [],
+      ids = Object.keys(CROPS),
+      stage = [1.2, 0.8, 0.3, 1.1, null, 0.6, 0.9, null];
+    // Eight beds, two columns of four, with paths between them, most of them growing, two waiting for seed.
+    for (let k = 0; k < 8; k++) {
+      const id = ids[k % ids.length],
+        grown = stage[k];
+      objects.push({ kind: "bed", x: BEDS_X + (k % 2) * 410, y: BEDS_Y + Math.floor(k / 2) * 190, crop: grown == null ? null : id, at: grown == null ? 0 : -grown * CROPS[id].grow * MINUTE });
+    }
+    // The camp round them; the player moves all of it as he likes.
+    // The buildings stand in a row under the palisade at the top; the beds begin below them, by the top left corner,
+    // and the player spreads them right and down as he likes.
+    for (const [kind, x, y, flip] of [
+      ["armory", -1500, -1560],
+      ["banner-stand", -1220, -1600],
+      ["seed-tent", -950, -1560],
+      ["market-tent", -480, -1560],
+      ["well", -110, -1580],
+      ["spear-rack", -1780, -1300],
+      ["shield-rack", -1770, -1050],
+      ["dummy", -1790, -820],
+      ["crates-barrels", -720, -1270],
+      ["hay-sacks", -720, -1050],
+    ])
+      objects.push({ kind, x, y, flip: !!flip });
+    return { gold: START_GOLD, barn: Object.fromEntries(ids.map((id) => [id, START_STOCK])), objects, time: 0, real: Date.now(), speed: 1, xp: 0, level: 1, quests: [] };
   }
   let state;
   try {
@@ -62,6 +107,23 @@
   } catch {
     state = fresh();
   }
+  state.xp ??= 0;
+  state.level ??= 1;
+  state.quests ??= [];
+  // A save from an older version may name kinds of objects or crops that are no more, or lack new crops: those
+  // objects are dropped, such beds are emptied, the barn gets the new crops, such tasks are let go. Without this one
+  // unknown name would stop the game on its first frame.
+  function mend() {
+    state.objects = (state.objects || []).filter((o) => KINDS[o.kind]);
+    for (const o of state.objects) if (o.kind === "bed" && o.crop && !CROPS[o.crop]) (o.crop = null), (o.at = 0);
+    state.barn ||= {};
+    for (const id of Object.keys(CROPS)) state.barn[id] ??= 0;
+    for (const id of Object.keys(state.barn)) if (!CROPS[id]) delete state.barn[id];
+    state.quests = state.quests.filter((q) => CROPS[q.crop]);
+    if (!Number.isFinite(state.gold)) state.gold = START_GOLD;
+  }
+  mend();
+  const beds = () => state.objects.filter((o) => o.kind === "bed");
   // Game time follows the real clock, including while the page was closed or in the background.
   function tick() {
     const now = Date.now();
@@ -72,10 +134,13 @@
     tick();
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      // The barn for the battle: opened from the garden, its squad picker offers only the fighters grown here.
+      localStorage.setItem("garden-barn", JSON.stringify(state.barn));
     } catch {}
   }
   const left = (bed) => CROPS[bed.crop].grow * MINUTE - (state.time - bed.at);
   const ripe = (bed) => bed.crop && left(bed) <= 0;
+  const growth = (b) => (state.time - b.at) / (CROPS[b.crop].grow * MINUTE);
   function clock(ms) {
     const s = Math.max(0, Math.ceil(ms / 1000 / state.speed)),
       h = Math.floor(s / 3600),
@@ -85,11 +150,41 @@
 
   // ---------- Pictures ----------
   const pic = {};
-  for (const name of ["ground-grass", "ground-path", "fence", "bed-empty", "bed-sprouts", "bed-growing", "bed-ready", "barn", "shop-seeds", "bazaar", "icon-harvest"]) {
+  for (const name of [...new Set(Object.values(KINDS).map((k) => k.pic)), ...Object.keys(CROPS).flatMap((id) => [1, 2, 3].map((n) => `w-${id}-${n}`)), "tile-dirt", "tile-grass", "tile-grass2", "tile-dirt-stones", "tile-path", "tree", "bush-round"]) {
     pic[name] = new Image();
-    pic[name].src = `/assets/garden/${name}.png`;
+    pic[name].src = `/assets/garden/obj/${name}.png`;
   }
-  const BUILDING_PIC = { barn: "barn", shop: "shop-seeds", bazaar: "bazaar" };
+  // The basket of the harvest, without the round gold badge it was drawn on (cut by tools/cut-basket.cjs).
+  pic["icon-basket"] = new Image();
+  pic["icon-basket"].src = "/assets/garden/icon-basket.png";
+  // The ground: the dirt tile, its rounded rim cut off, laid mirrored (as it is, flipped across, flipped down, both),
+  // so neighbouring tiles always meet edge to the same edge and no seam shows.
+  let ground = null,
+    groundTile = null;
+  pic["tile-dirt"].onload = () => {
+    const t = pic["tile-dirt"],
+      m = 10,
+      s = Math.min(t.naturalWidth, t.naturalHeight) - 2 * m,
+      k = 2.6,
+      c = document.createElement("canvas"),
+      cg = c.getContext("2d");
+    c.width = c.height = Math.round(s * k * 2);
+    const d = s * k;
+    for (const [fx, fy] of [
+      [1, 1],
+      [-1, 1],
+      [1, -1],
+      [-1, -1],
+    ]) {
+      cg.save();
+      cg.translate(fx < 0 ? 2 * d : 0, fy < 0 ? 2 * d : 0);
+      cg.scale(fx, fy);
+      cg.drawImage(t, m, m, s, s, 0, 0, d, d);
+      cg.restore();
+    }
+    ground = g.createPattern(c, "repeat");
+    groundTile = c;
+  };
   // Each crop's portrait: the standing figure facing the camera, cut from the hero's sprite sheet.
   const face = {},
     faceUrl = {};
@@ -109,10 +204,556 @@
           face[id] = c;
           faceUrl[id] = c.toDataURL();
           if (panel) panel();
+          renderQuests();
         };
         img.src = `/assets/characters/${id}/${sh.file}`;
       });
   const faceImg = (id) => `<img class="face" src="${faceUrl[id] || BLANK}" alt="">`;
+
+  // ---------- Footprints ----------
+  // An object's ground box [left, top, right, bottom] in world pixels; `pad` widens it on every side.
+  function footOf(o, pad = 0, x = o.x, y = o.y) {
+    const [hw, d] = KINDS[o.kind].foot;
+    return [x - hw - pad, y - d - pad, x + hw + pad, y + pad];
+  }
+  const overlap = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+  // Can an object stand at x, y: a path of GAP left between it and every other object.
+  // Nor on the land's own trees, bushes, stones and palisade, nor out in the forest.
+  function fits(o, x, y) {
+    const box = footOf(o, GAP / 2, x, y);
+    if (box[0] < LAND.x0 || box[2] > LAND.x1 || box[1] < LAND.y0 || box[3] > LAND.y1) return false;
+    if (scenery.some((q) => !q.forest && overlap(box, sceneryFoot(q, GAP / 2)))) return false;
+    // Nor under the crown of a tree or a big bush (the forest's ragged edge included): it would stand hidden in it.
+    if (crowns().some((c) => overlap(box, c))) return false;
+    return state.objects.every((q) => q === o || q === ghost?.moving || !overlap(box, footOf(q, GAP / 2)));
+  }
+  // The ground of a plant, stone or piece of palisade of the land: about its trunk or base, scaled with it.
+  const SCENERY_FOOT = { tree: [55, 45], "bush-round": [55, 34], palisade: [135, 30], gate: [115, 30], "rocks-big": [70, 36], "rock-moss": [60, 24], logs: [55, 30] };
+  // The ground under the crowns of the trees and big bushes, as boxes: the middle of each picture as drawn, from its
+  // foot up to near its top (the crown's round corners are left out). Worked out once.
+  const CROWN = { tree: [325, 359], "bush-round": [212, 159] };
+  let crownBoxes = null;
+  function crowns() {
+    return (crownBoxes ||= scenery
+      .filter((o) => CROWN[o.pic])
+      .map((o) => {
+        const [w, h] = CROWN[o.pic];
+        return [o.x - 0.36 * w * o.k, o.y - 0.85 * h * o.k, o.x + 0.36 * w * o.k, o.y + 6];
+      }));
+  }
+  function sceneryFoot(o, pad = 0) {
+    const [hw, d] = SCENERY_FOOT[o.pic] || [40, 24];
+    return [o.x - hw * o.k - pad, o.y - d * o.k - pad, o.x + hw * o.k + pad, o.y + pad];
+  }
+
+  // ---------- People: the gardener (the player's avatar) and his helpers ----------
+  // Their sheets are cut like a hero's (tools/cut-sheets.cjs gardener gnome): rows are directions facing right,
+  // columns are idle, four walk frames and two work frames. They are only a sight: the beds change at once, they
+  // follow. The gardener walks to each bed sown or gathered and works it; the helpers, on their own, go from one
+  // growing bed to another and water it. They find their way round the objects on a grid of CELL pixels.
+  const SPEED = 140,
+    WORK_TIME = 1.1,
+    CELL = 20;
+  const sheets = {};
+  for (const id of ["gardener", "gnome"])
+    fetch(`/assets/characters/${id}/manifest.json`)
+      .then((r) => r.json())
+      .then((m) => {
+        const img = new Image();
+        img.onload = () => (sheets[id] = { img, sheet: m.sheet });
+        img.src = `/assets/characters/${id}/${m.sheet.file}`;
+      });
+  // height: of the figure in world pixels; home: where one stands when there is nothing to do.
+  const walker = (sheet, home, height) => ({ sheet, home, height, x: home[0], y: home[1], dx: 0, dy: 1, jobs: [], doing: null, t: 0, rest: 0, aim: null, path: [] });
+  const avatar = walker("gardener", [-1500, -1450], 150),
+    helpers = [walker("gnome", [-1760, -930], 110), walker("gnome", [-860, -930], 110)],
+    walkers = [avatar, ...helpers];
+  helpers.forEach((w, i) => (w.rest = -3 * i));
+  // The walkable grid over the whole clearing, CELL pixels a cell: 1 where an object's footprint (a little narrower
+  // than the GAP round it) is. Built again only when something was placed or moved.
+  let nav = null;
+  const layoutKey = () => state.objects.map((o) => `${o.kind}${o.x},${o.y}`).join("|");
+  function navGrid() {
+    const key = layoutKey();
+    if (nav?.key === key) return nav;
+    const x0 = Math.floor((WORLD.x0 - 200) / CELL),
+      y0 = Math.floor((WORLD.y0 - 200) / CELL),
+      w = Math.ceil((WORLD.x1 - WORLD.x0 + 400) / CELL),
+      h = Math.ceil((WORLD.y1 - WORLD.y0 + 400) / CELL),
+      cells = new Uint8Array(w * h);
+    // The forest round the clearing is no place to walk.
+    for (let gy = 0; gy < h; gy++)
+      for (let gx = 0; gx < w; gx++) {
+        const x = (gx + x0) * CELL,
+          y = (gy + y0) * CELL;
+        if (x < LAND.x0 || x > LAND.x1 || y < LAND.y0 || y > LAND.y1) cells[gy * w + gx] = 1;
+      }
+    const boxes = [...state.objects.map((o) => footOf(o, GAP / 2 - 12)), ...scenery.filter((o) => !o.forest).map((o) => sceneryFoot(o, 4))];
+    for (const [l, t, r, b] of boxes) {
+      for (let cy = Math.ceil(t / CELL); cy * CELL < b; cy++)
+        for (let cx = Math.ceil(l / CELL); cx * CELL < r; cx++) {
+          const gx = cx - x0,
+            gy = cy - y0;
+          if (gx >= 0 && gy >= 0 && gx < w && gy < h) cells[gy * w + gx] = 1;
+        }
+    }
+    return (nav = { key, x0, y0, w, h, cells });
+  }
+  // The way to a point round the objects: A* on the grid (a binary heap of open cells); a straight line if none.
+  function findPath(px0, py0, px1, py1) {
+    const { x0, y0, w, h, cells } = navGrid(),
+      clampX = (x) => Math.max(0, Math.min(w - 1, x)),
+      clampY = (y) => Math.max(0, Math.min(h - 1, y)),
+      sx = clampX(Math.round(px0 / CELL) - x0),
+      sy = clampY(Math.round(py0 / CELL) - y0),
+      tx = clampX(Math.round(px1 / CELL) - x0),
+      ty = clampY(Math.round(py1 / CELL) - y0),
+      start = sy * w + sx,
+      goal = ty * w + tx,
+      cost = new Float32Array(w * h).fill(Infinity),
+      from = new Int32Array(w * h).fill(-1),
+      heap = [],
+      push = (f, k) => {
+        heap.push([f, k]);
+        for (let i = heap.length - 1; i > 0; ) {
+          const p = (i - 1) >> 1;
+          if (heap[p][0] <= heap[i][0]) break;
+          [heap[p], heap[i]] = [heap[i], heap[p]];
+          i = p;
+        }
+      },
+      pop = () => {
+        const top = heap[0],
+          last = heap.pop();
+        if (heap.length) {
+          heap[0] = last;
+          for (let i = 0; ; ) {
+            const l = 2 * i + 1,
+              r = l + 1;
+            let m = i;
+            if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+            if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+            if (m === i) break;
+            [heap[m], heap[i]] = [heap[i], heap[m]];
+            i = m;
+          }
+        }
+        return top;
+      },
+      free = (x, y) => x >= 0 && y >= 0 && x < w && y < h && !cells[y * w + x];
+    cost[start] = 0;
+    push(0, start);
+    let steps = 0;
+    while (heap.length && steps++ < 30000) {
+      const [, k] = pop();
+      if (k === goal) break;
+      const x = k % w,
+        y = (k - x) / w;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const nx = x + dx,
+          ny = y + dy,
+          nk = ny * w + nx;
+        if (nk !== goal && !free(nx, ny)) continue;
+        // No cutting a corner of an object.
+        if (dx && dy && (!free(x + dx, y) || !free(x, y + dy))) continue;
+        const c = cost[k] + (dx && dy ? 1.414 : 1);
+        if (c >= cost[nk]) continue;
+        cost[nk] = c;
+        from[nk] = k;
+        push(c + Math.hypot(tx - nx, ty - ny), nk);
+      }
+    }
+    if (from[goal] < 0) return [[px1, py1]];
+    const path = [];
+    for (let k = goal; k >= 0 && k !== start; k = from[k]) path.push([((k % w) + x0) * CELL, (Math.floor(k / w) + y0) * CELL]);
+    path.reverse();
+    path[path.length - 1] = [px1, py1];
+    return path;
+  }
+  // Where one stands to work a bed: on the path round it, on whichever side is free and near, facing the bed. From
+  // below one works with one's back to us, from above facing us, from a side in profile, from a corner three-quarter
+  // (the sheets have all five views). fx, fy: the way one faces there.
+  function workSpots(b) {
+    const [hw, d] = KINDS.bed.foot,
+      m = GAP / 2,
+      list = [];
+    for (const k of [-0.5, 0, 0.5]) list.push({ x: b.x + k * hw, y: b.y + m, fx: -k * 0.8 || 0.3, fy: -1 }, { x: b.x + k * hw, y: b.y - d - m, fx: -k * 0.8 || 0.3, fy: 1 });
+    for (const s of [-1, 1]) {
+      list.push({ x: b.x + s * (hw + m), y: b.y - d / 2, fx: -s, fy: 0 });
+      list.push({ x: b.x + s * (hw + m), y: b.y + m, fx: -s, fy: -1 }, { x: b.x + s * (hw + m), y: b.y - d - m, fx: -s, fy: 1 });
+    }
+    const { x0, y0, w, h, cells } = navGrid();
+    return list.filter((p) => {
+      const gx = Math.round(p.x / CELL) - x0,
+        gy = Math.round(p.y / CELL) - y0;
+      return gx >= 0 && gy >= 0 && gx < w && gy < h && !cells[gy * w + gx];
+    });
+  }
+  // One of the two free spots nearest to the walker (so they do not always come to the same side).
+  function pickSpot(b, w) {
+    const free = workSpots(b).sort((p, q) => Math.hypot(p.x - w.x, p.y - w.y) - Math.hypot(q.x - w.x, q.y - w.y));
+    return free[Math.floor(Math.random() * Math.min(2, free.length))] || { x: b.x, y: b.y + GAP / 2, fx: 0.4, fy: -1 };
+  }
+  const workSpot = (b, w) => (b.stroll ? b.stroll : ((w.spot = pickSpot(b, w)), [w.spot.x, w.spot.y]));
+  function job(b) {
+    if (avatar.jobs.includes(b)) return;
+    // What the player asks comes before what he found to do himself.
+    if (!avatar.given) (avatar.jobs = []), (avatar.aim = null);
+    avatar.given = true;
+    avatar.jobs.push(b);
+  }
+  // Someone with nothing to do finds something after a short rest: a helper waters a growing bed nobody is at; the
+  // gardener hoes an empty bed or looks over another. With no bed to go to, they stroll somewhere near.
+  function findWork(w) {
+    if (w.jobs.length || w.rest < 2 + Math.random() * 3) return;
+    const busy = new Set(walkers.flatMap((o) => [o.doing, ...o.jobs])),
+      open = beds().filter((b) => !busy.has(b)),
+      list = w === avatar ? [...open.filter((b) => !b.crop), ...open] : open.filter((b) => b.crop && !ripe(b));
+    if (list.length) return w.jobs.push(list[Math.floor(Math.random() * Math.min(list.length, w === avatar ? 3 : list.length))]);
+    w.jobs.push({ stroll: [w.home[0] + (Math.random() - 0.5) * 300, w.home[1] + (Math.random() - 0.5) * 200] });
+  }
+  function step(w, dt) {
+    if (w.doing) {
+      w.t += dt;
+      if (w.t >= WORK_TIME * (w === avatar ? 1 : 2)) w.doing = null;
+      return;
+    }
+    findWork(w);
+    const next = w.jobs[0];
+    if (!next && w === avatar) avatar.given = false;
+    // A new aim: the next bed, or home after a rest.
+    const aim = next || (w.rest > 4 ? "home" : null);
+    if (aim !== w.aim) {
+      w.aim = aim;
+      const [x1, y1] = !aim ? [w.x, w.y] : aim === "home" ? w.home : workSpot(next, w);
+      w.path = aim ? findPath(w.x, w.y, x1, y1) : [];
+    }
+    while (w.path.length && Math.hypot(w.path[0][0] - w.x, w.path[0][1] - w.y) <= 2) w.path.shift();
+    const [tx, ty] = w.path[0] || [w.x, w.y],
+      ddx = tx - w.x,
+      ddy = ty - w.y,
+      d = Math.hypot(ddx, ddy);
+    if (d > 2) {
+      const k = Math.min(1, (SPEED * (w === avatar ? 1 : 0.75) * dt) / d);
+      w.x += ddx * k;
+      w.y += ddy * k;
+      w.dx = ddx;
+      w.dy = ddy;
+      w.walking = true;
+      w.t += dt;
+      return;
+    }
+    w.walking = false;
+    if (next?.stroll) (w.jobs.shift(), (w.aim = null), (w.rest = 0));
+    else if (next) {
+      w.jobs.shift();
+      w.aim = null;
+      w.doing = next;
+      w.t = 0;
+      w.rest = 0;
+      // Facing the bed while working it, from the side one came to.
+      w.dx = w.spot?.fx ?? 0.4;
+      w.dy = w.spot?.fy ?? -1;
+    } else w.rest += dt;
+  }
+  function drawWalker(w) {
+    const s = sheets[w.sheet];
+    if (!s) return;
+    const { img, sheet } = s,
+      ang = (Math.atan2(w.dy, Math.abs(w.dx)) * 180) / Math.PI,
+      row = ang > 67.5 ? "front" : ang > 22.5 ? "front34" : ang > -22.5 ? "side" : ang > -67.5 ? "back34" : "back",
+      flip = w.dx < -0.01,
+      col = w.doing ? 5 + (Math.floor(w.t * 5) % 2) : w.walking ? 1 + (Math.floor(w.t * 8) % 4) : 0,
+      k = w.height / sheet.height,
+      cw = sheet.cell.w * k,
+      ch = sheet.cell.h * k;
+    g.save();
+    g.translate(w.x, w.y);
+    if (flip) g.scale(-1, 1);
+    // A soft shadow under the feet.
+    g.fillStyle = "#0005";
+    g.beginPath();
+    g.ellipse(0, 0, cw * 0.22, cw * 0.08, 0, 0, Math.PI * 2);
+    g.fill();
+    g.drawImage(img, col * sheet.cell.w, sheet.rows.indexOf(row) * sheet.cell.h, sheet.cell.w, sheet.cell.h, -sheet.feet.x * k, -sheet.feet.y * k, cw, ch);
+    g.restore();
+  }
+
+  // ---------- The world: its bounds, the forest round it, grass and wild plants on the ground ----------
+  // The garden is a clearing of WORLD pixels each way (several phone screens; most of it in view on a big monitor),
+  // closed by a palisade along the top and bottom and a forest all round. Nothing of this can be moved: it is the
+  // land itself, laid out the same way every time (a fixed seed).
+  const WORLD = { x0: -2000, x1: 2000, y0: -1900, y1: 2100 },
+    FOREST = 520,
+    // The ground one can build and walk on: the clearing inside the palisade and the first trees.
+    LAND = { x0: WORLD.x0 + 70, x1: WORLD.x1 - 70, y0: WORLD.y0 + 60, y1: WORLD.y1 - 40 };
+  function seeded(seed) {
+    return () => {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rnd = seeded(7);
+  // The middle where the garden stands at first: kept clear of wild plants.
+  // Wild plants and lone trees keep to a band along the forest; the clearing inside it is the player's to build on.
+  const clear = (x, y, m = 0) => x > WORLD.x0 + 380 - m && x < WORLD.x1 - 380 + m && y > WORLD.y0 + 330 - m && y < WORLD.y1 - 330 + m;
+  // The top left corner where the garden stands at first (buildings, beds, racks): no wild plants there.
+  const startArea = (x, y, m = 0) => x > -1900 - m && x < -40 + m && y > -1760 - m && y < -480 + m;
+  // Patches of grass and of stony ground over the bare earth: soft round blots of the sheet's tiles.
+  const patches = [];
+  for (let i = 0; i < 260; i++) {
+    const x = WORLD.x0 + rnd() * (WORLD.x1 - WORLD.x0),
+      y = WORLD.y0 + rnd() * (WORLD.y1 - WORLD.y0),
+      kind = rnd() < 0.8 ? (rnd() < 0.5 ? "tile-grass" : "tile-grass2") : "tile-dirt-stones";
+    patches.push({ x, y, kind, r: (clear(x, y) ? 90 : 160) + rnd() * 200, sx: 1 + rnd() * 0.6, a: rnd() * Math.PI });
+  }
+  // Wild plants and stones, and the forest: trees in a band round the clearing, thickest away from it.
+  const scenery = [];
+  const wild = ["bush", "bush-round", "fern", "fern2", "rocks-small", "rock-moss", "stump", "bush-yellow", "bush-white", "bush-berries"];
+  // Wild plants in clumps of three to five, thicker towards the forest, none in the middle.
+  for (let i = 0; i < 140; i++) {
+    const cx = WORLD.x0 + 150 + rnd() * (WORLD.x1 - WORLD.x0 - 300),
+      cy = WORLD.y0 + 220 + rnd() * (WORLD.y1 - WORLD.y0 - 360);
+    if (clear(cx, cy, -60) || startArea(cx, cy, 120)) continue;
+    const n = 3 + Math.floor(rnd() * 3),
+      kinds = [wild[Math.floor(rnd() * wild.length)], wild[Math.floor(rnd() * wild.length)]];
+    for (let j = 0; j < n; j++) scenery.push({ pic: kinds[j % 2], x: cx + (rnd() - 0.5) * 160, y: cy + (rnd() - 0.5) * 90, k: 0.75 + rnd() * 0.45, flip: rnd() < 0.5 });
+  }
+  // A few lone trees on the clearing, smaller than the forest's.
+  for (let i = 0; i < 70; i++) {
+    const x = WORLD.x0 + 200 + rnd() * (WORLD.x1 - WORLD.x0 - 400),
+      y = WORLD.y0 + 260 + rnd() * (WORLD.y1 - WORLD.y0 - 520);
+    if (clear(x, y, -120) || startArea(x, y, 220)) continue;
+    scenery.push({ pic: "tree", x, y, k: 0.75 + rnd() * 0.3, flip: rnd() < 0.5, tint: Math.floor(rnd() * 3) });
+  }
+  // The forest: rows of trees just outside the clearing on every side, the outer rows packed tighter.
+  for (let row = 0; row < 4; row++) {
+    const step = 150 - row * 15,
+      out = 40 + row * 120;
+    for (let x = WORLD.x0 - FOREST; x <= WORLD.x1 + FOREST; x += step) {
+      for (const y of [WORLD.y0 - out + 60, WORLD.y1 + out + 40]) scenery.push({ pic: rnd() < 0.85 ? "tree" : "bush-round", x: x + (rnd() - 0.5) * 70, y: y + (rnd() - 0.5) * 50, k: 1.1 + rnd() * 0.5, flip: rnd() < 0.5, forest: true, tint: Math.floor(rnd() * 3) });
+    }
+    for (let y = WORLD.y0 - FOREST; y <= WORLD.y1 + FOREST; y += step * 0.75) {
+      for (const x of [WORLD.x0 - out - 70, WORLD.x1 + out + 70]) scenery.push({ pic: rnd() < 0.85 ? "tree" : "bush-round", x: x + (rnd() - 0.5) * 60, y: y + (rnd() - 0.5) * 40, k: 1.1 + rnd() * 0.5, flip: rnd() < 0.5, forest: true, tint: Math.floor(rnd() * 3) });
+    }
+  }
+  // A palisade along the top and the bottom of the clearing, with a gate in the middle of each.
+  for (const y of [WORLD.y0 + 40, WORLD.y1 - 10])
+    for (let x = WORLD.x0 + 140; x <= WORLD.x1 - 140; x += 270) scenery.push({ pic: Math.abs(x) < 140 ? "gate" : "palisade", x, y, k: 1, flip: false });
+  // Back to front, as they are drawn.
+  scenery.sort((a, b) => a.y - b.y);
+  // Three shades of each tree, made once, so the forest is not one tree copied: as it is, darker and bluer, warmer.
+  const TINTS = ["none", "brightness(0.82) hue-rotate(12deg) saturate(0.9)", "brightness(0.95) hue-rotate(-14deg) saturate(1.1)"],
+    tinted = {};
+  function shade(name, tint) {
+    const key = name + tint;
+    if (tinted[key]) return tinted[key];
+    const img = pic[name];
+    if (!img?.complete || !img.naturalWidth) return null;
+    if (!tint) return (tinted[key] = img);
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const cg = c.getContext("2d");
+    cg.filter = TINTS[tint];
+    cg.drawImage(img, 0, 0);
+    return (tinted[key] = c);
+  }
+  // A picture as it stands on the ground, made once: a soft dark oval where it touches the ground (cw wide), the
+  // sun's shadow a little to the right and down (the sun is up on the left), and the picture itself, in a canvas a
+  // margin M larger on every side. Shadows are costly to draw every frame; baked like this they cost nothing.
+  const M = 40,
+    lit = {};
+  function litSprite(key, img, cw, sun = true, filter = "none") {
+    if (lit[key]) return lit[key];
+    const iw = img.width || img.naturalWidth,
+      ih = img.height || img.naturalHeight;
+    if (!iw) return null;
+    const c = document.createElement("canvas");
+    c.width = iw + 2 * M;
+    c.height = ih + 2 * M;
+    const cg = c.getContext("2d"),
+      cx = M + iw / 2,
+      cy = M + ih - 6;
+    const gr = cg.createRadialGradient(cx, cy, 0, cx, cy, cw / 2);
+    gr.addColorStop(0, "rgba(30,20,5,0.35)");
+    gr.addColorStop(1, "rgba(30,20,5,0)");
+    cg.save();
+    cg.translate(cx, cy);
+    cg.scale(1, 0.28);
+    cg.fillStyle = gr;
+    cg.beginPath();
+    cg.arc(0, 0, cw / 2, 0, Math.PI * 2);
+    cg.fill();
+    cg.restore();
+    cg.filter = filter;
+    if (sun) {
+      cg.shadowColor = "rgba(40,25,5,0.32)";
+      cg.shadowBlur = 14;
+      cg.shadowOffsetX = 12;
+      cg.shadowOffsetY = 8;
+    }
+    cg.drawImage(img, M, M);
+    return (lit[key] = c);
+  }
+  function drawScenery(o) {
+    const base = shade(o.pic, o.tint || 0);
+    if (!base) return;
+    // The forest's trees darker, so the clearing stands in light; they cast no sun shadow (unseen in a mass).
+    const img = litSprite(`s:${o.pic}:${o.tint || 0}:${!!o.forest}`, base, base.width * 0.72, !o.forest, o.forest ? "brightness(0.85)" : "none");
+    if (!img) return;
+    const k = o.k;
+    g.save();
+    g.translate(o.x, o.y);
+    if (o.flip) g.scale(-1, 1);
+    g.drawImage(img, -img.width * k / 2, (-img.height + M + 6) * k, img.width * k, img.height * k);
+    g.restore();
+  }
+  // Grass and stony patches over the earth.
+  function drawPatches() {
+    for (const p of patches) {
+      const b = blot(p.kind);
+      if (!b) continue;
+      g.save();
+      g.translate(p.x, p.y);
+      g.scale(p.sx, 0.62);
+      g.rotate(p.a);
+      g.drawImage(b, -p.r, -p.r, 2 * p.r, 2 * p.r);
+      g.restore();
+    }
+  }
+  // The trodden ground of the garden, worked out from where things stand: blots of path texture under and round each
+  // bed, and along a line from each building's door to the nearest bed.
+  function drawPaths() {
+    const b = blot("tile-path");
+    if (!b) return;
+    const spot = (x, y, r) => g.drawImage(b, x - r, y - r * 0.62, 2 * r, 2 * r * 0.62);
+    const list = beds();
+    for (const o of list) for (let dx = -180; dx <= 180; dx += 90) spot(o.x + dx, o.y - 60, 120);
+    for (const o of state.objects) {
+      if (o.kind === "bed" || !KINDS[o.kind].unique) continue;
+      let near = null;
+      for (const q of list) if (!near || Math.hypot(q.x - o.x, q.y - o.y) < Math.hypot(near.x - o.x, near.y - o.y)) near = q;
+      if (!near) continue;
+      const x0 = o.x,
+        y0 = o.y + 10,
+        x1 = near.x,
+        y1 = near.y - 70,
+        n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 40);
+      for (let i = 0; i <= n; i++) spot(x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, 62);
+    }
+  }
+  // A soft round blot of a tile, made once per tile: the tile repeated over a disc that fades out at its rim.
+  const blots = {};
+  function blot(kind) {
+    if (blots[kind]) return blots[kind];
+    const t = pic[kind];
+    if (!t?.complete || !t.naturalWidth) return null;
+    const S = 256,
+      c = document.createElement("canvas"),
+      cg = c.getContext("2d"),
+      m = 10;
+    c.width = c.height = S;
+    for (let y = 0; y < S; y += t.naturalHeight - 2 * m) for (let x = 0; x < S; x += t.naturalWidth - 2 * m) cg.drawImage(t, m, m, t.naturalWidth - 2 * m, t.naturalHeight - 2 * m, x, y, t.naturalWidth - 2 * m, t.naturalHeight - 2 * m);
+    const fade = cg.createRadialGradient(S / 2, S / 2, S * 0.18, S / 2, S / 2, S / 2);
+    fade.addColorStop(0, "#000");
+    fade.addColorStop(1, "#0000");
+    cg.globalCompositeOperation = "destination-in";
+    cg.fillStyle = fade;
+    cg.fillRect(0, 0, S, S);
+    return (blots[kind] = c);
+  }
+  // The ground, drawn once into chunks of CHUNK world pixels at GROUND_K of their size (earth, paths, patches and the
+  // forest floor beyond the clearing) and kept; drawn again only when the layout changes (the paths follow the beds).
+  // At full size: at a lower one the ground looked blurred beside the sharp objects standing on it.
+  const CHUNK = 1024,
+    GROUND_K = 1,
+    chunks = new Map(); // "ix,iy" -> { c: canvas, key: the paths' layout it was drawn for }
+  let chunkKey = "",
+    keepChunks = 16,
+    builtThisFrame = 0;
+  function groundChunk(ix, iy) {
+    const key = `${ix},${iy}`,
+      have = chunks.get(key);
+    if (have) {
+      chunks.delete(key);
+      chunks.set(key, have);
+      // Drawn for an older layout of the paths: still shown while chunks are drawn anew, two a frame at most, so a
+      // moved bed does not freeze the screen while the whole view is drawn again.
+      if (have.key === chunkKey || builtThisFrame >= 2) return have.c;
+    } else if (builtThisFrame >= 2) return null;
+    // Not before every picture of the ground is loaded, or the chunk would be kept without it.
+    if (!ground || ![...new Set(["tile-path", "tile-grass", "tile-grass2", "tile-dirt-stones", ...scenery.map((o) => o.pic)])].every((n) => pic[n].complete && pic[n].naturalWidth)) return null;
+    const c = document.createElement("canvas"),
+      size = Math.round(CHUNK * GROUND_K);
+    c.width = c.height = size;
+    const cg = c.getContext("2d"),
+      wx = ix * CHUNK,
+      wy = iy * CHUNK;
+    cg.scale(GROUND_K, GROUND_K);
+    cg.translate(-wx, -wy);
+    cg.fillStyle = cg.createPattern(groundTile, "repeat");
+    cg.fillRect(wx, wy, CHUNK, CHUNK);
+    const draw0 = g;
+    g = cg; // the helpers below draw on `g`
+    try {
+      drawPaths(true);
+      drawPatches(true);
+    } finally {
+      g = draw0;
+    }
+    // Beyond the clearing: the forest floor, dark under the trees.
+    cg.fillStyle = "#33461f";
+    const fx0 = WORLD.x0 - 60,
+      fy0 = WORLD.y0 - 80,
+      fx1 = WORLD.x1 + 60,
+      fy1 = WORLD.y1 + 60;
+    if (wx < fx0) cg.fillRect(wx, wy, fx0 - wx, CHUNK);
+    if (wx + CHUNK > fx1) cg.fillRect(fx1, wy, wx + CHUNK - fx1, CHUNK);
+    if (wy < fy0) cg.fillRect(wx, wy, CHUNK, fy0 - wy);
+    if (wy + CHUNK > fy1) cg.fillRect(wx, fy1, CHUNK, wy + CHUNK - fy1);
+    // The land's own plants, stones, palisade and forest belong to the ground too: they never move, and the forest's
+    // hundreds of trees would be far too many to draw every frame. Each is drawn into every chunk it reaches.
+    g = cg;
+    try {
+      for (const o of scenery) {
+        const r = 230 * o.k;
+        if (o.x + r > wx && o.x - r < wx + CHUNK && o.y + 40 > wy && o.y - 560 * o.k < wy + CHUNK) drawScenery(o);
+      }
+    } finally {
+      g = draw0;
+    }
+    builtThisFrame++;
+    chunks.set(key, { c, key: chunkKey });
+    // Only so many are kept: those on the screen and a few round them.
+    while (chunks.size > keepChunks) chunks.delete(chunks.keys().next().value);
+    return c;
+  }
+  function drawGround() {
+    // The ground changes only with the paths, and they follow only the beds and the main buildings.
+    chunkKey = state.objects
+      .filter((o) => o.kind === "bed" || KINDS[o.kind].unique)
+      .map((o) => `${o.x},${o.y}`)
+      .join("|");
+    builtThisFrame = 0;
+    const [x0, y0] = toWorld(0, 0),
+      [x1, y1] = toWorld(W, H);
+    keepChunks = (Math.ceil((x1 - x0) / CHUNK) + 2) * (Math.ceil((y1 - y0) / CHUNK) + 2);
+    for (let iy = Math.floor(y0 / CHUNK); iy * CHUNK < y1; iy++)
+      for (let ix = Math.floor(x0 / CHUNK); ix * CHUNK < x1; ix++) {
+        const c = groundChunk(ix, iy);
+        if (c) g.drawImage(c, ix * CHUNK, iy * CHUNK, CHUNK + 1, CHUNK + 1);
+      }
+  }
+  // Is a world box on the screen (with a margin)?
+  function inView(l, t, r, b) {
+    const [x0, y0] = toWorld(0, 0),
+      [x1, y1] = toWorld(W, H);
+    return r > x0 && l < x1 && b > y0 && t < y1;
+  }
 
   // ---------- The view: pan with a finger, zoom with two fingers or the wheel ----------
   let W = 0,
@@ -128,184 +769,351 @@
   }
   function fit() {
     resize();
-    // Close enough for the small beds to be tapped easily (about 85 px wide on a phone), looking at the beds with the
-    // barn behind them; the rest is reached by moving the map.
-    cam.zoom = Math.min(1.3, Math.max(0.85, W / (N * TW * 0.4)));
-    [cam.x, cam.y] = iso(5.5, 5.5);
+    // The two columns of beds across the screen, their middle in the middle.
+    // Close on the beds: two columns of them across most of the screen, their middle a little below the middle.
+    cam.zoom = Math.min(1.2, W / 680);
+    // Looking at the top left corner: the row of buildings at the top of the field, the first beds under them.
+    cam.x = BEDS_X + 205;
+    cam.y = -1760 + H / 2 / cam.zoom;
   }
   const toScreen = (x, y) => [(x - cam.x) * cam.zoom + W / 2, (y - cam.y) * cam.zoom + H / 2];
   const toWorld = (sx, sy) => [(sx - W / 2) / cam.zoom + cam.x, (sy - H / 2) / cam.zoom + cam.y];
-  // The cell (fractional) under a point of the screen.
-  function cellAt(sx, sy) {
-    const [x, y] = toWorld(sx, sy),
-      a = x / (TW / 2),
-      b = y / (TH / 2);
-    return [(a + b) / 2, (b - a) / 2];
-  }
+  // The view stays over the clearing and the first trees of the forest round it; zooming out stops when it holds
+  // all of that.
   function clampCam() {
-    cam.zoom = Math.min(1.8, Math.max(0.45, cam.zoom));
-    const half = (N * TW) / 2;
-    cam.x = Math.min(half, Math.max(-half, cam.x));
-    cam.y = Math.min(N * TH, Math.max(0, cam.y));
+    const ex = 260,
+      ey = 300,
+      spanX = WORLD.x1 - WORLD.x0 + 2 * ex,
+      spanY = WORLD.y1 - WORLD.y0 + 2 * ey;
+    cam.zoom = Math.min(1.6, Math.max(W / spanX, H / spanY, cam.zoom));
+    const hw = W / 2 / cam.zoom,
+      hh = H / 2 / cam.zoom;
+    cam.x = Math.max(WORLD.x0 - ex + hw, Math.min(WORLD.x1 + ex - hw, cam.x));
+    cam.y = Math.max(WORLD.y0 - ey + hh, Math.min(WORLD.y1 + ey - hh, cam.y));
   }
 
-  // ---------- What stands on the plot ----------
-  const inside = (t, u, v) => u >= t.u && u < t.u + t.size && v >= t.v && v < t.v + t.size;
-  const bedAt = (u, v) => state.beds.find((b) => b.u === Math.floor(u) && b.v === Math.floor(v));
-  const buildingAt = (u, v) => BUILDINGS.find((t) => inside(t, Math.floor(u), Math.floor(v)));
-  // A bed may stand on the grass only: inside the plot, off the path, on nothing else.
-  function free(u, v, skip = null) {
-    if (u < 0 || v < 0 || u >= N || v >= N || onPath(u, v) || buildingAt(u, v)) return false;
-    const b = bedAt(u, v);
-    return !b || b === skip;
+  // ---------- What is under a point ----------
+  // The size an object is drawn at: its picture's own size (the sheet's scale is the world's).
+  function drawBox(o) {
+    // Every stage of a bed is drawn in the empty bed's box, so a bed keeps its shape as it grows.
+    const img = pic[o.kind === "bed" ? "bed-empty" : picOf(o)],
+      w = img.naturalWidth || 100,
+      h = img.naturalHeight || 100;
+    return [o.x - w / 2, o.y - h + footPad(o), w, h];
   }
+  // The picture's bottom edge stands a little below the footprint's front (its own soft shadow).
+  const footPad = (o) => (o.kind === "bed" ? 10 : 8);
+  // The topmost object whose picture is under a screen point (beds by their footprint, which is their picture).
+  function objectAt(sx, sy) {
+    const [x, y] = toWorld(sx, sy);
+    return [...state.objects]
+      .sort((a, b) => b.y - a.y)
+      .find((o) => {
+        const [l, t, w, h] = drawBox(o);
+        return x >= l && x < l + w && y >= t && y < t + h;
+      });
+  }
+  const bedUnder = (sx, sy) => {
+    const [x, y] = toWorld(sx, sy);
+    return beds().find((b) => {
+      const [l, t, r, bt] = footOf(b);
+      return x >= l && x < r && y >= t && y < bt;
+    });
+  };
 
   // ---------- Drawing ----------
-  // ghost: a bed being placed or moved, {u, v, moving: the bed it was picked up from}.
+  // ghost: an object being placed or moved, { kind, x, y, moving: the object it was picked up from }.
   let ghost = null;
   // tool: what the finger is sliding over the beds: {kind: "seed", crop} or {kind: "sickle"}, with its screen point.
   let tool = null;
-  // A texture spread over cells as if lying on the ground: `cells` cells per picture.
-  function groundFill(img, u0, v0, u1, v1, cells) {
-    if (!img.complete || !img.naturalWidth) return;
-    g.save();
-    g.transform(TW / 2, TH / 2, -TW / 2, TH / 2, 0, 0);
-    const pat = g.createPattern(img, "repeat");
-    pat.setTransform(new DOMMatrix().scale(cells / img.naturalWidth));
-    g.fillStyle = pat;
-    g.fillRect(u0, v0, u1 - u0, v1 - v0);
-    g.restore();
+  // A bed's picture: empty soil; seedlings for the first half of the growth; then grown plants (tomatoes for the
+  // tomato), pale until ripe.
+  // A bed is always the same empty bed; what grows on it is drawn over it (see drawWarriors).
+  function picOf(o) {
+    return o.kind === "bed" ? "bed-empty" : KINDS[o.kind].pic;
   }
-  function diamond(u, v, size) {
-    const p = [iso(u, v), iso(u + size, v), iso(u + size, v + size), iso(u, v + size)];
-    g.beginPath();
-    g.moveTo(...p[0]);
-    for (const q of p.slice(1)) g.lineTo(...q);
-    g.closePath();
-  }
-  // A picture standing on its cells: as wide as its footprint, its bottom on the footprint's front corner.
-  function stand(img, u, v, size, widen = 1.08, lift = 0) {
+  // The army growing on a bed: its warriors in a row on the soil, as many as it will give. First only their helmets show above
+  // little mounds, from half the growth they are half out of the ground, ripe they stand with their weapons.
+  // Pictures: assets/garden/obj/w-<crop>-<1..3>.png, cut from art/garden/warriors-sheet.png by tools/cut-objects.cjs.
+  const WARRIOR_K = 0.46;
+  function drawWarriors(o, now) {
+    if (!o.crop) return;
+    const stage = ripe(o) ? 3 : growth(o) < 0.5 ? 1 : 2,
+      img = pic[`w-${o.crop}-${stage}`];
     if (!img?.complete || !img.naturalWidth) return;
-    const w = size * TW * widen,
-      h = (w * img.naturalHeight) / img.naturalWidth,
-      [cx, y] = iso(u + size, v + size);
-    g.drawImage(img, cx - w / 2, y - h + size * TH * 0.12 - lift, w, h);
+    const w = img.naturalWidth * WARRIOR_K,
+      h = img.naturalHeight * WARRIOR_K;
+    // As many as the bed will give: what is gathered is what was seen growing.
+    const n = CROPS[o.crop].yield;
+    for (let i = 0; i < n; i++) {
+      const dx = (i - (n - 1) / 2) * (n > 2 ? 112 : 130);
+      // Ripe warriors shift from foot to foot a little, each in his own time.
+      const bob = stage === 3 ? Math.sin(now / 260 + i * 1.7 + o.x) * 2 : 0;
+      g.drawImage(img, o.x + dx - w / 2, o.y - 44 - h + bob, w, h);
+    }
   }
-  function bedPicture(b) {
-    if (!b.crop) return pic["bed-empty"];
-    const k = (state.time - b.at) / (CROPS[b.crop].grow * MINUTE);
-    return k >= 1 ? pic["bed-ready"] : k >= 0.5 ? pic["bed-growing"] : pic["bed-sprouts"];
+  // A picture's outline filled with one colour (for the haze round the object in hand), made once per picture and colour.
+  const sils = new WeakMap();
+  function silhouette(img, color) {
+    const byColor = sils.get(img) || (sils.set(img, {}), sils.get(img));
+    if (byColor[color]) return byColor[color];
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const cg = c.getContext("2d");
+    cg.drawImage(img, 0, 0);
+    cg.globalCompositeOperation = "source-in";
+    cg.fillStyle = `rgb(${color})`;
+    cg.fillRect(0, 0, c.width, c.height);
+    return (byColor[color] = c);
+  }
+  // glow: a colour ("r,g,b") for a soft haze round the object's outline (the one in hand: green fits, red not).
+  // part: "box" draws only a bed's box, "warriors" only what grows on it; anything else draws all of it.
+  function drawObject(o, now, alpha = 1, glow = null, part = "all") {
+    if (part === "warriors") {
+      g.save();
+      g.globalAlpha = alpha;
+      drawWarriors(o, now);
+      g.restore();
+      return;
+    }
+    const name = picOf(o),
+      raw = pic[name];
+    if (!raw?.complete || !raw.naturalWidth) return;
+    // Buildings and decorations stand with their shadows (baked once).
+    const img = litSprite(`o:${name}`, raw, o.kind === "bed" ? 0 : KINDS[o.kind].foot[0] * 2.3, o.kind !== "bed");
+    if (!img) return;
+    const [l, t] = drawBox(o);
+    g.save();
+    g.globalAlpha = alpha;
+    // A ripe bed glows softly gold, so it is seen from afar (only a few at a time: a live shadow is fine).
+    if (o.kind === "bed" && ripe(o) && !glow) {
+      g.shadowColor = `rgba(255,214,90,${0.65 + 0.3 * Math.sin(now / 300)})`;
+      g.shadowBlur = 26;
+    }
+    if (o.flip) {
+      g.translate(o.x, 0);
+      g.scale(-1, 1);
+      g.translate(-o.x, 0);
+    }
+    // A bed's picture fitted to the empty bed's size (the ripe one was drawn a little taller and more from the front).
+    const [, , bw, bh] = drawBox(o),
+      sx = o.kind === "bed" ? bw / raw.naturalWidth : 1,
+      sy = o.kind === "bed" ? bh / raw.naturalHeight : 1;
+    if (glow) {
+      // The haze: the object's outline filled with the colour, blurred and a little larger than the object.
+      const sil = silhouette(img, glow),
+        cx = l - M * sx + (img.width * sx) / 2,
+        cy = t - M * sy + (img.height * sy) / 2,
+        k = 1.07;
+      g.filter = `blur(${Math.max(4, 14 * cam.zoom)}px)`;
+      g.globalAlpha = 0.75 + 0.25 * Math.sin(now / 220);
+      for (let i = 0; i < 2; i++) g.drawImage(sil, cx - (img.width * sx * k) / 2, cy - (img.height * sy * k) / 2, img.width * sx * k, img.height * sy * k);
+      g.filter = "none";
+      g.globalAlpha = alpha;
+    }
+    g.drawImage(img, l - M * sx, t - M * sy, img.width * sx, img.height * sy);
+    g.restore();
+    if (o.kind === "bed" && part !== "box") {
+      g.save();
+      g.globalAlpha = alpha;
+      drawWarriors(o, now);
+      g.restore();
+    }
   }
   function draw(now) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.fillStyle = "#1c3a1e";
+    g.fillStyle = "#3f5a26";
     g.fillRect(0, 0, W, H);
     g.setTransform(dpr * cam.zoom, 0, 0, dpr * cam.zoom, dpr * (W / 2 - cam.x * cam.zoom), dpr * (H / 2 - cam.y * cam.zoom));
-    // Meadow all around, darker, so the screen has no empty space; then the plot's own grass and the path.
-    groundFill(pic["ground-grass"], -N, -N, 2 * N, 2 * N, 4);
-    diamond(-N, -N, 3 * N);
-    g.fillStyle = "#0b2a0e88";
-    g.fill();
-    groundFill(pic["ground-grass"], 0, 0, N, N, 4);
-    groundFill(pic["ground-path"], 0, PATH, PATH_END, PATH + 1, 2);
-    groundFill(pic["ground-path"], PATH, 0, PATH + 1, PATH_END, 2);
-    // The grid, only while a bed is being placed.
+    // The ground: earth, trodden paths, grass and stony patches, the forest floor (cached chunks).
+    drawGround();
+    // While placing: every footprint with its path round it, so the free ground is plain to see.
     if (ghost) {
-      g.lineWidth = 1.5;
-      g.strokeStyle = "#ffffff70";
-      g.beginPath();
-      for (let k = 0; k <= N; k++) g.moveTo(...iso(k, 0)), g.lineTo(...iso(k, N)), g.moveTo(...iso(0, k)), g.lineTo(...iso(N, k));
-      g.stroke();
-    }
-    fenceRow(false);
-    // Everything standing, back to front.
-    const list = [...BUILDINGS, ...state.beds.filter((b) => b !== ghost?.moving).map((b) => ({ u: b.u, v: b.v, size: 1, bed: b }))].sort(
-      (a, b) => a.u + a.v + a.size - (b.u + b.v + b.size),
-    );
-    for (const t of list) {
-      if (!t.bed) {
-        stand(pic[BUILDING_PIC[t.kind]], t.u, t.v, t.size, 1.1);
-        continue;
-      }
-      const b = t.bed;
-      stand(bedPicture(b), b.u, b.v, 1);
-      // A ripe bed shows its crop bobbing over it, so it is known what will be gathered.
-      if (ripe(b) && face[b.crop]) {
-        const [x, y] = iso(b.u + 0.5, b.v + 0.5),
-          s = TW * 0.42,
-          bob = Math.sin(now / 300 + b.u + b.v) * 3;
-        g.drawImage(face[b.crop], x - s / 2, y - s * 1.35 + bob, s, s);
+      g.fillStyle = "#00000022";
+      for (const o of state.objects) if (o !== ghost.moving) {
+        const [l, t, r, b] = footOf(o, GAP / 2);
+        g.fillRect(l, t, r - l, b - t);
       }
     }
-    // The bed being placed: its cell green where it fits, red where not.
+    // Objects and people back to front by where they stand.
+    // A bed is a low box on the ground: it is drawn under everyone, so no one walking by it is cut by its edge. What
+    // grows on it stands up, and takes its place among the walkers by where it stands.
+    const placed = state.objects.filter((o) => o !== ghost?.moving);
+    for (const o of placed) if (o.kind === "bed") drawObject(o, now, 1, null, "box");
+    const list = [
+      ...placed.map((o) => (o.kind === "bed" ? { y: o.y - 44, draw: () => drawObject(o, now, 1, null, "warriors") } : { y: o.y, draw: () => drawObject(o, now) })),
+      ...walkers.map((w) => ({ y: w.y + 1, draw: () => drawWalker(w) })),
+    ].sort((a, b) => a.y - b.y);
+    for (const it of list) it.draw();
+    // A bed or building offered for razing: ringed in red, so it is plain which one is meant.
+    if (razing) drawObject(razing, now, 1, "255,60,45", "box");
+    // The object being placed, in a haze round its outline: green where it fits, red where not (as foes are ringed in
+    // battle).
     if (ghost) {
-      const ok = free(ghost.u, ghost.v, ghost.moving) && (ghost.moving || state.gold >= BED_PRICE);
-      diamond(ghost.u, ghost.v, 1);
-      g.fillStyle = ok ? "#9bd96b88" : "#ff5a4a88";
-      g.fill();
-      g.globalAlpha = 0.8;
-      stand(ghost.moving ? bedPicture(ghost.moving) : pic["bed-empty"], ghost.u, ghost.v, 1, 1.08, 8);
-      g.globalAlpha = 1;
-      $("#placeOk").disabled = !ok;
+      const ok = fits(ghost.moving || ghost, ghost.x, ghost.y) && (ghost.moving || state.gold >= KINDS[ghost.kind].price),
+        held = ghost.moving ? { ...ghost.moving, x: ghost.x, y: ghost.y } : ghost,
+        glow = ok ? "110,235,90" : "255,60,45";
+      drawObject(held, now, 0.9, glow);
+      const okBtn = $('#place [data-p="ok"]');
+      if (okBtn) okBtn.disabled = !ok;
     }
-    fenceRow(true);
-    // Screen-sized marks: building names, the tool under the finger.
+    // Plain daylight (a warm wash over everything made it look like sunset); the corners only a little darker, in a
+    // cool shade, so the eye stays on the middle.
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    for (const t of BUILDINGS) nameplate(t);
+    const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.5, W / 2, H / 2, Math.hypot(W, H) * 0.62);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(6,14,22,0.2)");
+    g.fillStyle = vg;
+    g.fillRect(0, 0, W, H);
+    // A long press under way: a ring fills round the finger; full, the object is taken (or offered for razing).
+    if (pressAt) {
+      const k = Math.min(1, (performance.now() - pressAt.t0) / 550);
+      if (k > 0.15) {
+        g.lineWidth = 5;
+        g.lineCap = "round";
+        g.strokeStyle = "rgba(0,0,0,0.35)";
+        g.beginPath();
+        g.arc(pressAt.x, pressAt.y - 70, 26, 0, Math.PI * 2);
+        g.stroke();
+        g.strokeStyle = "#ffd56b";
+        g.beginPath();
+        g.arc(pressAt.x, pressAt.y - 70, 26, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2);
+        g.stroke();
+      }
+    }
+    // The tool under the finger, at screen size.
     if (tool?.x != null) {
       const s = 64;
-      if (tool.kind === "sickle") pic["icon-harvest"].complete && g.drawImage(pic["icon-harvest"], tool.x - s / 2, tool.y - s - 20, s, s);
+      if (tool.kind === "sickle") pic["icon-basket"].complete && g.drawImage(pic["icon-basket"], tool.x - s / 2, tool.y - s - 20, s, s);
       else if (face[tool.crop]) g.drawImage(face[tool.crop], tool.x - s / 2, tool.y - s - 20, s, s);
     }
-  }
-  // The fence: along v = 0 and v = N it runs down to the right (the picture mirrored), along u = 0 and u = N down to
-  // the left. `front`: the two front edges, else the two back ones.
-  function fenceRow(front) {
-    const img = pic.fence;
-    if (!img.complete || !img.naturalWidth) return;
-    const w = TW * 1.06,
-      h = (w * img.naturalHeight) / img.naturalWidth,
-      edge = front ? N : 0;
-    for (let k = 0; k < N; k += 2) {
-      const [x1, y1] = iso(k + 1, edge);
-      g.save();
-      g.translate(x1, y1);
-      g.scale(-1, 1);
-      g.drawImage(img, -w / 2, -h + TH * 0.55, w, h);
-      g.restore();
-      const [x2, y2] = iso(edge, k + 1);
-      g.drawImage(img, x2 - w / 2, y2 - h + TH * 0.55, w, h);
-    }
-  }
-  function nameplate(t) {
-    const [x, y] = toScreen(...iso(t.u + t.size, t.v + t.size)),
-      s = Math.max(0.8, Math.min(1.2, cam.zoom));
-    g.font = `800 ${13 * s}px system-ui`;
-    const w = g.measureText(t.name).width + 16;
-    g.beginPath();
-    g.roundRect ? g.roundRect(x - w / 2, y + 2, w, 22 * s, 11 * s) : g.rect(x - w / 2, y + 2, w, 22 * s);
-    g.fillStyle = "#0b1710cc";
-    g.fill();
-    g.fillStyle = "#ffe9b0";
-    g.textBaseline = "middle";
-    g.fillText(t.name, x - w / 2 + 8, y + 2 + 11 * s);
   }
 
   // ---------- Sowing and gathering ----------
   // Sow one empty bed with a fighter of the crop from the barn; gather one ripe bed into the barn.
   function sow(b, id) {
     if (b.crop || !(state.barn[id] > 0)) return false;
+    job(b);
     state.barn[id]--;
     b.crop = id;
     b.at = state.time;
+    gain(4, "sow", id);
     return true;
   }
   function gather(b) {
     if (!ripe(b)) return false;
+    job(b);
     state.barn[b.crop] = (state.barn[b.crop] || 0) + CROPS[b.crop].yield;
     floaters.push({ b, text: `+${CROPS[b.crop].yield}`, t0: performance.now() });
+    const [sx, sy] = toScreen(b.x, b.y - 80);
+    for (let i = 0; i < CROPS[b.crop].yield; i++) flyers.push({ crop: b.crop, x: sx + i * 14, y: sy, t0: performance.now() + i * 120 });
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("light");
+    gain(10, "harvest", b.crop);
     b.crop = null;
     return true;
+  }
+  // A few butterflies drifting over the field, for life.
+  const butterflies = Array.from({ length: 6 }, (_, i) => ({
+    cx: (Math.random() - 0.5) * 900,
+    cy: (Math.random() - 0.5) * 900,
+    r: 60 + Math.random() * 90,
+    s: 0.25 + Math.random() * 0.35,
+    ph: Math.random() * 6,
+    hue: ["#ffd84a", "#ffffff", "#ff9ad5", "#9fd8ff", "#ffb347", "#c9a7ff"][i],
+  }));
+  function drawButterflies(now) {
+    g.setTransform(dpr * cam.zoom, 0, 0, dpr * cam.zoom, dpr * (W / 2 - cam.x * cam.zoom), dpr * (H / 2 - cam.y * cam.zoom));
+    const t = now / 1000;
+    for (const b of butterflies) {
+      const a = t * b.s + b.ph,
+        x = b.cx + Math.cos(a) * b.r + Math.sin(a * 2.3) * 14,
+        y = b.cy + Math.sin(a * 1.4) * b.r * 0.5 - 60,
+        flap = Math.abs(Math.sin(t * 14 + b.ph)) * 9 + 3;
+      g.fillStyle = b.hue;
+      g.beginPath();
+      g.ellipse(x - flap / 2, y, flap / 2, 7, -0.4, 0, Math.PI * 2);
+      g.ellipse(x + flap / 2, y, flap / 2, 7, 0.4, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  // Over each sown bed, at screen size: its crop in a ring that fills as it grows; over a ripe one, the sickle bobbing.
+  // The badge over a bed: where it is on the screen and how big (it is also a button: a tap opens the bed's menu).
+  const badgeR = () => Math.max(14, Math.min(24, 40 * cam.zoom));
+  const badgeAt = (b) => toScreen(b.x + 150, b.y - 150);
+  // The bed whose badge is under a tap, with a generous margin for the finger.
+  function badgeUnder(sx, sy) {
+    const r = badgeR() + 14;
+    return beds().find((b) => {
+      if (!b.crop) return false;
+      const [x, y] = badgeAt(b);
+      return Math.hypot(sx - x, sy - (y - 4)) < r;
+    });
+  }
+  function drawBadges(now) {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const r = badgeR();
+    for (const b of beds()) {
+      if (!b.crop || b === ghost?.moving) continue;
+      // In the bed's back right corner, clear of the warriors.
+      const [x, y0] = badgeAt(b);
+      if (x < -40 || x > W + 40 || y0 < -40 || y0 > H + 40) continue;
+      const done = ripe(b),
+        y = y0 - (done ? 4 + 4 * Math.sin(now / 200 + b.x) : 0);
+      // A ripe bed shows just the basket, bobbing (no disc behind it); a growing one its crop in a ring of progress.
+      if (done) {
+        const icon = pic["icon-basket"];
+        if (icon?.naturalWidth) {
+          g.save();
+          g.shadowColor = "rgba(0,0,0,0.55)";
+          g.shadowBlur = 6;
+          g.shadowOffsetY = 2;
+          g.drawImage(icon, x - r * 1.05, y - r * 1.05, r * 2.1, r * 2.1);
+          g.restore();
+        }
+        continue;
+      }
+      g.beginPath();
+      g.arc(x, y, r + 3, 0, Math.PI * 2);
+      g.fillStyle = "#0b1710cc";
+      g.fill();
+      {
+        g.beginPath();
+        g.arc(x, y, r + 1, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, growth(b)));
+        g.strokeStyle = "#9bd96b";
+        g.lineWidth = 4;
+        g.stroke();
+      }
+      const icon = face[b.crop];
+      if (icon && (icon.width || icon.naturalWidth)) g.drawImage(icon, x - r * 0.8, y - r * 0.8, r * 1.6, r * 1.6);
+    }
+  }
+  // Fighters flying from a gathered bed into the barn button: a small portrait along an arc, then the button bounces.
+  const flyers = [];
+  function drawFlyers(now) {
+    if (!flyers.length) return;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const btn = $("#barnBtn").getBoundingClientRect(),
+      cr = canvas.getBoundingClientRect(),
+      tx = btn.left + btn.width / 2 - cr.left,
+      ty = btn.top + btn.height / 3 - cr.top;
+    for (let i = flyers.length - 1; i >= 0; i--) {
+      const f = flyers[i],
+        k = (now - f.t0) / 700;
+      if (k < 0) continue;
+      if (k >= 1) {
+        flyers.splice(i, 1);
+        const b = $("#barnBtn");
+        b.classList.remove("pulse");
+        void b.offsetWidth;
+        b.classList.add("pulse");
+        continue;
+      }
+      const x = f.x + (tx - f.x) * k,
+        y = f.y + (ty - f.y) * k - Math.sin(Math.PI * k) * 120,
+        s = 44 * (1 - 0.4 * k);
+      if (face[f.crop]) g.drawImage(face[f.crop], x - s / 2, y - s / 2, s, s);
+    }
   }
   // "+2" rising over a gathered bed.
   const floaters = [];
@@ -318,7 +1126,7 @@
         floaters.splice(i, 1);
         continue;
       }
-      const [x, y] = toScreen(...iso(f.b.u + 0.5, f.b.v + 0.5));
+      const [x, y] = toScreen(f.b.x, f.b.y - 80);
       g.globalAlpha = 1 - k;
       g.font = "900 22px system-ui";
       g.fillStyle = "#ffd56b";
@@ -348,7 +1156,7 @@
     showMenu(
       sx,
       sy,
-      `<p>Проведите семенем по пустым грядкам</p><div class="seeds">${Object.keys(CROPS)
+      `<p>Нажмите на бойца — он посадится на эту грядку. Или ведите его пальцем по пустым грядкам, чтобы засадить сразу несколько</p><div class="seeds">${Object.keys(CROPS)
         .map(
           (id) =>
             `<button class="seed${state.barn[id] > 0 ? "" : " none"}" data-crop="${id}">${faceImg(id)}<b>${state.barn[id] || 0}</b><small>${clock(CROPS[id].grow * MINUTE)}</small></button>`,
@@ -357,7 +1165,7 @@
     );
   }
   function sickleMenu(sx, sy) {
-    showMenu(sx, sy, `<p>Проведите серпом по спелым грядкам</p><div class="seeds"><button class="seed sickle" data-sickle="1"><img class="face" src="/assets/garden/icon-harvest.png" alt=""></button></div>`);
+    showMenu(sx, sy, `<p>Нажмите на корзину — бойцы с этой грядки уйдут в амбар. Или ведите её пальцем по готовым грядкам, чтобы собрать сразу несколько</p><div class="seeds"><button class="seed sickle" data-sickle="1"><img class="face" src="/assets/garden/icon-basket.png" alt=""></button></div>`);
   }
   function growingTip(sx, sy, b) {
     showMenu(sx, sy, `<p class="tip">${faceImg(b.crop)}<span><b>${CROPS[b.crop].name}</b><br>созреет через ${clock(left(b))}</span></p>`);
@@ -369,23 +1177,23 @@
     const b = e.target.closest("[data-crop],[data-sickle]");
     if (!b) return;
     e.preventDefault();
-    if (b.dataset.crop && !(state.barn[b.dataset.crop] > 0)) return say(`В амбаре нет: ${CROPS[b.dataset.crop].name}. Соберите урожай или купите на базаре.`);
+    if (b.dataset.crop && !(state.barn[b.dataset.crop] > 0)) return say(`В амбаре нет: ${CROPS[b.dataset.crop].name}. Семена — это собранные бойцы: соберите их с грядки.`);
     tool = b.dataset.crop ? { kind: "seed", crop: b.dataset.crop } : { kind: "sickle" };
     tool.id = e.pointerId;
-    tool.moved = false;
     tool.done = 0;
     hideMenu();
-    const r = canvas.getBoundingClientRect();
-    tool.x = e.clientX - r.left;
-    tool.y = e.clientY - r.top;
+    ({ x: tool.x, y: tool.y } = local(e));
+    tool.x0 = tool.x;
+    tool.y0 = tool.y;
   });
   addEventListener("pointermove", (e) => {
     if (!tool || e.pointerId !== tool.id) return;
-    const r = canvas.getBoundingClientRect();
-    tool.x = e.clientX - r.left;
-    tool.y = e.clientY - r.top;
-    tool.moved = true;
-    const b = bedAt(...cellAt(tool.x, tool.y));
+    ({ x: tool.x, y: tool.y } = local(e));
+    // Sweeping over beds starts only once the finger has really moved: a trembling finger on the button does the bed
+    // the menu was opened for, not the one that happens to lie under the menu.
+    if (!tool.sweeping && Math.hypot(tool.x - tool.x0, tool.y - tool.y0) < 14) return;
+    tool.sweeping = true;
+    const b = bedUnder(tool.x, tool.y);
     if (!b) return;
     if (tool.kind === "seed" ? sow(b, tool.crop) : gather(b)) tool.done++;
     if (tool.kind === "seed" && !(state.barn[tool.crop] > 0)) say(`${CROPS[tool.crop].name} в амбаре закончились.`);
@@ -393,6 +1201,13 @@
   addEventListener("pointerup", (e) => {
     if (!tool || e.pointerId !== tool.id) return;
     if (!tool.done && menuBed) tool.kind === "seed" ? sow(menuBed, tool.crop) : gather(menuBed);
+    tool = null;
+    menuBed = null;
+    save();
+  });
+  // Taken away by the system (a Telegram swipe, a call): the seed or basket is let go, the map answers again.
+  addEventListener("pointercancel", (e) => {
+    if (!tool || e.pointerId !== tool.id) return;
     tool = null;
     menuBed = null;
     save();
@@ -407,35 +1222,43 @@
   const pointers = new Map();
   let drag = null; // { kind: "pan" | "ghost" }
   let pinch = null;
-  let press = null; // a long press on a bed picks it up to move it
+  let press = null, // a long press on an object picks it up to move it
+    pressAt = null; // where and when that press began: a ring fills round the finger till it takes
+  function cancelPress() {
+    clearTimeout(press);
+    pressAt = null;
+  }
   canvas.addEventListener("pointerdown", (e) => {
     if (tool) return;
     try {
       canvas.setPointerCapture(e.pointerId);
     } catch {}
     hideMenu();
-    pointers.set(e.pointerId, { ...local(e), x0: local(e).x, y0: local(e).y, t0: performance.now() });
+    const p = local(e);
+    pointers.set(e.pointerId, { ...p, x0: p.x, y0: p.y, t0: performance.now() });
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: cam.zoom };
       drag = null;
-      clearTimeout(press);
+      cancelPress();
       return;
     }
-    const [u, v] = cellAt(local(e).x, local(e).y);
-    if (ghost && Math.floor(u) === ghost.u && Math.floor(v) === ghost.v) drag = { kind: "ghost" };
-    else {
-      drag = { kind: "pan", cx: cam.x, cy: cam.y };
-      const b = !ghost && bedAt(u, v);
-      clearTimeout(press);
-      if (b) press = setTimeout(() => pickUp(b), 550);
+    const [wx, wy] = toWorld(p.x, p.y);
+    if (ghost) {
+      const [l, t, r, b] = footOf(ghost, 40);
+      // A finger on the object being placed drags it; elsewhere it moves the map.
+      if (wx > l && wx < r && wy > t - 120 && wy < b) return (drag = { kind: "ghost", dx: ghost.x - wx, dy: ghost.y - wy });
     }
+    drag = { kind: "pan", cx: cam.x, cy: cam.y };
+    cancelPress();
+    const o = !ghost && objectAt(p.x, p.y);
+    if (o) (press = setTimeout(() => pickUp(o), 550)), (pressAt = { x: p.x, y: p.y, t0: performance.now() });
   });
   canvas.addEventListener("pointermove", (e) => {
     const p = pointers.get(e.pointerId);
     if (!p) return;
     ({ x: p.x, y: p.y } = local(e));
-    if (Math.hypot(p.x - p.x0, p.y - p.y0) > 10) clearTimeout(press);
+    if (Math.hypot(p.x - p.x0, p.y - p.y0) > 10) cancelPress();
     if (pinch && pointers.size >= 2) {
       const [a, b] = [...pointers.values()];
       cam.zoom = (pinch.zoom * Math.hypot(a.x - b.x, a.y - b.y)) / pinch.d;
@@ -445,23 +1268,25 @@
       cam.y = drag.cy - (p.y - p.y0) / cam.zoom;
       clampCam();
     } else if (drag?.kind === "ghost") {
-      const [u, v] = cellAt(p.x, p.y);
-      ghost.u = Math.max(0, Math.min(N - 1, Math.floor(u)));
-      ghost.v = Math.max(0, Math.min(N - 1, Math.floor(v)));
+      const [wx, wy] = toWorld(p.x, p.y);
+      // Snapped to 10 px, so rows line up easily.
+      ghost.x = Math.round((wx + drag.dx) / 10) * 10;
+      ghost.y = Math.round((wy + drag.dy) / 10) * 10;
     }
   });
-  const up = (e) => {
-    clearTimeout(press);
+  const up = (e, cancelled = false) => {
+    cancelPress();
     const p = pointers.get(e.pointerId);
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinch = null;
     if (!p) return;
     const tap = Math.hypot(p.x - p.x0, p.y - p.y0) < 10 && performance.now() - p.t0 < 500;
-    if (tap && drag?.kind !== "ghost" && !pointers.size) onTap(p.x, p.y);
+    if (tap && !cancelled && drag?.kind !== "ghost" && !pointers.size) onTap(p.x, p.y);
     if (!pointers.size) drag = null;
   };
   canvas.addEventListener("pointerup", up);
-  canvas.addEventListener("pointercancel", up);
+  // A touch taken away by the system is no tap.
+  canvas.addEventListener("pointercancel", (e) => up(e, true));
   canvas.addEventListener(
     "wheel",
     (e) => {
@@ -472,31 +1297,105 @@
     { passive: false },
   );
   function onTap(sx, sy) {
-    const [u, v] = cellAt(sx, sy);
+    // With the drawer out, a tap on the field folds it back (and does nothing else).
+    if ($("#drawer").classList.contains("open")) return toggleDrawer(false);
     if (ghost) {
-      // A tap on the grass moves the bed being placed there.
-      ghost.u = Math.max(0, Math.min(N - 1, Math.floor(u)));
-      ghost.v = Math.max(0, Math.min(N - 1, Math.floor(v)));
+      // A tap on the ground moves the object being placed there.
+      const [wx, wy] = toWorld(sx, sy);
+      ghost.x = Math.round(wx / 10) * 10;
+      ghost.y = Math.round(wy / 10) * 10;
       return;
     }
-    const b = bedAt(u, v);
+    // The bed itself, or its badge (which stands above its back corner, partly off the bed).
+    const b = badgeUnder(sx, sy) || bedUnder(sx, sy);
     if (b) {
       menuBed = b;
       if (!b.crop) return seedMenu(sx, sy);
       if (ripe(b)) return sickleMenu(sx, sy);
       return growingTip(sx, sy, b);
     }
-    const t = buildingAt(u, v);
-    if (t?.kind === "shop") return open(shopCard);
-    if (t?.kind === "barn") return open(barnCard);
-    if (t?.kind === "bazaar") return open(bazaarCard);
+    const o = objectAt(sx, sy),
+      opens = o && KINDS[o.kind].opens;
+    if (opens === "shop") return toggleDrawer(true);
+    if (opens === "barn") return open(barnCard);
+    if (opens === "bazaar") return open(bazaarCard);
+    if (o) say(`${KINDS[o.kind].name}. ${KINDS[o.kind].fixed ? "Подержите палец, чтобы снести." : "Подержите палец, чтобы передвинуть."}`);
   }
-  // A long press on a bed picks it up; it is put down like a new one, with what grows on it.
-  function pickUp(b) {
+  // A long press on an object picks it up to move it; a bed or a building is not moved but offered for razing.
+  function pickUp(o) {
+    pressAt = null;
     if (pointers.size !== 1) return;
-    drag = { kind: "ghost" };
-    ghost = { u: b.u, v: b.v, moving: b };
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
+    const k = KINDS[o.kind];
+    if (k.fixed) {
+      if (o.kind === "bed" && o.crop) return say("На грядке растут бойцы: соберите их, потом грядку можно снести.");
+      razing = o;
+      hideMenu();
+      return placeBar("raze");
+    }
+    const p = [...pointers.values()][0],
+      [wx, wy] = toWorld(p.x, p.y);
+    drag = { kind: "ghost", dx: o.x - wx, dy: o.y - wy };
+    ghost = { kind: o.kind, x: o.x, y: o.y, moving: o };
     startPlacing();
+  }
+
+  // ---------- Level, tasks, the army ----------
+  // Experience for sowing and gathering; each level asks for more and pays some gold.
+  const needFor = (level) => 40 + level * 30;
+  function gain(xp, what, crop) {
+    state.xp += xp;
+    while (state.xp >= needFor(state.level)) {
+      state.xp -= needFor(state.level);
+      state.level++;
+      state.gold += 50;
+      say(`Уровень огорода ${state.level}! +50 золота`);
+    }
+    for (const q of state.quests) if (!q.done && q.what === what && q.crop === crop) (q.have = Math.min(q.need, q.have + (what === "harvest" ? CROPS[crop].yield : 1))), (q.done = q.have >= q.need);
+    renderQuests();
+  }
+  // Three tasks at a time: sow or gather so much of a crop, for gold. A finished one is taken by a tap.
+  function newQuest() {
+    const ids = Object.keys(CROPS),
+      crop = ids[Math.floor(Math.random() * Math.min(ids.length, 2 + state.level))],
+      what = Math.random() < 0.5 ? "sow" : "harvest",
+      need = what === "sow" ? 2 + Math.floor(Math.random() * 3) : 4 + 2 * Math.floor(Math.random() * 3);
+    return { what, crop, need, have: 0, done: false, gold: need * (what === "sow" ? 8 : 6) + 10 * state.level };
+  }
+  while (state.quests.length < 3) state.quests.push(newQuest());
+  // The tasks fold into one button, so they do not cover the beds; it glows when one is done.
+  $("#qbtn").onclick = () => ($("#quests").hidden = !$("#quests").hidden);
+  function renderQuests() {
+    const done = state.quests.filter((q) => q.done).length;
+    $("#qcount").textContent = done ? `${done} готово` : `${state.quests.length}`;
+    $("#qbtn").classList.toggle("ready", done > 0);
+    $("#quests").innerHTML = state.quests
+      .map(
+        (q, i) =>
+          `<li class="${q.done ? "done" : ""}" data-q="${i}">${faceImg(q.crop)}<span>${q.what === "sow" ? "Посадить" : "Собрать"} ${CROPS[q.crop].name.toLowerCase()}: ${q.have}/${q.need}</span><small>${q.done ? "Забрать " : ""}+${q.gold}</small></li>`,
+      )
+      .join("");
+    $("#quests")
+      .querySelectorAll("li.done")
+      .forEach(
+        (li) =>
+          (li.onclick = () => {
+            const q = state.quests[+li.dataset.q];
+            state.gold += q.gold;
+            state.quests[+li.dataset.q] = newQuest();
+            window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success");
+            say(`Задание выполнено: +${q.gold} золота`);
+            save();
+            renderQuests();
+          }),
+      );
+  }
+  // The army: every fighter in the barn; a squad of six can go to battle.
+  function renderArmy() {
+    const n = Object.values(state.barn).reduce((a, b) => a + b, 0);
+    const t = n >= 6 ? `Армия: ${n}` : `Армия: ${n}/6`;
+    if ($("#army").textContent !== t) $("#army").textContent = t;
+    $("#fight").classList.toggle("ready", n >= 6);
   }
 
   // ---------- Panels ----------
@@ -519,15 +1418,22 @@
       scrolled = box.firstElementChild?.scrollTop || 0;
     box.innerHTML = `<div class="card">${html}<div class="foot"><button class="back" data-do="close">← Назад</button></div></div>`;
     box.firstElementChild.scrollTop = scrolled;
-    box.querySelectorAll("[data-do]").forEach((b) => (b.onclick = () => act(b.dataset.do)));
+    box.querySelectorAll("[data-do]").forEach((b) => (b.onclick = () => act(b.dataset.do, b.dataset.arg)));
   }
   const goldTag = (n) => `<img src="/assets/garden/icon-gold.png" alt="">${n}`;
+  // The shop: beds and everything else that can be put on the ground.
   function shopCard() {
+    const row = (kind) => {
+      const k = KINDS[kind];
+      return `<div class="row"><img class="face" src="/assets/garden/obj/${k.pic}.png" alt=""><div class="what"><b>${k.name}</b>${kind === "bed" ? "<small>Сажать — проведите семенем по пустой грядке.</small>" : ""}</div>
+        <button class="buy" data-do="buy" data-arg="${kind}" ${state.gold < k.price ? "disabled" : ""}>${goldTag(k.price)}</button></div>`;
+    };
     show(
-      `<h3><img src="/assets/garden/icon-build.png" alt="">Магазин</h3><p>Купите и перетащите на участок.</p>
-      <div class="row"><img class="face" src="/assets/garden/bed-empty.png" alt=""><div class="what"><b>Грядка</b><small>Одна клетка. Сажать — проведите семенем по пустым грядкам.</small></div>
-      <button class="buy" data-do="bed" ${state.gold < BED_PRICE ? "disabled" : ""}>${goldTag(BED_PRICE)}</button></div>
-      <div class="row soon"><img class="face" src="/assets/garden/barn.png" alt=""><div class="what"><b>Теплица, декор</b><small>Скоро</small></div></div>`,
+      `<h3><img src="/assets/garden/icon-seed.png" alt="">Лавка</h3><p>Купите и поставьте куда хотите. Любой объект можно передвинуть: подержите на нём палец.</p>
+      <h4>Грядки</h4>${row("bed")}
+      <h4>Постройки</h4>${["well", "trade-stall"].map(row).join("")}
+      <h4>Лагерь</h4>${["palisade", "palisade-corner", "gate", "banner-stand", "banner", "dummy", "spear-rack", "shield-rack"].map(row).join("")}
+      <h4>Декор</h4>${["crates-barrels", "hay-sacks", "rocks-big", "rocks-small", "rock-moss", "bush", "bush-berries", "bush-white", "bush-yellow", "fern", "fern2", "stump", "logs"].map(row).join("")}`,
     );
   }
   function barnCard() {
@@ -541,60 +1447,226 @@
   function bazaarCard() {
     show(`<h3><img src="/assets/garden/icon-gold.png" alt="">Базар</h3><p>Здесь игроки будут продавать и покупать бойцов. Откроется позже.</p>`);
   }
-  function act(what) {
+  function act(what, arg) {
     if (what === "close") return close();
-    if (what === "bed") {
+    if (what === "buy") {
       close();
-      // The new bed starts on the free cell nearest the middle of the screen.
-      const [cu, cv] = cellAt(W / 2, H / 2);
+      // The new object starts in the middle of the screen, or on the nearest free ground.
+      const [cx, cy] = toWorld(W / 2, H / 2),
+        probe = { kind: arg };
       let best = null;
-      for (let u = 0; u < N; u++) for (let v = 0; v < N; v++) if (free(u, v) && (!best || Math.hypot(u - cu, v - cv) < Math.hypot(best.u - cu, best.v - cv))) best = { u, v };
-      if (!best) return say("На участке нет места.");
-      ghost = best;
+      for (let r = 0; r < 1500 && !best; r += 40)
+        for (let a = 0; a < 16 && !best; a++) {
+          const x = Math.round((cx + Math.cos((a * Math.PI) / 8) * r) / 10) * 10,
+            y = Math.round((cy + Math.sin((a * Math.PI) / 8) * r) / 10) * 10;
+          if (fits(probe, x, y)) best = { x, y };
+        }
+      ghost = { kind: arg, ...(best || { x: Math.round(cx), y: Math.round(cy) }) };
       startPlacing();
     }
   }
 
-  // ---------- Placing a bed ----------
+  // ---------- The drawer: drag an object out of it onto the field ----------
+  // Pressing an object in the drawer takes it in hand; it follows the finger over the field; let go on free ground
+  // and it is bought and placed; let go over the drawer, or where it does not fit, and it is put back.
+  const SHELVES = [
+    ["Грядки", ["bed"]],
+    ["Постройки", ["armory", "seed-tent", "market-tent", "well", "trade-stall"]],
+    ["Лагерь", ["palisade", "palisade-corner", "gate", "banner-stand", "banner", "dummy", "spear-rack", "shield-rack"]],
+    ["Декор", ["crates-barrels", "barrels", "hay-sacks", "rocks-big", "rocks-small", "rock-moss", "bush", "bush-berries", "bush-white", "bush-yellow", "fern", "fern2", "stump", "logs"]],
+  ];
+  function renderDrawer() {
+    $("#drawerList").innerHTML = SHELVES.map(
+      ([title, kinds]) =>
+        `<h5>${title}</h5>` +
+        kinds
+          // A building that stands one at a time is offered only while there is none.
+          .filter((kind) => !KINDS[kind].unique || !state.objects.some((o) => o.kind === kind))
+          .map((kind) => `<div class="item${state.gold < KINDS[kind].price ? " poor" : ""}" data-kind="${kind}"><img src="/assets/garden/obj/${KINDS[kind].pic}.png" alt=""><span>${KINDS[kind].name}</span><b>${KINDS[kind].price}</b></div>`).join(""),
+    ).join("");
+  }
+  function toggleDrawer(open = !$("#drawer").classList.contains("open")) {
+    if (open) renderDrawer(), hideMenu();
+    $("#drawer").classList.toggle("open", open);
+  }
+  $("#drawerTab").onclick = () => toggleDrawer();
+  // A finger on an item may mean to scroll the list (up or down) or to take the item (sideways, towards the field):
+  // it is taken only once it has moved left. The items let the browser do nothing with the finger (touch-action: none),
+  // so it never takes the gesture away midway to scroll; the list is scrolled here instead.
+  let carry = null, // { id: the pointer, kind }
+    maybe = null; // { id, kind, x, y, top, scroll }: a press on an item not yet decided, or scrolling the list
+  $("#drawerList").addEventListener("pointerdown", (e) => {
+    const item = e.target.closest(".item");
+    if (!item || carry || (ghost && !ghost.fromDrawer)) return;
+    ghost = null;
+    maybe = { id: e.pointerId, kind: item.dataset.kind, x: e.clientX, y: e.clientY, top: $("#drawerList").scrollTop, scroll: false };
+  });
+  // If the browser or the system takes the finger away all the same, what was in hand is let go, not left hanging.
+  addEventListener("pointercancel", (e) => {
+    if (maybe && e.pointerId === maybe.id) maybe = null;
+    if (carry && e.pointerId === carry.id) (carry = null), (ghost = null);
+  });
+  addEventListener("pointermove", (e) => {
+    if (maybe && e.pointerId === maybe.id && !carry) {
+      const dx = e.clientX - maybe.x,
+        dy = e.clientY - maybe.y;
+      if (maybe.scroll || (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx))) {
+        maybe.scroll = true;
+        $("#drawerList").scrollTop = maybe.top - dy;
+        return;
+      }
+      if (dx > -14) return;
+      const kind = maybe.kind;
+      maybe = null;
+      if (state.gold < KINDS[kind].price) return say(`Не хватает золота: ${KINDS[kind].name.toLowerCase()} стоит ${KINDS[kind].price}.`);
+      carry = { id: e.pointerId, kind };
+      ghost = { kind, x: 0, y: 0, fromDrawer: true };
+      // The drawer folds away while the object is carried, so the whole field is free to put it on; let go at the
+      // right edge (where the drawer's tab is) to put it back.
+      $("#drawer").classList.remove("open");
+      say("Отпустите на свободном месте. Передумали — отпустите у правого края.");
+    }
+    if (!carry || e.pointerId !== carry.id) return;
+    const p = local(e),
+      [wx, wy] = toWorld(p.x, p.y);
+    ghost.x = Math.round(wx / 10) * 10;
+    ghost.y = Math.round((wy - 40 / cam.zoom) / 10) * 10;
+  });
+  addEventListener("pointerup", (e) => {
+    if (maybe && e.pointerId === maybe.id) {
+      // A tap on an item (not a scroll of the list): say how to use it.
+      if (!maybe.scroll) say(`Потяните «${KINDS[maybe.kind].name}» влево на поле, чтобы поставить.`);
+      maybe = null;
+    }
+    if (!carry || e.pointerId !== carry.id) return;
+    const k = KINDS[carry.kind],
+      cr = canvas.getBoundingClientRect(),
+      overDrawer = e.clientX > cr.right - 46;
+    carry = null;
+    if (overDrawer) return (ghost = null), say("Не куплено.");
+    if (!fits(ghost, ghost.x, ghost.y)) {
+      ghost = null;
+      return say("Здесь тесно: вокруг нужен проход. Перетащите в другое место.");
+    }
+    state.gold -= k.price;
+    const o = { kind: ghost.kind, x: ghost.x, y: ghost.y };
+    if (o.kind === "bed") Object.assign(o, { crop: null, at: 0 });
+    state.objects.push(o);
+    ghost = null;
+    save();
+    renderDrawer();
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
+    say(`Поставлено: ${k.name.toLowerCase()} · −${k.price}`);
+  });
+
+  // ---------- Placing and moving ----------
+  // The bar at the bottom says plainly what each button does, for the one object in hand:
+  //   new  — a bought object not yet placed: "Не покупать" / "Купить и поставить · N";
+  //   move — an object picked up: "Вернуть на место" / "Продать за N" / "Поставить сюда";
+  //   more — just placed a bought one: "Готово" / "Ещё одну · N" (the next appears beside it).
+  let lastPlaced = null,
+    razing = null; // a bed or building offered for razing (they are not moved)
+  function placeBar(mode) {
+    const box = $("#place"),
+      k = ghost ? KINDS[ghost.kind] : razing ? KINDS[razing.kind] : lastPlaced && KINDS[lastPlaced.kind],
+      o = ghost?.moving,
+      sellable = o && !KINDS[o.kind].unique && !(o.kind === "bed" && o.crop),
+      btn = (id, cls, text) => `<button class="${cls}" data-p="${id}">${text}</button>`;
+    box.innerHTML =
+      mode === "raze"
+        ? btn("keep", "no", "Оставить") + btn("raze", "no del", `Снести · вернётся ${Math.floor((k.price || 0) / 2)}`)
+        : mode === "new"
+        ? btn("cancel", "no", "✕ Не покупать") + btn("ok", "ok", `✓ Купить и поставить · ${k.price}`)
+        : mode === "move"
+          ? btn("cancel", "no", "↩ Вернуть на место") + (sellable ? btn("sell", "no del", `Продать за ${Math.floor((k.price || 0) / 2)}`) : "") + btn("ok", "ok", "✓ Поставить сюда")
+          : btn("done", "no", "Готово") + btn("more", "ok", `+ Ещё одну · ${k.price}`);
+    box.querySelectorAll("[data-p]").forEach((b) => (b.onclick = () => placeAct(b.dataset.p)));
+    if (mode === "more") box.querySelector('[data-p="more"]').disabled = state.gold < k.price;
+    $("#bottom").hidden = true;
+    box.hidden = false;
+  }
   function startPlacing() {
     hideMenu();
-    $("#bottom").hidden = true;
-    $("#place").hidden = false;
+    lastPlaced = null;
+    // The object in hand is always in sight: the view moves to it if it is off the screen.
+    const [sx, sy] = toScreen(ghost.x, ghost.y - 80);
+    if (sx < 40 || sx > W - 40 || sy < 60 || sy > H - 40) ([cam.x, cam.y] = [ghost.x, ghost.y - 80]), clampCam();
+    placeBar(ghost.moving ? "move" : "new");
   }
-  $("#placeOk").onclick = () => {
-    if (!ghost) return;
-    if (ghost.moving) {
-      if (!free(ghost.u, ghost.v, ghost.moving)) return;
-      Object.assign(ghost.moving, { u: ghost.u, v: ghost.v });
+  // The free spot nearest to an object (beside it first), for the next one of its kind.
+  function spotBeside(o) {
+    const [hw, d] = KINDS[o.kind].foot;
+    for (const [dx, dy] of [[2 * hw + GAP, 0], [0, d + GAP], [-(2 * hw + GAP), 0], [0, -(d + GAP)], [2 * hw + GAP, d + GAP], [-(2 * hw + GAP), d + GAP]]) {
+      const c = { x: o.x + dx, y: o.y + dy };
+      if (fits({ kind: o.kind }, c.x, c.y)) return c;
+    }
+    return null;
+  }
+  function placeAct(what) {
+    if (what === "cancel" || what === "done" || what === "keep") return endPlacing();
+    if (what === "raze") {
+      const o = razing;
+      if (!o) return endPlacing();
+      // Razed: gone, half its price back. A new one is bought and placed from the drawer.
+      state.objects.splice(state.objects.indexOf(o), 1);
+      state.gold += Math.floor((KINDS[o.kind].price || 0) / 2);
+      for (const w of walkers) (w.jobs = w.jobs.filter((j) => j !== o)), w.doing === o && (w.doing = null), (w.aim = null);
+      save();
+      say(`Снесено: ${KINDS[o.kind].name.toLowerCase()} · +${Math.floor((KINDS[o.kind].price || 0) / 2)}`);
+      renderDrawer();
+      return endPlacing();
+    }
+    if (what === "more") {
+      const c = lastPlaced && spotBeside(lastPlaced);
+      if (!c) return say("Рядом нет места — откройте лавку и поставьте в другом месте.");
+      ghost = { kind: lastPlaced.kind, ...c };
+      return startPlacing();
+    }
+    if (what === "sell") {
+      const o = ghost?.moving;
+      if (!o) return;
+      // Sold back for half its price.
+      state.objects.splice(state.objects.indexOf(o), 1);
+      state.gold += Math.floor((KINDS[o.kind].price || 0) / 2);
+      for (const w of walkers) (w.jobs = w.jobs.filter((j) => j !== o)), w.doing === o && (w.doing = null), (w.aim = null);
       save();
       return endPlacing();
     }
-    if (!free(ghost.u, ghost.v) || state.gold < BED_PRICE) return;
-    state.gold -= BED_PRICE;
-    state.beds.push({ u: ghost.u, v: ghost.v, crop: null, at: 0 });
+    // ok
+    if (!ghost) return;
+    if (ghost.moving) {
+      if (!fits(ghost.moving, ghost.x, ghost.y)) return say("Здесь тесно: вокруг нужен проход.");
+      Object.assign(ghost.moving, { x: ghost.x, y: ghost.y });
+      save();
+      return endPlacing();
+    }
+    const k = KINDS[ghost.kind];
+    if (state.gold < k.price) return say("Не хватает золота.");
+    if (!fits(ghost, ghost.x, ghost.y)) return say("Здесь тесно: вокруг нужен проход.");
+    state.gold -= k.price;
+    const o = { kind: ghost.kind, x: ghost.x, y: ghost.y };
+    if (o.kind === "bed") Object.assign(o, { crop: null, at: 0 });
+    state.objects.push(o);
     save();
-    // As in such games, the next bed is offered at once beside the last one, while gold lasts.
-    const next = [
-      [1, 0],
-      [0, 1],
-      [-1, 0],
-      [0, -1],
-    ]
-      .map(([du, dv]) => ({ u: ghost.u + du, v: ghost.v + dv }))
-      .find((c) => free(c.u, c.v));
-    if (next && state.gold >= BED_PRICE) ghost = next;
-    else endPlacing();
-  };
-  $("#placeNo").onclick = endPlacing;
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
+    // Placed: nothing more in hand. The bar offers to finish or to buy one more of the same, beside it.
+    ghost = null;
+    lastPlaced = o;
+    say(`Поставлено: ${k.name.toLowerCase()}.`);
+    placeBar("more");
+  }
   function endPlacing() {
     ghost = null;
+    razing = null;
+    lastPlaced = null;
     $("#bottom").hidden = false;
     $("#place").hidden = true;
   }
 
   // ---------- The bottom buttons and the top ----------
-  $("#shopBtn").onclick = () => open(shopCard);
+  $("#shopBtn").onclick = () => toggleDrawer();
   $("#barnBtn").onclick = () => open(barnCard);
+  $("#bazaarBtn").onclick = () => open(bazaarCard);
   $("#speed").onclick = () => {
     tick();
     state.speed = state.speed === 1 ? 60 : 1;
@@ -603,48 +1675,87 @@
   $("#reset").onclick = () => {
     if (!confirm("Начать огород заново? Всё будет удалено.")) return;
     state = fresh();
+    while (state.quests.length < 3) state.quests.push(newQuest());
+    for (const w of walkers) Object.assign(w, { x: w.home[0], y: w.home[1], jobs: [], doing: null, aim: null, path: [], rest: 0 });
+    tool = null;
+    menuBed = null;
     save();
     close();
     endPlacing();
+    hideMenu();
+    renderQuests();
+    renderDrawer();
   };
   let sayUntil = 0,
     sayText = "";
   function say(text) {
     sayText = text;
-    sayUntil = performance.now() + 3500;
+    // Long enough to be read: about 60 ms a letter, never under 2.5 s.
+    sayUntil = performance.now() + Math.max(2500, text.length * 60);
   }
   function hint() {
     if (performance.now() < sayUntil) return sayText;
-    if (ghost) return ghost.moving ? "Перетащите грядку на новое место" : `Перетащите грядку на свободное место · ${BED_PRICE} золота`;
+    if (ghost) return ghost.moving ? `Перетащите: ${KINDS[ghost.kind].name.toLowerCase()}` : `Поставьте: ${KINDS[ghost.kind].name.toLowerCase()} · ${KINDS[ghost.kind].price} золота`;
     return "";
   }
 
   // ---------- The loop ----------
-  let saved = 0;
+  let saved = 0,
+    // How long a frame takes to draw (smoothed), for checking by hand.
+    drawMs = 0;
+  let lastFrame = performance.now();
+  // Text and widths of the top bar are written only when they change (a write each frame costs layout).
+  const shown = {};
+  function showTop(el, prop, value) {
+    const key = el + prop;
+    if (shown[key] === value) return;
+    shown[key] = value;
+    prop === "width" ? ($(el).style.width = value) : ($(el).textContent = value);
+  }
   function frame(now) {
+    // Asked for first, so one error in a frame does not stop the game for good.
+    requestAnimationFrame(frame);
     tick();
+    for (const w of walkers) step(w, Math.min(1, (now - lastFrame) / 1000));
+    lastFrame = now;
     if (now - saved > 5000) (saved = now), save();
-    $("#gold").textContent = state.gold;
-    $("#speed").textContent = state.speed === 1 ? "×1" : "×60";
+    showTop("#gold", "text", String(state.gold));
+    showTop("#lvlN", "text", String(state.level));
+    showTop("#xpBar", "width", `${Math.round((1000 * state.xp) / needFor(state.level)) / 10}%`);
+    renderArmy();
+    showTop("#speed", "text", state.speed === 1 ? "×1" : "×60");
     $("#speed").classList.toggle("on", state.speed !== 1);
     const h = hint();
     if ($("#hint").textContent !== h) $("#hint").textContent = h;
+    const t0 = performance.now();
     draw(now);
+    drawMs = drawMs * 0.9 + (performance.now() - t0) * 0.1;
+    drawButterflies(now);
+    drawBadges(now);
     drawFloaters(now);
-    requestAnimationFrame(frame);
+    drawFlyers(now);
   }
-  // For checking by hand from the console: the camera, the state and where a cell is on the screen.
+  // For checking by hand from the console: the camera, the people, the state and where a world point is on screen.
   window.garden = {
     cam,
+    fits,
+    step,
+    walkers,
+    get drawMs() {
+      return drawMs;
+    },
     get state() {
       return state;
     },
-    screenOf: (u, v) => toScreen(...iso(u, v)),
+    screenOf: (x, y) => toScreen(x, y),
   };
   addEventListener("resize", resize);
   addEventListener("pagehide", save);
+  // In Telegram on Android the page is often only hidden, never unloaded: save then too.
+  document.addEventListener("visibilitychange", () => document.hidden && save());
   tick();
   fit();
   clampCam();
+  renderQuests();
   requestAnimationFrame(frame);
 })();

@@ -1,0 +1,91 @@
+ПЕРСОНАЖ ДЛЯ ОГОРОДА — два варианта на выбор. Каждый делается в два шага:
+шаг 1 — один образец персонажа (картинка-эталон), шаг 2 — лист анимаций по этому образцу (как у героев боя).
+Новый чат ChatGPT на каждый шаг. Формат картинки: самый большой, для шага 2 — горизонтальный.
+
+=====================================================================
+ВАРИАНТ А. АВАТАР ИГРОКА — садовник, который ходит по огороду и ухаживает за грядками.
+Один на огороде, на нём потом будут скины. В бою не участвует.
+=====================================================================
+
+ШАГ 1. СОХРАНИТЬ КАК: art\gardener\avatar-reference.png
+ЗАГРУЗИТЬ для стиля: D:/HomeProjects/GardenButtle-fight/src/assets/characters/tomato/sprites/front/idle.png
+
+Use the uploaded image only as a STYLE reference (rendering, proportions, outline, lighting), not as the character.
+Draw one new game character in exactly that style: a chibi farmer-warrior, the keeper of a fortified vegetable farm.
+Big head, short sturdy body, the same proportions as the uploaded character. A wide straw hat with a small iron
+leaf badge, a short green cape, a leather apron with pockets over a brown tunic, rolled sleeves, leather gloves,
+heavy boots, a small seed pouch on the belt. He holds a garden hoe with an iron blade in the right hand.
+Friendly but determined face. Standing, facing the camera, camera slightly from above (about 35 degrees down).
+Full figure, centred, white background, no shadow on the ground, no text.
+
+ШАГ 2. СОХРАНИТЬ КАК: art\gardener\avatar-sheet.png
+ЗАГРУЗИТЬ: art\gardener\avatar-reference.png (картинка из шага 1)
+
+The uploaded image is my game character: a chibi farmer with a straw hat, a short green cape, a leather apron,
+gloves, boots and a garden hoe in the right hand.
+Draw ONE sprite sheet of this character for a mobile farm game: a grid of 5 rows × 8 columns, 40 figures in total.
+All figures are the same character, the same costume, the hoe in the same hand, drawn at EXACTLY the same size:
+the same head width and the same total height in every cell (difference not more than 3%). In every row all figures
+stand on one common ground line. Camera slightly from above, about 35 degrees down, the same camera in every cell.
+
+ROWS = directions (the whole row keeps one direction):
+row 1 - facing the camera (front);
+row 2 - three-quarter front, turned to the RIGHT;
+row 3 - side view, facing RIGHT;
+row 4 - three-quarter back, turned to the RIGHT, no face visible;
+row 5 - facing away from the camera (back), no face visible.
+
+COLUMNS = poses (the same pose in the whole column):
+column 1 - idle, relaxed, the hoe resting on the shoulder;
+columns 2-5 - walk cycle in the row's direction: 2 contact step (one leg forward), 3 passing (other knee bent,
+boot slightly lifted), 4 contact step with the other leg forward, 5 passing with the other leg;
+column 6 - work wind-up: the hoe raised high with both hands, in the facing direction;
+column 7 - work strike: the hoe digs into the ground in front of him, small clods of dark soil fly up;
+column 8 - harvest: bending down, holding a small basket with green leaves in both hands.
+
+Every figure stays inside its own cell with clear white space around it; figures must not touch or overlap.
+White background, no grid lines, no shadows on the ground, no text, no numbers, no labels.
+
+=====================================================================
+ВАРИАНТ Б. РАБОЧИЕ, как в Hay Day — маленькие помощники, их на огороде несколько.
+Сами ходят от грядки к грядке, поливают, пропалывают, носят урожай в амбар.
+=====================================================================
+
+ШАГ 1. СОХРАНИТЬ КАК: art\gardener\worker-reference.png
+ЗАГРУЗИТЬ для стиля: D:/HomeProjects/GardenButtle-fight/src/assets/characters/tomato/sprites/front/idle.png
+
+Use the uploaded image only as a STYLE reference (rendering, proportions, outline, lighting), not as the character.
+Draw one new small game character in exactly that style: a little sprout worker of a vegetable farm, about half the
+height of the uploaded character. A round turnip-like body with two green leaves on the head, tiny arms and legs,
+a small brown work apron, a tiny leather cap, little boots. He carries a small wooden watering can. Cheerful, busy
+face. Standing, facing the camera, camera slightly from above (about 35 degrees down). Full figure, centred,
+white background, no shadow on the ground, no text.
+
+ШАГ 2. СОХРАНИТЬ КАК: art\gardener\worker-sheet.png
+ЗАГРУЗИТЬ: art\gardener\worker-reference.png (картинка из шага 1)
+
+The uploaded image is my game character: a little sprout worker with two leaves on the head, a work apron,
+a leather cap, boots and a small wooden watering can.
+Draw ONE sprite sheet of this character for a mobile farm game: a grid of 5 rows × 8 columns, 40 figures in total.
+All figures are the same character, the same costume, the watering can in the same hand, drawn at EXACTLY the same
+size: the same head width and the same total height in every cell (difference not more than 3%). In every row all
+figures stand on one common ground line. Camera slightly from above, about 35 degrees down, the same camera in every
+cell.
+
+ROWS = directions (the whole row keeps one direction):
+row 1 - facing the camera (front);
+row 2 - three-quarter front, turned to the RIGHT;
+row 3 - side view, facing RIGHT;
+row 4 - three-quarter back, turned to the RIGHT, no face visible;
+row 5 - facing away from the camera (back), no face visible.
+
+COLUMNS = poses (the same pose in the whole column):
+column 1 - idle, the watering can held at the side;
+columns 2-5 - walk cycle in the row's direction: 2 contact step, 3 passing, 4 contact step with the other leg,
+5 passing with the other leg;
+column 6 - watering: the can tilted forward, a thin stream of water falling in front of him;
+column 7 - weeding: crouching, pulling a small weed out of the ground with both hands;
+column 8 - carrying: a small sack of harvest held over the head with both hands.
+
+Every figure stays inside its own cell with clear white space around it; figures must not touch or overlap.
+White background, no grid lines, no shadows on the ground, no text, no numbers, no labels.

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "gardener",
+  "sheet": {
+    "rows": [
+      "front",
+      "front34",
+      "side",
+      "back34",
+      "back"
+    ],
+    "columns": [
+      "idle",
+      "walk",
+      "walk",
+      "walk",
+      "walk",
+      "work",
+      "work"
+    ],
+    "facing": "right",
+    "file": "sprites/sheet.png",
+    "cell": {
+      "w": 207,
+      "h": 194
+    },
+    "feet": {
+      "x": 111,
+      "y": 192
+    },
+    "portrait": {
+      "x": 8,
+      "y": 3,
+      "w": 183,
+      "h": 189
+    },
+    "height": 189
+  },
+  "sources": {
+    "sheet": "Generated sheet supplied by the user (Chibi Farmer Hoeing Animation Sprite Sheet.png): the garden avatar, 5 directions x (idle, walk 4, hoe raised, hoe in the ground)"
+  }
+}
