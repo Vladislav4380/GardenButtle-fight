@@ -769,12 +769,14 @@
   }
   function fit() {
     resize();
-    // The two columns of beds across the screen, their middle in the middle.
-    // Close on the beds: two columns of them across most of the screen, their middle a little below the middle.
-    cam.zoom = Math.min(1.2, W / 680);
-    // Looking at the top left corner: the row of buildings at the top of the field, the first beds under them.
-    cam.x = BEDS_X + 205;
-    cam.y = -1760 + H / 2 / cam.zoom;
+    // Far enough to see the garden and the land round it at a glance: about 1530 world pixels across; pinch to come
+    // closer.
+    cam.zoom = Math.min(1.2, W / 1530);
+    // On loading: as far to the top left as the view goes (clampCam stops it at the forest's edge), where the garden
+    // starts and grows right and down from.
+    cam.x = -Infinity;
+    cam.y = -Infinity;
+    clampCam();
   }
   const toScreen = (x, y) => [(x - cam.x) * cam.zoom + W / 2, (y - cam.y) * cam.zoom + H / 2];
   const toWorld = (sx, sy) => [(sx - W / 2) / cam.zoom + cam.x, (sy - H / 2) / cam.zoom + cam.y];
@@ -1750,6 +1752,9 @@
     screenOf: (x, y) => toScreen(x, y),
   };
   addEventListener("resize", resize);
+  // The system's own long-press menus (Copy / Paste, the picture menu) would come up over the game's.
+  document.addEventListener("contextmenu", (e) => e.preventDefault());
+  document.addEventListener("selectstart", (e) => e.preventDefault());
   addEventListener("pagehide", save);
   // In Telegram on Android the page is often only hidden, never unloaded: save then too.
   document.addEventListener("visibilitychange", () => document.hidden && save());
