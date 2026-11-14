@@ -33,6 +33,7 @@ while (stack.length) {
   if (y > 0) stack.push(k - W);
   if (y < H - 1) stack.push(k + W);
 }
+const HOLE_MIN = Number(process.env.HOLE_MIN || 220) || Infinity;
 // White left inside an object (gaps between a tree's branches, under a cart) is background too, if it is a large patch.
 {
   const seen = new Uint8Array(W * H);
@@ -46,7 +47,8 @@ while (stack.length) {
         if (q !== false && !bg[q] && !seen[q] && isWhite(q)) (seen[q] = 1), comp.push(q);
     }
     // Painted white highlights (on canvas, stones, metal) are smaller: up to about 200 pixels on the sheets so far.
-    if (comp.length >= 220) for (const k of comp) bg[k] = 1;
+    // HOLE_MIN raises it for a large single picture, whose highlights are larger too (0 keeps every white inside).
+    if (comp.length >= HOLE_MIN) for (const k of comp) bg[k] = 1;
   }
 }
 // The grey shadows the generator paints under objects on its white sheet: pale, colourless pixels reached from the

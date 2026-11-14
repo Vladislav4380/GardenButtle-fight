@@ -39,6 +39,8 @@
 | `spear-rack.png` | a wooden rack with spears standing upright, front view |
 | `shield-rack.png` | a wooden rack with round shields hanging on it, front view |
 | `banner-stand.png` | a war banner on a pole set in a pile of stones, red cloth with a golden leaf |
+| `laboratory.png` | a seed laboratory: a squat stone-and-iron alchemical apparatus with copper pipes and valves, a big glass dome on top filled with glowing purple liquid and a floating seed inside, a small round porthole and an arched iron door on the front facade, a few seed jars on a ledge (same idea as the old one in `D:\HomeProjects\GardenBattle\img\garden_items.png`, «Лаборатория», but in our style and front-facing) |
+| `greenhouse.png` | a greenhouse of wooden frames and glass panes with a pitched glass roof, green seedlings visible through the glass, a wooden door in the middle of the front facade (old reference: «Теплица» in the same sheet) |
 
 Не нужно переделывать: грядку, частокол, ворота, ящики, бочки, сено, камни, кусты. Они уже фронтальные или круглые, и ракурс на них почти не заметен.
 

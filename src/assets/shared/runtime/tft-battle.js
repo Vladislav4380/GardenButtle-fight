@@ -191,6 +191,22 @@ const GARDEN_BARN = (() => {
   }
 })();
 const inBarn = (c) => (GARDEN_BARN ? GARDEN_BARN[c] || 0 : Infinity);
+// The garden's own save (src/scenes/garden/garden.js, SAVE_KEY): a match fought from the garden takes its losses
+// out of that barn (and, see matchPay, puts the gold in).
+const GARDEN_SAVE = "garden-test-v13";
+function gardenSettle(lost, gold) {
+  if (!GARDEN_BARN) return;
+  try {
+    const save = JSON.parse(localStorage.getItem(GARDEN_SAVE));
+    if (!save) return;
+    for (const c of lost) save.barn[c] = Math.max(0, (save.barn[c] || 0) - 1);
+    save.gold = (save.gold || 0) + gold;
+    localStorage.setItem(GARDEN_SAVE, JSON.stringify(save));
+    localStorage.setItem("garden-barn", JSON.stringify(save.barn));
+    for (const c of Object.keys(GARDEN_BARN)) delete GARDEN_BARN[c];
+    Object.assign(GARDEN_BARN, save.barn);
+  } catch {}
+}
 // A squad cut to the barn: each hero kept only while the barn has that many, the freed places empty.
 function fitToBarn(list) {
   if (!GARDEN_BARN) return [...list];
@@ -1674,14 +1690,72 @@ function initPage() {
   const ONE = { guard: "страж", shooter: "стрелок", fighter: "боец", fruit: "плод", root: "корнеплод", grain: "зерно", greens: "зелень" };
   // ---------- The match: rounds, score and the heroes the player may still replace ----------
   // base: the squad at the start of the round; between rounds the picker may change at most MATCH_SWAPS of its places.
+  // units: the player's six fighters of the match, each with how many rounds it fell in; bench: those replaced
+  // between rounds (their falls still count). A fighter that fell in 2 of the 3 rounds is lost for good.
   let match = null;
+  const freshMatch = () => ({ round: 1, wins: [0, 0], enemy: enemyLineup(), base: null, over: false, units: lineup.map((hero) => ({ hero, falls: 0 })), bench: [] });
   function newMatch() {
-    match = { round: 1, wins: [0, 0], enemy: enemyLineup(), base: null, over: false };
+    match = freshMatch();
     newBattle(false, match.enemy);
+  }
+  // A place whose hero was swapped between rounds holds a new fighter; the one it replaced keeps its falls.
+  function syncUnits() {
+    match.units.forEach((u, i) => {
+      if (u.hero === lineup[i]) return;
+      match.bench.push(u);
+      match.units[i] = { hero: lineup[i], falls: 0 };
+    });
+  }
+  const LOST_AFTER = 2;
+  // The battle's glory (decided 14.11.2026, numbers for the test): 10 for a match played, 20 more for a match won;
+  // kept in localStorage "glory-battle", never falls. Titles: Новобранец → Боец → Ветеран → Полководец.
+  const B_TITLES = [
+    [0, "Новобранец"],
+    [300, "Боец"],
+    [1500, "Ветеран"],
+    [5000, "Полководец"],
+  ];
+  const battleGlory = () => {
+    try {
+      return +localStorage.getItem("glory-battle") || 0;
+    } catch {
+      return 0;
+    }
+  };
+  const battleTitle = (n) => B_TITLES.filter(([at]) => n >= at).pop()[1];
+  function addBattleGlory(points) {
+    try {
+      localStorage.setItem("glory-battle", String(battleGlory() + points));
+    } catch {}
+  }
+  // Gold for a match by its score (14.11.2026): 3:0 — 1000, 2:1 — 800, 1:2 — 300, 0:3 — 200. A drawn match (a round
+  // ended level) pays 500 — chosen here, not in the decision.
+  function matchPay([a, b]) {
+    if (a > b) return b === 0 ? 1000 : 800;
+    if (a < b) return a === 0 ? 200 : 300;
+    return 500;
+  }
+  const lostOf = () => [...match.units, ...match.bench].filter((u) => u.falls >= LOST_AFTER).map((u) => u.hero);
+  const woundedOf = () => match.units.filter((u) => u.falls === LOST_AFTER - 1).map((u) => u.hero);
+  // "Морковь ×2, Лук" from a list of heroes.
+  function listNames(list) {
+    const n = {};
+    for (const c of list) n[c] = (n[c] || 0) + 1;
+    return Object.entries(n)
+      .map(([c, k]) => TFT_NAMES[c] + (k > 1 ? " ×" + k : ""))
+      .join(", ");
   }
   function nextRound() {
     if (match.over) {
-      match = { round: 1, wins: [0, 0], enemy: enemyLineup(), base: null, over: false };
+      // From the garden, a squad that lost fighters may no longer fit the barn: choose again first.
+      if (GARDEN_BARN && fitToBarn(lineup).includes(null)) {
+        match = null;
+        draft = fitToBarn(lineup);
+        $("#picker").hidden = false;
+        renderPicker();
+        return;
+      }
+      match = freshMatch();
       return newBattle(true, match.enemy);
     }
     match.round++;
@@ -1772,7 +1846,7 @@ function initPage() {
       words = (c) => (HERO_TAGS[c] || []).map((id) => ONE[id]).join(" · ");
     const head = `<div class="pk-head"><b>${
       swapping() ? `Раунд ${match.round} из ${MATCH_ROUNDS} · замен осталось ${Math.max(0, left)} из ${MATCH_SWAPS}` : `Отряд ${chosen.length}/${TEAM_SIZE}`
-    }</b><span class="pk-links"><a class="pk-q pk-garden" href="/garden" target="_top">🌱 Огород</a><button class="pk-q" data-help>? Правила</button></span></div>`;
+    }</b><span class="pk-links"><span class="pk-q pk-glory">⚔ ${battleGlory()} · ${battleTitle(battleGlory())}</span><a class="pk-q pk-garden" href="/garden" target="_top">🌱 Огород</a><button class="pk-q" data-help>? Правила</button></span></div>`;
     // The squad: a tap anywhere on a hero takes it out (the ✕ in its corner only says so); a locked one opens its
     // details instead.
     const squad = Array.from({ length: TEAM_SIZE }, (_, i) => {
@@ -1955,6 +2029,22 @@ function initPage() {
     if (r.outcome === "win") match.wins[0]++;
     if (r.outcome === "loss") match.wins[1]++;
     match.over = match.round >= MATCH_ROUNDS;
+    // Who of the player's fell this round (each place once).
+    syncUnits();
+    for (const f of F) if (f.team === 0 && f.hp <= 0 && match.units[f.index]) match.units[f.index].falls++;
+    let losses = "";
+    if (match.over) {
+      const lost = lostOf(),
+        gold = matchPay(match.wins),
+        glory = 10 + (match.wins[0] > match.wins[1] ? 20 : 0);
+      gardenSettle(lost, gold);
+      addBattleGlory(glory);
+      losses = (lost.length ? `Погибли: ${listNames(lost)}` : "Погибших нет — все вернулись в амбар") + (GARDEN_BARN ? `\n+${gold} золота` : "") + `\n+${glory} боевой славы · ${battleTitle(battleGlory())}`;
+    } else {
+      const hurt = woundedOf(),
+        gone = lostOf();
+      losses = [gone.length && `Пали дважды — после матча не вернутся: ${listNames(gone)}`, hurt.length && `Ранены (падут ещё раз — погибнут): ${listNames(hurt)}`].filter(Boolean).join("\n");
+    }
     const [a, b] = match.wins,
       round = r.outcome === "win" ? "Раунд ваш!" : r.outcome === "loss" ? "Раунд проигран" : "Ничья в раунде";
     $(".field").classList.add("over");
@@ -1964,9 +2054,9 @@ function initPage() {
       $("#after").hidden = false;
     }, RESULT_DELAY);
     $("#resultText").textContent = match.over ? (a > b ? "Победа в матче!" : a < b ? "Матч проигран" : "Ничья в матче") : round;
-    $("#resultDetail").textContent = match.over
+    $("#resultDetail").textContent = (match.over
       ? `Счёт ${a}:${b}`
-      : `Счёт ${a}:${b} · перед раундом ${match.round + 1} можно заменить до ${MATCH_SWAPS} героев кнопкой «Заменить»`;
+      : `Счёт ${a}:${b} · перед раундом ${match.round + 1} можно заменить до ${MATCH_SWAPS} героев кнопкой «Заменить»`) + (losses ? "\n" + losses : "");
   };
   $("#start").onclick = () => {
     if (!battleStarted) startBattle(), ($(".bottom").hidden = true);
@@ -2078,6 +2168,10 @@ function initPage() {
   openPicker();
   let last = performance.now(),
     acc = 0;
+  // For testing (a hidden tab gets no animation frames): ?loop=timer runs the loop on a timer, ?rate=N speeds it up.
+  const query = new URLSearchParams(location.search),
+    nextFrame = query.get("loop") === "timer" ? (cb) => setTimeout(() => cb(performance.now()), 16) : requestAnimationFrame;
+  if (+query.get("rate") > 0) rate = +query.get("rate");
   function frame(now) {
     // The layout may settle after the first frame (iframe, fonts): follow the canvas size.
     const box = canvas.getBoundingClientRect();
@@ -2094,8 +2188,8 @@ function initPage() {
     const dragHex = drag && ownRows(0).includes(hexAt(drag.f.x, drag.f.y).row) ? hexAt(drag.f.x, drag.f.y) : null;
     render(g, dragHex);
     hud();
-    requestAnimationFrame(frame);
+    nextFrame(frame);
   }
-  requestAnimationFrame(frame);
+  nextFrame(frame);
 }
 if (typeof document !== "undefined" && document.querySelector?.("#cv")) initPage();
