@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.dashboard-cards {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-cards,
+.dashboard-cards * {
+  box-sizing: border-box;
+}

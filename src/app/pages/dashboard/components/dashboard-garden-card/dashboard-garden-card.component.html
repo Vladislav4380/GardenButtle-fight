@@ -1,0 +1,40 @@
+<div class="dashboard-block garden-block">
+  <div class="wood-frame">
+    <div class="wood-side wood-top"></div>
+    <div class="wood-side wood-bottom"></div>
+    <div class="wood-side wood-left"></div>
+    <div class="wood-side wood-right"></div>
+
+    <div class="wood-corner wood-tl"></div>
+    <div class="wood-corner wood-tr"></div>
+    <div class="wood-corner wood-bl"></div>
+    <div class="wood-corner wood-br"></div>
+  </div>
+
+  <div class="garden-header">
+    <div class="garden-title">
+      <img class="garden-sprout" [src]="iconSrc" alt="" />
+      <span>{{ title }}</span>
+    </div>
+    <div class="garden-count">{{ summaryText }}</div>
+  </div>
+
+  <div class="garden-plots">
+    @for (plot of plots; track plot.id) {
+      <gb-dashboard-garden-plot
+        [state]="plot.state"
+        [slot]="plot.slot"
+        [imageUrl]="plot.imageUrl ?? ''"
+        [imageBase64]="plot.imageBase64 ?? ''"
+        [imageMimeType]="plot.imageMimeType ?? 'image/png'"
+        [statusText]="plot.statusText ?? ''"
+        [unlockLevel]="plot.unlockLevel"
+      ></gb-dashboard-garden-plot>
+    }
+  </div>
+
+  <button class="harvest-button" type="button" (click)="openGarden()">
+    <span class="harvest-text">СОБРАТЬ УРОЖАЙ</span>
+    <img class="basket-icon" src="assets/ui/hud/hud-harvest-basket.png" alt="" />
+  </button>
+</div>

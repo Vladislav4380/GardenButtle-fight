@@ -1,0 +1,40 @@
+<div class="dashboard-block garden-block garden-block-compact">
+  <div class="garden-header">
+    <div class="garden-title">
+      <img class="garden-sprout" [src]="iconSrc" alt="" />
+      <span>{{ title }}</span>
+    </div>
+    <div class="garden-count">{{ summaryText }}</div>
+  </div>
+
+  <div class="garden-plots" [class.is-team-empty]="members.length === 0">
+    @if (members.length === 0) {
+      <div class="empty-team-state">
+        <div>
+          <strong>Для боя нужно 6 бойцов</strong>
+          <span>Вырастите их на грядках</span>
+        </div>
+        <button class="create-team-button" type="button" (click)="openTeam()">В огород</button>
+      </div>
+    } @else {
+      @for (member of members; track member.id) {
+        <gb-dashboard-garden-plot
+          [state]="member.state"
+          [slot]="member.slot"
+          [imageUrl]="member.imageUrl ?? ''"
+          [imageBase64]="member.imageBase64 ?? ''"
+          [imageMimeType]="member.imageMimeType ?? 'image/png'"
+          [statusText]="member.statusText ?? ''"
+          [unlockLevel]="member.unlockLevel"
+        ></gb-dashboard-garden-plot>
+      }
+
+      @if (members.length === 3) {
+        <button class="garden-plot battle-entry-plot" type="button" aria-label="Перейти в бой" (click)="startBattle()">
+          <img class="battle-entry-icon" src="assets/ui/hud/hud-battle-swords.png" alt="" />
+          <span class="battle-entry-text">В бой!</span>
+        </button>
+      }
+    }
+  </div>
+</div>

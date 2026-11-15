@@ -1,0 +1,22 @@
+<button
+  class="garden-plot"
+  type="button"
+  [class.locked]="state === 'locked'"
+  [attr.aria-label]="ariaLabel"
+>
+  @if (imageSrc) {
+    <img class="crop" [class.crop-locked]="state === 'locked'" [src]="imageSrc" alt="" (load)="scale($event)" />
+  }
+
+  @if (state === 'locked') {
+    <span class="locked-overlay">
+      <img class="lock-icon" src="assets/ui/dashboard/hub-lock.png" alt="" />
+      <span class="locked-level">{{ lockedLevelText }}</span>
+    </span>
+  } @else {
+    <span class="plot-status">{{ statusText }}</span>
+    @if (actionIconSrc) {
+      <img class="plot-action-icon" [src]="actionIconSrc" alt="" />
+    }
+  }
+</button>

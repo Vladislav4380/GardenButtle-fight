@@ -1,0 +1,181 @@
+:host {
+  display: block;
+  flex: 0 1 44%;
+  min-width: 0;
+  font-family: var(--dashboard-body-font, 'Nunito', 'Noto Sans', 'Trebuchet MS', Arial, Helvetica, sans-serif);
+}
+
+.dashboard-card,
+.dashboard-card * {
+  box-sizing: border-box;
+}
+
+.dashboard-card {
+  position: relative;
+  min-width: 0;
+  height: clamp(196px, 46vw, 202px);
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    url('/assets/ui/dashboard/bg-dashboard.png') center / 100% 100% no-repeat,
+    linear-gradient(180deg, rgba(111, 62, 18, .22), rgba(18, 10, 3, .2)),
+    repeating-linear-gradient(90deg, #3b210b 0 14px, #2a1708 15px 30px);
+  box-shadow:
+    inset 0 0 0 2px rgba(17, 8, 2, .72),
+    inset 0 0 0 4px rgba(238, 169, 61, .22),
+    0 3px 0 rgba(16, 8, 2, .82);
+  color: #ffe5a8;
+}
+
+.tournament-card {
+  display: flex;
+  flex-direction: column;
+  padding: 48px 8px 14px;
+  background:
+    linear-gradient(180deg, rgba(78, 24, 94, .38), rgba(10, 5, 14, .94)),
+    radial-gradient(circle at 50% 18%, rgba(102, 40, 128, .35), transparent 58%),
+    #08050c;
+}
+
+.card-title {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, rgba(236, 185, 245, .12), transparent 38%),
+    linear-gradient(180deg, #682b72 0%, #4e1858 58%, #35113d 100%);
+  clip-path: polygon(
+    6% 0,
+    94% 0,
+    100% 12%,
+    96% 50%,
+    100% 88%,
+    94% 100%,
+    73% 96%,
+    50% 100%,
+    27% 96%,
+    6% 100%,
+    0 88%,
+    4% 50%,
+    0 12%
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 230, 255, .22),
+    inset 0 -2px 0 rgba(36, 5, 43, .42),
+    0 2px 0 rgba(34, 8, 39, .72),
+    0 4px 7px rgba(0, 0, 0, .3);
+  color: #ffe89d;
+  filter: drop-shadow(0 1px 0 rgba(34, 8, 39, .58));
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(34, 8, 39, .72);
+  white-space: nowrap;
+}
+
+.title-icon {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.league-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 74px;
+  padding-top: 16px;
+}
+
+.league-icon {
+  flex: 0 0 50px;
+  display: block;
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 0 rgba(18, 8, 2, .72));
+}
+
+.league-info {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  color: #ffd481;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-shadow: 0 1px 0 rgba(20, 7, 25, .72);
+}
+
+.league-info span,
+.league-info strong {
+  white-space: nowrap;
+}
+
+.league-info strong {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  color: #fff4c8;
+  font-size: 12px;
+  line-height: 1.15;
+  margin-bottom: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.game-button {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--button-border);
+  border-radius: 13px;
+  color: #fffbe2;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(37, 8, 44, .72);
+  white-space: nowrap;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 180, .45),
+    inset 0 -1px 0 var(--button-inner-shadow),
+    0 3px 0 var(--button-bottom-shadow),
+    0 5px 6px rgba(0, 0, 0, .35);
+}
+
+.game-button:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .32),
+    inset 0 -2px 0 var(--button-active-inner-shadow),
+    0 1px 0 var(--button-bottom-shadow),
+    0 3px 5px rgba(0, 0, 0, .35);
+}
+
+.tournament-button {
+  --button-border: #32103a;
+  --button-inner-shadow: rgba(38, 7, 46, .74);
+  --button-active-inner-shadow: rgba(47, 8, 56, .66);
+  --button-bottom-shadow: #230929;
+
+  width: min(130px, 100%);
+  height: 35px;
+  margin: auto auto 7px;
+  background:
+    linear-gradient(180deg, #5e2863, #5e2863 48%, #36103c, #36103c);
+}

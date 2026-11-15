@@ -1,0 +1,36 @@
+<article class="dashboard-card rewards-card">
+  <header class="card-title">
+    <img class="title-icon prize-icon" src="assets/ui/dashboard/hub-prise.png" alt="" />
+    <span>ЗАКАЗЫ</span>
+  </header>
+
+  <div class="rewards-panel">
+    <div class="reward-caption">Доска заказов</div>
+
+    <div class="reward-list">
+      @for (gold of orderGold; track $index) {
+        <div class="reward-item">
+          <img class="reward-icon" src="assets/ui/hud/hud-coin.png" alt="" />
+          <span>{{ gold }}</span>
+        </div>
+      }
+    </div>
+
+    <button class="game-button claim-button" type="button" routerLink="/garden">К ЗАКАЗАМ</button>
+
+    <div class="chest-bottom">
+      <div class="chest-progress">
+        <div class="chest-label">Можно выполнить</div>
+
+        <div class="progress-row">
+          <div class="progress-bar" [attr.aria-label]="'Можно выполнить ' + chestProgressCurrent + ' из ' + chestProgressTarget">
+            <span class="progress-fill" [style.width.%]="chestProgressPercent"></span>
+            <span class="progress-value">{{ chestProgressCurrent }}/{{ chestProgressTarget }}</span>
+          </div>
+        </div>
+      </div>
+
+      <img class="chest-image" src="assets/ui/hud/hud-chest-closed.png" alt="" />
+    </div>
+  </div>
+</article>

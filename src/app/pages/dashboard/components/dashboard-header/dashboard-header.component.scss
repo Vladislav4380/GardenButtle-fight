@@ -1,0 +1,239 @@
+:host {
+  display: block;
+  position: relative;
+  z-index: 1;
+  font-family: var(--dashboard-body-font, 'Nunito', 'Noto Sans', 'Trebuchet MS', Arial, Helvetica, sans-serif);
+}
+
+.game-header,
+.game-header * {
+  box-sizing: border-box;
+}
+
+.game-header {
+  isolation: isolate;
+  position: relative;
+  width: 100%;
+  max-width: 437px;
+  min-height: 133px;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.game-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -9px;
+  z-index: 0;
+  background: url('/assets/ui/dashboard/bg-dashboard.webp') center / 100% 100% no-repeat;
+}
+
+.avatar {
+  position: absolute;
+  left: -7.25%;
+  top: 0.58%;
+  z-index: 3;
+  width: 41.14%;
+  aspect-ratio: 1;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+
+.avatar-img {
+  display: block;
+  width: 112%;
+  height: 112%;
+  object-fit: contain;
+  transform: translate(-4%, -5%);
+}
+
+.player-name {
+  position: absolute;
+  left: 25%;
+  top: 44px;
+  z-index: 12;
+  width: 112px;
+  margin-top: 0;
+  color: #fff8d8;
+  font-size: clamp(14px, 4.12vw, 18px);
+  font-weight: 700;
+  line-height: 1.1;
+  text-shadow: 0 2px 0 rgba(55, 24, 6, .78);
+  white-space: pre-line;
+}
+
+.header-top-row {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+}
+
+.currency {
+  position: absolute;
+  top: clamp(20px, 4.58vw, 20px);
+  z-index: 12;
+  height: 22px;
+  border: 2px solid #3f210d;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(18, 10, 4, .96), rgba(0, 0, 0, .94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 228, 132, .18),
+    inset 0 -2px 0 rgba(0, 0, 0, .45),
+    0 1px 2px rgba(0, 0, 0, .45);
+}
+
+.header-top-row .currency {
+  position: absolute;
+  flex: none;
+  width: 90px;
+  margin-top: 0;
+}
+
+.coins {
+  left: 25.5%;
+  top: 102px;
+  width: 90px;
+}
+
+.gems {
+  left: 51.25%;
+  top: 102px;
+  width: 90px;
+}
+
+.xp {
+  left: 76%;
+  top: 102px;
+  width: 90px;
+  height: 22px;
+  border: 2px solid #3f210d;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(18, 10, 4, .96), rgba(0, 0, 0, .94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 228, 132, .18),
+    inset 0 -2px 0 rgba(0, 0, 0, .45),
+    0 1px 2px rgba(0, 0, 0, .45);
+}
+
+.xp-fill {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  bottom: 2px;
+  z-index: 1;
+  border-radius: 7px 3px 3px 7px;
+  background: linear-gradient(to bottom, #8fd02b 0%, #2f7f10 100%);
+}
+
+.value {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #fffce8;
+  font-size: clamp(10px, 2.98vw, 12px);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(38, 15, 3, .85);
+}
+
+.header-top-row .value {
+  padding: 0 22px 0 20px;
+  font-size: 11px;
+}
+
+.coin-icon,
+.gem-icon,
+.level-icon {
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  transform: translateY(-50%);
+}
+
+.level-icon {
+  left: -17px;
+  width: 44px;
+  height: 44px;
+}
+
+.plus {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 2px solid #d5ff7e;
+  border-radius: 50%;
+  background: linear-gradient(#a7e63b, #3c8d15);
+  color: #fff;
+  font-size: clamp(13px, 4.12vw, 18px);
+  font-weight: 500;
+  line-height: 18px;
+  transform: translateY(-50%);
+}
+
+.plus-icon {
+  border: 0;
+  background: transparent;
+  object-fit: contain;
+}
+
+.shop {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  position: absolute;
+  right: 3px;
+  top: 8px;
+  z-index: 13;
+  width: 52px;
+  height: 52px;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  line-height: 0;
+  font-size: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shop img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 360px) {
+  .game-header {
+    border-right: 0;
+    border-left: 0;
+  }
+
+  .avatar,
+  .currency,
+  .shop,
+  .avatar-img,
+  .coin-icon,
+  .gem-icon,
+  .level-icon,
+  .plus {
+    border-width: 2px;
+  }
+}

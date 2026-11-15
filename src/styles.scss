@@ -5,3 +5,24 @@
 @import '@ionic/angular/css/display.css';
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overscroll-behavior:none;background:#09140e;color:#edf5ee;font-family:system-ui,sans-serif}gbf-root{display:block;height:100%}router-outlet+*{display:block;height:100%}button,a{-webkit-tap-highlight-color:transparent}ion-content{--background:#09140e}button{cursor:pointer}
 
+
+/* The game's own screens (splash, welcome, keeper, main): one look with the scenes — dark wood, bronze rims, gold. */
+:root{--wood-900:#1a130b;--wood-700:#2b2013;--wood-500:#4a2f12;--bronze:#8a6a2a;--bronze-hi:#c9a24a;--gold:#ffd56b;--gold-deep:#f0a531;--gold-shadow:#6b3f08;--ink:#2a1600;--parch:#f5f2df;--muted:#c9bfa3;--leaf:#9bd96b;--blood:#ff5a4a}
+.gb-screen{position:relative;height:var(--visible-h,100dvh);overflow:hidden;color:var(--parch);background:var(--wood-900) center/cover no-repeat}
+/* A picture shown whole across the width, at the top (the splash and welcome): the rest of the screen is dark. */
+.gb-screen.fit{background-size:100% auto;background-position:center 28%}
+.gb-screen::before{content:"";position:absolute;inset:0;background:linear-gradient(#0b0805d9,#0b080533 22%,#0000 35%,#0b0805cc 72%,#0b0805f2)}
+.gb-body{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:calc(var(--safe-top,0px) + 34px) 16px calc(max(16px,var(--safe-bottom,0px)) + 8px);box-sizing:border-box}
+.gb-title{margin:0;font:900 30px/1.05 system-ui;letter-spacing:.02em;text-align:center;color:var(--gold);text-shadow:0 2px 0 var(--gold-shadow),0 4px 14px #000c}
+.gb-sub{margin:6px 0 0;text-align:center;color:var(--parch);font:600 15px/1.35 system-ui;text-shadow:0 2px 6px #000}
+.gb-panel{border-radius:16px;background:linear-gradient(var(--wood-700),var(--wood-900));border:3px solid var(--bronze);box-shadow:inset 0 1px #fff1,0 6px 16px #000a}
+.gb-btn{display:block;width:100%;height:56px;border:3px solid var(--gold-shadow);border-radius:16px;font:900 18px system-ui;letter-spacing:.03em;color:var(--ink);text-shadow:0 1px 0 #fff7;background:linear-gradient(#ffe794,#f6b638 55%,#d98a12);box-shadow:inset 0 2px 0 #fff8,0 4px 0 #5a3407,0 8px 16px #000a;cursor:pointer}
+.gb-btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 #fff8,0 1px 0 #5a3407,0 4px 10px #000a}.gb-btn:disabled{filter:grayscale(.6) brightness(.8)}
+.gb-btn.wood{color:var(--parch);text-shadow:0 1px 2px #000;background:linear-gradient(#9b6b3c,#55341a);border-color:#2c1a06}
+/* The start picture (from the first version, 720×1279, as tall as the screen, at the top) and the wooden board with
+   the game's name over its English logo, placed in the picture's own measure (splash and welcome). */
+.gb-art{position:absolute;top:0;left:50%;height:100%;aspect-ratio:720/1279;transform:translateX(-50%);pointer-events:none}
+.logo-board{position:absolute;left:10%;top:5.5%;width:80%;height:31%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2%;box-sizing:border-box;border-radius:7% / 14%;border:4px solid #8a6a2a;background:radial-gradient(circle at 50% 30%,#4a2f12,#2b2013 70%,#1a130b);box-shadow:inset 0 2px 0 #fff2,inset 0 0 0 3px #1a130b,0 8px 22px #000b;container-type:size}
+.logo-board b{font:900 17cqh/.95 system-ui;letter-spacing:.02em;text-align:center;color:#ffd56b;text-transform:uppercase;text-shadow:0 3px 0 #6b3f08,0 6px 14px #000c;padding:0 4%}
+.logo-board small{font:800 7cqh system-ui;letter-spacing:.06em;color:#f5f2df;text-shadow:0 2px 4px #000}
+.gb-chip{display:inline-flex;align-items:center;height:30px;box-sizing:border-box;padding:0 10px;border-radius:12px;border:1px solid var(--bronze);background:var(--wood-700);color:var(--gold);font:800 13px system-ui;white-space:nowrap}

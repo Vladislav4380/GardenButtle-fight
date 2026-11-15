@@ -1,0 +1,30 @@
+<header class="game-header" aria-label="Профиль игрока">
+  <div class="avatar" aria-label="Аватар">
+    <img class="avatar-img" [src]="avatarPreviewSrc" [alt]="'Аватар игрока ' + playerName">
+  </div>
+
+  <div class="header-top-row">
+    <div class="player-name">{{ playerName }}</div>
+
+    <div class="currency coins" aria-label="Монеты">
+      <img class="coin-icon" src="assets/ui/hud/hud-coin.png" alt="">
+      <span class="value">{{ coins }}</span>
+      <img class="plus plus-icon" src="assets/ui/dashboard/hub-plus.png" alt="">
+    </div>
+
+    <a class="currency gems" routerLink="/glory" [queryParams]="{ tab: 'battle' }" aria-label="Боевая слава">
+      <img class="gem-icon" src="assets/ui/hud/hud-battle-swords.png" alt="">
+      <span class="value">{{ gems }}</span>
+    </a>
+
+    <button class="shop" type="button" routerLink="/garden" aria-label="Базар в огороде">
+      <img src="assets/ui/hud/hud-shop.png" alt="">
+    </button>
+  </div>
+
+  <a class="currency xp" routerLink="/glory" [queryParams]="{ tab: 'garden' }" [attr.aria-label]="'Слава огородника ' + xpCurrent + ' из ' + xpTarget">
+    <span class="xp-fill" [style.width.%]="xpProgressPercent"></span>
+    <img class="level-icon" src="assets/ui/hud/hud-level-star.png" alt="">
+    <span class="value">{{ xpText }}</span>
+  </a>
+</header>

@@ -1,0 +1,453 @@
+:host {
+  display: block;
+  color: #fff8d8;
+  font-family: 'Nunito', 'Noto Sans', 'Trebuchet MS', Arial, Helvetica, sans-serif;
+  --dashboard-body-font: 'Nunito', 'Noto Sans', 'Trebuchet MS', Arial, Helvetica, sans-serif;
+}
+
+.dashboard-page {
+  --background: #071108;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-page::part(background) {
+  background: #000;
+}
+
+.dashboard-page::part(scroll) {
+  min-height: 100dvh;
+}
+
+.dashboard-viewport {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.dashboard-shell {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  box-sizing: border-box;
+  flex: 0 0 390px;
+  margin: 0;
+  padding: env(safe-area-inset-top) 0 calc(1px + env(safe-area-inset-bottom));
+  background: #000;
+  transform: scale(var(--dashboard-scale, 1));
+  transform-origin: top center;
+}
+
+@media (min-width: 431px) {
+  .dashboard-page::part(background) {
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0.18) 52%,
+        rgba(0, 0, 0, 0.42) 100%
+      ),
+      url('/assets/ui/avatars/bg-garden.webp') center top / auto 100% no-repeat,
+      #071108;
+  }
+
+  .dashboard-viewport {
+    background: transparent;
+  }
+
+  .dashboard-shell {
+    box-shadow: 0 0 34px rgba(0, 0, 0, .52);
+  }
+}
+
+.dashboard-content {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 133px);
+  gap: 4px;
+  padding: 4px 2px 0;
+  box-sizing: border-box;
+}
+
+.dashboard-block {
+  position: relative;
+  min-height: 112px;
+  border: 1px solid rgba(247, 189, 54, .38);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(39, 65, 27, .82), rgba(15, 25, 14, .94));
+}
+
+.dashboard-block-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+}
+
+@media (max-width: 360px) {
+  .dashboard-content {
+    padding-right: 2px;
+    padding-left: 2px;
+  }
+
+}
+
+.garden-block {
+  position: relative;
+  min-height: 236px;
+  padding: 10px 10px 22px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: url('/assets/ui/dashboard/bg-dashboard.png') center / 100% 100% no-repeat, #120803;
+}
+
+.garden-block:not(.garden-block-compact) {
+  box-sizing: border-box;
+  flex: 0 0 226px;
+  height: 226px;
+  min-height: 0;
+  padding-bottom: 8px;
+}
+
+.garden-block-compact {
+  flex: 0 0 197px;
+  height: 197px;
+  min-height: 0;
+  padding-bottom: 8px;
+}
+
+.dashboard-mini-block {
+  min-height: 112px;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.garden-block > * {
+  position: relative;
+  z-index: 2;
+}
+
+.wood-frame {
+  display: none;
+}
+
+.wood-side {
+  position: absolute;
+  background-image: url('/assets/ui/dashboard/wood-border-top.png');
+  background-repeat: repeat-x;
+  background-size: auto 14px;
+}
+
+.wood-top {
+  left: 26px;
+  right: 26px;
+  top: 0;
+  height: 14px;
+}
+
+.wood-bottom {
+  left: 26px;
+  right: 26px;
+  bottom: -5px;
+  height: 14px;
+  transform: scaleY(-1);
+}
+
+.wood-left {
+  top: 26px;
+  bottom: 26px;
+  left: 0;
+  width: 14px;
+  background-repeat: repeat-y;
+  background-size: 14px auto;
+  transform: none;
+}
+
+.wood-right {
+  top: 26px;
+  bottom: 26px;
+  right: 0;
+  width: 14px;
+  background-repeat: repeat-y;
+  background-size: 14px auto;
+  transform: scaleX(-1);
+}
+
+.wood-corner {
+  position: absolute;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  background-image: url('/assets/ui/dashboard/wood-corner-tl.png');
+  background-repeat: no-repeat;
+  background-size: 95px 63px;
+  background-position: -28px -11px;
+}
+
+.wood-tl {
+  left: 0;
+  top: 0;
+  transform: scaleY(-1);
+}
+
+.wood-tr {
+  right: 0;
+  top: 0;
+  transform: scale(-1);
+}
+
+.wood-bl {
+  left: 0;
+  bottom: 0;
+  transform: none;
+}
+
+.wood-br {
+  right: 0;
+  bottom: 0;
+  transform: scaleX(-1);
+}
+.garden-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 25px;
+  padding: 0 4px 2px;
+}
+
+.garden-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #f7e1a2;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.garden-sprout {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex: 0 0 24px;
+  margin-left: -6px;
+  transform: translateY(-2px);
+}
+
+.garden-count {
+  color: #ffe8a6;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.garden-plots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  height: 150px;
+}
+
+.garden-block:not(.garden-block-compact) .garden-plots {
+  box-sizing: border-box;
+  display: flex;
+  grid-template-columns: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0 -2px;
+  padding: 0 2px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.garden-block:not(.garden-block-compact) .garden-plots::-webkit-scrollbar {
+  display: none;
+}
+
+.garden-plot {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid #7a4318;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .55),
+    inset 0 0 0 2px #2b1608,
+    inset 0 0 0 4px rgba(255, 220, 119, .36);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.garden-plot:active {
+  transform: translateY(1px);
+}
+
+.garden-plot:focus-visible {
+  outline: 2px solid #fff6a8;
+  outline-offset: 2px;
+}
+
+.garden-block:not(.garden-block-compact) .garden-plot {
+  flex: 0 0 calc((100% - 12px) / 4);
+  min-width: 76px;
+  scroll-snap-align: start;
+}
+
+.crop {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-position: center;
+  transform: none;
+  transform-origin: center;
+}
+
+/* сюда подставь свои картинки */
+// .crop-carrot {
+//   background-image: url('/assets/ui/dashboard/crop-carrot.png');
+// }
+
+// .crop-tomato {
+//   background-image: url('/assets/ui/dashboard/crop-tomato.png');
+// }
+
+// .crop-cucumber {
+//   background-image: url('/assets/ui/dashboard/crop-cucumber.png');
+// }
+
+.plot-status {
+  isolation: isolate;
+  position: absolute;
+  z-index: 3;
+  left: 1px;
+  right: 1px;
+  bottom: 5px;
+  display: grid;
+  align-items: center;
+  width: auto;
+  height: 22px;
+  padding-left: 8px;
+  padding-right: 36px;
+  overflow: hidden;
+  border: 1px solid #3f210d;
+  border-radius: 10px;
+  background: #000;
+  color: #fffde4;
+  font-size: clamp(10px, 2.98vw, 13px);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.plot-status::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 8px;
+  background: linear-gradient(to bottom, #8fd02b 0%, #2f7f10 100%);
+}
+
+.plot-ok,
+.plot-timer {
+  position: absolute;
+  z-index: 4;
+  right: 4px;
+  bottom: 5px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.plot-ok {
+  right: -9px;
+  bottom: -7px;
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.plot-timer {
+  right: -9px;
+  bottom: -7px;
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.harvest-button {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: 58%;
+  height: 35px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 3px auto 0;
+  padding: 0 68px 0 14px;
+  border: 2px solid #1d4308;
+  border-radius: 13px;
+  background:
+    linear-gradient(180deg, #4a8514, #4a8514 48%, #4a8514, #4a8514);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 180, .45),
+    inset 0 -1px 0 rgba(15, 52, 5, .65),
+    0 3px 0 #102f05,
+    0 5px 6px rgba(0, 0, 0, .35);
+  color: #fffbe2;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.harvest-text {
+  position: relative;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.harvest-button:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .32),
+    inset 0 -2px 0 rgba(16, 71, 7, .58),
+    0 1px 0 #0d3005,
+    0 3px 5px rgba(0, 0, 0, .35);
+}
+
+.basket-icon {
+  position: absolute;
+  right: 10px;
+  bottom: -5px;
+  z-index: 3;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  pointer-events: none;
+}

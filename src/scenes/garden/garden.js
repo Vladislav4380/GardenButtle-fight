@@ -66,7 +66,6 @@
     gate: { name: "Ворота", pic: "gate", foot: [115, 30], price: 30 },
     "banner-stand": { name: "Знамя на камнях", pic: "banner-stand", foot: [45, 30], price: 25 },
     banner: { name: "Знамя", pic: "banner", foot: [20, 14], price: 20 },
-    dummy: { name: "Чучело-мишень", pic: "dummy", foot: [25, 18], price: 30 },
     "spear-rack": { name: "Стойка с копьями", pic: "spear-rack", foot: [60, 45], price: 40 },
     "shield-rack": { name: "Стойка со щитами", pic: "shield-rack", foot: [85, 45], price: 40 },
     "crates-barrels": { name: "Ящики", pic: "crates-barrels", foot: [62, 40], price: 15 },
@@ -83,8 +82,8 @@
     fern2: { name: "Папоротник-2", pic: "fern2", foot: [46, 24], price: 5 },
     stump: { name: "Пень", pic: "stump", foot: [48, 26], price: 5 },
     logs: { name: "Брёвна", pic: "logs", foot: [58, 32], price: 10 },
-    // No picture yet: drawn by code (a pole, a crossbar and a mark). Birds do not land on beds near it.
-    scarecrow: { name: "Пугало", emoji: "🧑‍🌾", foot: [30, 20], price: 15, size: [110, 170] },
+    // The scarecrow (the training dummy's picture): birds do not land on beds near it.
+    scarecrow: { name: "Чучело", pic: "dummy", foot: [25, 18], price: 15 },
     // No pictures yet either: drawn by code as a coloured board with a mark and a name.
     "order-board": { name: "Доска заказов", emoji: "📋", box: "#7a5530", foot: [70, 30], price: 30, unique: true, size: [150, 150], opens: "orders" },
     // The gardener's dwelling, better with the gardener's glory: one on the plot, a new one replaces the old.
@@ -128,7 +127,7 @@
       ["well", -110, -1580],
       ["spear-rack", -1780, -1300],
       ["shield-rack", -1770, -1050],
-      ["dummy", -1790, -820],
+      ["scarecrow", -1790, -820],
       ["crates-barrels", -720, -1270],
       ["hay-sacks", -720, -1050],
     ])
@@ -148,6 +147,8 @@
   // objects are dropped, such beds are emptied, the barn gets the new crops, such tasks are let go. Without this one
   // unknown name would stop the game on its first frame.
   function mend() {
+    // The training dummy is the scarecrow now (14.11.2026): the same picture on the same spot.
+    for (const o of state.objects || []) if (o.kind === "dummy") o.kind = "scarecrow";
     state.objects = (state.objects || []).filter((o) => KINDS[o.kind]);
     for (const o of state.objects) if (o.kind === "bed" && o.crop && !CROPS[o.crop]) (o.crop = null), (o.at = 0);
     state.barn ||= {};
@@ -988,13 +989,23 @@
     if (!img?.complete || !img.naturalWidth) return;
     const w = img.naturalWidth * WARRIOR_K,
       h = img.naturalHeight * WARRIOR_K;
-    // As many as the bed will give: what is gathered is what was seen growing.
-    const n = CROPS[o.crop].yield;
-    for (let i = 0; i < n; i++) {
-      const dx = (i - (n - 1) / 2) * (n > 2 ? 112 : 130);
-      // Ripe warriors shift from foot to foot a little, each in his own time.
-      const bob = stage === 3 ? Math.sin(now / 260 + i * 1.7 + o.x) * 2 : 0;
-      g.drawImage(img, o.x + dx - w / 2, o.y - 44 - h + bob, w, h);
+    // As many as the bed will give (with the harvest fertilizer's extra): what is gathered is what was seen growing.
+    // Up to three stand in one row; more in two — up to three at the back, the rest in front, half a step aside, a
+    // little lower and over the back row. Their size never changes: where a row would not fit inside the bed's frame
+    // (its soil is about SOIL_W across), only the step between them shrinks.
+    const n = CROPS[o.crop].yield + (o.boost || 0),
+      SOIL_W = 290,
+      back = n > 3 ? Math.min(3, Math.ceil(n / 2)) : n,
+      rows = n > 3 ? [[back, -34], [n - back, 6]] : [[n, -4]];
+    let i = 0;
+    for (const [count, dy] of rows) {
+      const step = count > 1 ? Math.min(count > 2 ? 112 : 130, (SOIL_W - w) / (count - 1)) : 0;
+      for (let k = 0; k < count; k++, i++) {
+        const dx = (k - (count - 1) / 2) * step;
+        // Ripe warriors shift from foot to foot a little, each in his own time.
+        const bob = stage === 3 ? Math.sin(now / 260 + i * 1.7 + o.x) * 2 : 0;
+        g.drawImage(img, o.x + dx - w / 2, o.y - 40 + dy - h + bob, w, h);
+      }
     }
   }
   // A picture's outline filled with one colour (for the haze round the object in hand), made once per picture and colour.
@@ -1169,10 +1180,19 @@
     ].sort((a, b) => a.y - b.y);
     for (const it of list) it.draw();
     drawPests(now);
+    // A fertilizer carried by the finger: the bed under it in green (it takes it) or red (it does not).
+    if (fertDrag?.bed) drawObject(fertDrag.bed, now, 1, canFert(fertDrag.bed, fertDrag.kind) ? "110,235,90" : "255,60,45", "box");
     // A bed or building offered for razing: ringed in red, so it is plain which one is meant.
     if (razing) drawObject(razing, now, 1, "255,60,45", "box");
     // The object being placed, in a haze round its outline: green where it fits, red where not (as foes are ringed in
     // battle).
+    if (ghost?.back) {
+      const k = Math.min(1, (performance.now() - ghost.back.t0) / 280),
+        e = 1 - (1 - k) * (1 - k);
+      ghost.x = ghost.back.x + (ghost.moving.x - ghost.back.x) * e;
+      ghost.y = ghost.back.y + (ghost.moving.y - ghost.back.y) * e;
+      if (k >= 1) endPlacing();
+    }
     if (ghost) {
       const ok = fits(ghost.moving || ghost, ghost.x, ghost.y) && (ghost.moving || state.gold >= KINDS[ghost.kind].price),
         held = ghost.moving ? { ...ghost.moving, x: ghost.x, y: ghost.y } : ghost,
@@ -1271,6 +1291,20 @@
       if (done.water + done.weed + done.pest || state.pests.length || state.weeds.length) awaySummary = { away, ...done, pestsLeft: state.pests.length, weedsLeft: state.weeds.length };
     }
   }
+  // Birds already sitting on a bed near a scarecrow (one just put or moved there) fly off at once: no gold for them,
+  // the bed grows on. Checked twice a second, so it looks immediate.
+  const scaredBirds = [];
+  let nextScare = 0;
+  function scareBirds(now) {
+    state.pests = state.pests.filter((p) => {
+      if (p.kind !== "bird") return true;
+      const b = beds().find((q) => bedKey(q) === p.bed);
+      if (!b || !scared(b)) return true;
+      const at = pestPlace(p);
+      if (at) scaredBirds.push({ x: at[0], y: at[1], t0: now });
+      return false;
+    });
+  }
   let lastGame = state.time,
     nextPest = performance.now() + 20000,
     nextWeed = performance.now() + 45000;
@@ -1284,6 +1318,7 @@
       b.at += dt;
       return true;
     });
+    if (now > nextScare) (nextScare = now + 500), scareBirds(now);
     if (now > nextPest) (nextPest = now + 25000 + Math.random() * 20000), Math.random() < 0.6 && spawnPest();
     if (now > nextWeed) (nextWeed = now + 60000 + Math.random() * 60000), Math.random() < 0.5 && spawnWeed();
   }
@@ -1378,6 +1413,19 @@
       g.font = `${p.kind === "mole" ? 90 : 72}px system-ui`;
       g.fillText(PESTS[p.kind].emoji, at[0], at[1] + bob);
     }
+    // A scared bird: up and away to the side, fading, in a second.
+    for (let i = scaredBirds.length - 1; i >= 0; i--) {
+      const f = scaredBirds[i],
+        t = (now - f.t0) / 1000;
+      if (t >= 1) {
+        scaredBirds.splice(i, 1);
+        continue;
+      }
+      g.globalAlpha = 1 - t;
+      g.font = "72px system-ui";
+      g.fillText("🐦", f.x + t * 260, f.y - t * t * 420 + Math.sin(t * 40) * 8);
+      g.globalAlpha = 1;
+    }
   }
 
   // ---------- Sowing and gathering ----------
@@ -1453,6 +1501,21 @@
       return Math.hypot(sx - x, sy - (y - 4)) < r;
     });
   }
+  // The water drop beside a dry growing bed's badge: a tap on it waters the bed.
+  const dropAt = (b) => {
+    const [x, y] = badgeAt(b);
+    return [x - badgeR() * 1.7, y];
+  };
+  function dropUnder(sx, sy) {
+    const r = badgeR() + 10;
+    return beds().find((b) => {
+      if (!b.crop || ripe(b) || b.wet) return false;
+      const [x, y] = dropAt(b);
+      return Math.hypot(sx - x, sy - y) < r;
+    });
+  }
+  // Can this fertilizer go on this bed (a growing one, not yet given the same)?
+  const canFert = (b, kind) => b && b.crop && !ripe(b) && (kind === "yield" ? !b.boost : !b.fast);
   function drawBadges(now) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const r = badgeR();
@@ -1495,7 +1558,7 @@
         g.font = `${Math.round(r * 1.1)}px system-ui`;
         g.textAlign = "center";
         g.textBaseline = "middle";
-        g.fillText("💧", x - r * 1.7, y);
+        g.fillText("💧", ...dropAt(b));
       }
     }
   }
@@ -1562,6 +1625,8 @@
   }
   function hideMenu() {
     menu.hidden = true;
+    menu.classList.remove("holdmenu");
+    holdObj = null;
   }
   function seedMenu(sx, sy) {
     showMenu(
@@ -1585,20 +1650,23 @@
       sx,
       sy,
       `<p class="tip">${faceImg(b.crop)}<span><b>${CROPS[b.crop].name}</b><br>${pest ? `<em class="stop">${PESTS[pest.kind].name} — рост стоит</em>` : `созреет через ${clock(left(b))}`}</span></p>` +
-        (b.wet ? `<p class="wet">💧 Полита: растёт быстрее</p>` : `<button class="tobazaar" data-water="1">💧 Полить — расти быстрее</button>`) +
-        (b.boost ? `<p class="wet">🧪 Удобрено: +${b.boost} к урожаю</p>` : `<button class="tobazaar" data-fert="yield">🧪 Удобрить урожай: +${CROPS[b.crop].boost} · у вас ${state.items.yield}</button>`) +
-        (b.fast ? `<p class="wet">⚡ Растёт вдвое быстрее</p>` : `<button class="tobazaar" data-fert="grow">⚡ Ускорить рост ×2 · у вас ${state.items.grow}</button>`),
+        (b.wet ? `<p class="wet">💧 Полита: растёт быстрее</p>` : `<p class="wet">💧 Нажмите на капельку — полить</p>`) +
+        (b.boost ? `<p class="wet">🧪 Удобрено: +${b.boost} к урожаю</p>` : "") +
+        (b.fast ? `<p class="wet">⚡ Растёт вдвое быстрее</p>` : "") +
+        (b.boost && b.fast ? "" : `<p class="wet">Удобрение — перетащите его снизу на грядку</p>`),
     );
   }
   // A finger put on a crop or the sickle in the menu takes it; sliding it over the map sows or gathers each bed it
   // passes. A tap on it (no slide) does the bed the menu was opened for.
   let menuBed = null;
   menu.addEventListener("click", (e) => {
-    if (e.target.closest("[data-bazaar]")) hideMenu(), open(bazaarCard);
+    const hb = e.target.closest("[data-hold]");
+    if (hb) return holdAct(hb.dataset.hold, hb);
+    if (e.target.closest("[data-bazaar]")) hideMenu(), open(() => bazaarCard("seed"));
     if (e.target.closest("[data-water]") && menuBed && water(menuBed)) hideMenu(), say("Полито: грядка растёт быстрее."), save();
     const fert = e.target.closest("[data-fert]")?.dataset.fert;
     if (fert && menuBed) {
-      if (!(state.items[fert] > 0)) return hideMenu(), open(bazaarCard), say(`Нет: ${FERTS[fert].name.toLowerCase()}. Купите на Базаре.`);
+      if (!(state.items[fert] > 0)) return hideMenu(), open(() => bazaarCard("fert")), say(`Нет: ${FERTS[fert].name.toLowerCase()}. Купите на Базаре.`);
       if (fertilize(menuBed, fert)) hideMenu(), say(fert === "yield" ? `Удобрено: урожай +${menuBed.boost}.` : "Удобрено: растёт вдвое быстрее."), save();
     }
   });
@@ -1673,7 +1741,7 @@
       return;
     }
     const [wx, wy] = toWorld(p.x, p.y);
-    if (ghost) {
+    if (ghost && !ghost.back) {
       const [l, t, r, b] = footOf(ghost, 40);
       // A finger on the object being placed drags it; elsewhere it moves the map.
       if (wx > l && wx < r && wy > t - 120 && wy < b) return (drag = { kind: "ghost", dx: ghost.x - wx, dy: ghost.y - wy });
@@ -1713,6 +1781,7 @@
     if (!p) return;
     const tap = Math.hypot(p.x - p.x0, p.y - p.y0) < 10 && performance.now() - p.t0 < 500;
     if (tap && !cancelled && drag?.kind !== "ghost" && !pointers.size) onTap(p.x, p.y);
+    if (!pointers.size && drag?.kind === "ghost" && ghost?.hold && !ghost.back) dropMoved();
     if (!pointers.size) drag = null;
   };
   canvas.addEventListener("pointerup", up);
@@ -1730,6 +1799,8 @@
   function onTap(sx, sy) {
     // With the drawer out, a tap on the field folds it back (and does nothing else).
     if ($("#drawer").classList.contains("open")) return toggleDrawer(false);
+    // An object picked up from the hold menu: a tap off it puts it back as it was.
+    if (ghost?.hold) return ghost.back || endPlacing();
     if (ghost) {
       // A tap on the ground moves the object being placed there.
       const [wx, wy] = toWorld(sx, sy);
@@ -1741,6 +1812,13 @@
     const pest = pestUnder(sx, sy);
     if (pest) return hitPest(pest);
     if (weedUnder(sx, sy)) return say("Сорняк: проведите по нему пальцем, чтобы вырвать.");
+    const dry = dropUnder(sx, sy);
+    if (dry && water(dry)) {
+      window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("light");
+      floaters.push({ b: dry, text: "💧", t0: performance.now() });
+      save();
+      return say("Полито: грядка растёт быстрее.");
+    }
     // The bed itself, or its badge (which stands above its back corner, partly off the bed).
     const b = badgeUnder(sx, sy) || bedUnder(sx, sy);
     if (b) {
@@ -1758,23 +1836,70 @@
     if (opens === "orders") return open(ordersCard);
     if (o) say(`${KINDS[o.kind].name}. ${KINDS[o.kind].fixed ? "Подержите палец, чтобы снести." : "Подержите палец, чтобы передвинуть."}`);
   }
-  // A long press on an object picks it up to move it; a bed or a building is not moved but offered for razing.
+  // A long press on an object opens a small menu of icons beside it: decor — «Передвинуть» and «Продать за N»; a bed
+  // or a building is not moved — «Снести» (half its price back). Selling and razing ask once more: the first tap turns
+  // the button into «Точно?», the second does it. A tap anywhere else closes the menu and nothing happens.
+  let holdObj = null;
+  const backPrice = (o) => Math.floor((KINDS[o.kind].price || 0) / 2);
   function pickUp(o) {
     pressAt = null;
     if (pointers.size !== 1) return;
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
     const k = KINDS[o.kind];
-    if (k.fixed) {
-      if (o.kind === "bed" && o.crop) return say("На грядке растут бойцы: соберите их, потом грядку можно снести.");
-      razing = o;
+    if (o.kind === "bed" && o.crop) return say("На грядке растут бойцы: соберите их, потом грядку можно снести.");
+    holdObj = o;
+    const btn = (id, icon, text) => `<button data-hold="${id}"><i>${icon}</i><small>${text}</small></button>`,
+      [sx, sy] = toScreen(o.x, o.y - KINDS[o.kind].foot[1]);
+    showMenu(
+      sx,
+      sy,
+      `<div class="hold">${
+        k.fixed
+          ? btn("raze", "🔨", `Снести · +${backPrice(o)}`)
+          : btn("move", "✋", "Передвинуть") + (k.unique ? "" : btn("sell", "💰", `Продать · +${backPrice(o)}`))
+      }</div>`,
+    );
+    menu.classList.add("holdmenu");
+  }
+  // Gone from the garden: a part of its price back; the helpers forget it.
+  function removeObject(o) {
+    state.objects.splice(state.objects.indexOf(o), 1);
+    state.gold += backPrice(o);
+    for (const w of walkers) (w.jobs = w.jobs.filter((j) => j !== o)), w.doing === o && (w.doing = null), (w.aim = null);
+    save();
+    renderDrawer();
+  }
+  function holdAct(what, b) {
+    const o = holdObj;
+    if (!o || !state.objects.includes(o)) return hideMenu();
+    if (what === "move") {
       hideMenu();
-      return placeBar("raze");
+      // In hand: drag it with a finger (green where it fits, red where not) and let go — it stays where it fits, or
+      // goes back to its place.
+      ghost = { kind: o.kind, x: o.x, y: o.y, moving: o, hold: true };
+      return say(`Перетащите: ${KINDS[o.kind].name.toLowerCase()}. Отпустите — встанет на место.`);
     }
-    const p = [...pointers.values()][0],
-      [wx, wy] = toWorld(p.x, p.y);
-    drag = { kind: "ghost", dx: o.x - wx, dy: o.y - wy };
-    ghost = { kind: o.kind, x: o.x, y: o.y, moving: o };
-    startPlacing();
+    if (!b.classList.contains("sure")) {
+      b.classList.add("sure");
+      b.querySelector("small").textContent = `Точно? +${backPrice(o)}`;
+      return;
+    }
+    hideMenu();
+    removeObject(o);
+    say(`${what === "raze" ? "Снесено" : "Продано"}: ${KINDS[o.kind].name.toLowerCase()} · +${backPrice(o)}`);
+  }
+  // Let go of an object being moved: where it fits it stays (saved at once); where not it slides back to its place.
+  function dropMoved() {
+    const o = ghost?.moving;
+    if (!o) return;
+    if (fits(o, ghost.x, ghost.y)) {
+      Object.assign(o, { x: ghost.x, y: ghost.y });
+      save();
+      window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("light");
+      return endPlacing();
+    }
+    say("Здесь тесно: вокруг нужен проход.");
+    ghost.back = { t0: performance.now(), x: ghost.x, y: ghost.y };
   }
 
   // ---------- Level, tasks, the army ----------
@@ -1804,7 +1929,7 @@
   $("#qbtn").onclick = () => ($("#quests").hidden = !$("#quests").hidden);
   function renderQuests() {
     const done = state.quests.filter((q) => q.done).length;
-    $("#qcount").textContent = done ? `${done} готово` : `${state.quests.length}`;
+    $("#qcount").textContent = done ? `✓${done}` : `${state.quests.length}`;
     $("#qbtn").classList.toggle("ready", done > 0);
     $("#quests").innerHTML = state.quests
       .map(
@@ -1832,6 +1957,12 @@
     const n = Object.values(state.barn).reduce((a, b) => a + b, 0);
     const t = n >= 6 ? `Армия: ${n}` : `Армия: ${n}/6`;
     if ($("#army").textContent !== t) $("#army").textContent = t;
+    for (const k of ["yield", "grow"]) {
+      const el = $(`#ferts [data-fert="${k}"]`),
+        c = `×${state.items[k] || 0}`;
+      if (el.lastChild.textContent !== c) el.lastChild.textContent = c;
+      el.classList.toggle("none", !(state.items[k] > 0));
+    }
     $("#fight").classList.toggle("ready", n >= 6);
   }
   // With fewer than six in the barn there is no squad: the battle is not opened.
@@ -1844,7 +1975,9 @@
 
   // ---------- Panels ----------
   let panel = null;
+  let openedAt = 0;
   function open(fn) {
+    openedAt = performance.now();
     panel = fn;
     $("#sheet").hidden = false;
     hideMenu();
@@ -1855,7 +1988,7 @@
     $("#sheet").hidden = true;
   }
   $("#sheet").addEventListener("click", (e) => {
-    if (e.target === $("#sheet")) close();
+    if (e.target === $("#sheet") && performance.now() - openedAt > 400) close();
   });
   const show_ = (card) => card();
   function show(html) {
@@ -1877,7 +2010,7 @@
       `<h3><img src="/assets/garden/icon-seed.png" alt="">Лавка</h3><p>Купите и поставьте куда хотите. Любой объект можно передвинуть: подержите на нём палец.</p>
       <h4>Грядки</h4>${row("bed")}
       <h4>Постройки</h4>${["well", "trade-stall"].map(row).join("")}
-      <h4>Лагерь</h4>${["palisade", "palisade-corner", "gate", "banner-stand", "banner", "dummy", "spear-rack", "shield-rack"].map(row).join("")}
+      <h4>Лагерь</h4>${["palisade", "palisade-corner", "gate", "banner-stand", "banner", "spear-rack", "shield-rack"].map(row).join("")}
       <h4>Декор</h4>${["crates-barrels", "hay-sacks", "rocks-big", "rocks-small", "rock-moss", "bush", "bush-berries", "bush-white", "bush-yellow", "fern", "fern2", "stump", "logs"].map(row).join("")}`,
     );
   }
@@ -1890,30 +2023,46 @@
         .join("")}`,
     );
   }
-  // The bazaar: seeds of the starting crops and fertilizers from the game; seeds of new crops and fighters from other
-  // players (that needs the server: shown empty for now).
-  function bazaarCard() {
+  // The bazaar: seeds of the starting crops, fertilizers and gnome helpers from the game; seeds of new crops and
+  // fighters from other players (that needs the server: shown empty for now). One tab at a time, the tabs on top, so
+  // every shelf is in sight without scrolling; the tab stays as it was after a purchase.
+  let bazaarTab = "seed";
+  const B_TABS = [
+    ["seed", "Семена"],
+    ["fert", "Удобрения"],
+    ["gnome", "Гномы"],
+    ["players", "От игроков"],
+  ];
+  function bazaarCard(tab) {
+    if (typeof tab === "string") bazaarTab = tab;
     const seedRow = (id) =>
       `<div class="row">${faceImg(id)}<div class="what"><b>Семена: ${CROPS[id].name}</b><small>растёт ${clock(CROPS[id].grow * MINUTE)} · с грядки ${CROPS[id].yield} · с удобрением +${CROPS[id].boost} · у вас ${state.seeds[id] || 0}</small></div>
         <button class="buy" data-do="seed" data-arg="${id}" ${state.gold < CROPS[id].seed ? "disabled" : ""}>${goldTag(CROPS[id].seed)}</button></div>`;
     show(
-      `<h3><img src="/assets/garden/icon-gold.png" alt="">Базар</h3><p>Семя одноразовое: одно семя — одна посадка.</p>
-      <h4>Семена от игры</h4>${STARTERS.map(seedRow).join("")}
-      <h4>Удобрения от игры</h4>${Object.entries(FERTS)
+      `<h3><img src="/assets/garden/icon-gold.png" alt="">Базар</h3>
+      <div class="btabs">${B_TABS.map(([k, t]) => `<button data-do="btab" data-arg="${k}" class="${k === bazaarTab ? "on" : ""}">${t}</button>`).join("")}</div>
+      ${
+        bazaarTab === "seed"
+          ? `<p>Семя одноразовое: одно семя — одна посадка.</p>${STARTERS.map(seedRow).join("")}`
+          : bazaarTab === "fert"
+            ? Object.entries(FERTS)
         .map(
           ([k, f]) =>
             `<div class="row"><i class="emo">${f.emoji}</i><div class="what"><b>${f.name}</b><small>${k === "yield" ? "одна порция на грядку: больше бойцов (прибавка — на карточке семени)" : "одна порция на грядку: растёт вдвое быстрее"} · у вас ${state.items[k] || 0}</small></div>
         <button class="buy" data-do="fert" data-arg="${k}" ${state.gold < f.price ? "disabled" : ""}>${goldTag(f.price)}</button></div>`,
         )
-        .join("")}
-      <h4>Гномы-помощники</h4>${Object.entries(GNOMES)
+        .join("")
+            : bazaarTab === "gnome"
+              ? `<p>Гном работает в огороде сам и остаётся навсегда.</p>` +
+                Object.entries(GNOMES)
         .map(
           ([role, gn]) =>
             `<div class="row"><i class="emo">${gn.emoji}</i><div class="what"><b>${gn.name}</b><small>${gn.text} · навсегда · у вас ${state.gnomes.filter((r) => r === role).length}</small></div>
         <button class="buy" data-do="gnome" data-arg="${role}" ${state.gold < gnomePrice(role) ? "disabled" : ""}>${goldTag(gnomePrice(role))}</button></div>`,
         )
-        .join("")}
-      <h4>От игроков</h4><p class="soon">Здесь будут семена новых культур и готовые бойцы от других игроков. Появится, когда заработает сервер.</p>`,
+        .join("")
+              : `<p class="soon">Здесь будут семена новых культур и готовые бойцы от других игроков. Появится, когда заработает сервер.</p>`
+      }`,
     );
   }
   // ---------- The gardener's glory ----------
@@ -1992,8 +2141,9 @@
   }
 
   // ---------- The order board ----------
-  // 3 to 5 orders: some fighters of the garden's crops for gold (80 a fighter and 50 more) and experience; a new one
-  // every hour, up to five. Taking them is up to the player.
+  // Up to five notices pinned to a wooden board: some fighters of the garden's crops for gold (80 a fighter and 50
+  // more). A fulfilled one stays pinned, stamped «Выполнено», till a new notice comes in its place; a new one comes
+  // every hour (onto a stamped one's place, or a free one). Taking them is up to the player.
   function newOrder() {
     const ids = Object.keys(CROPS).filter((id) => opened(id)),
       items = {},
@@ -2009,21 +2159,30 @@
     state.nextOrder ??= state.time + 60 * MINUTE;
     while (state.orders.length < 3) state.orders.push(newOrder());
     if (state.time >= state.nextOrder) {
-      if (state.orders.length < 5) state.orders.push(newOrder());
+      const done = state.orders.findIndex((o) => o.done);
+      if (done >= 0) state.orders[done] = newOrder();
+      else if (state.orders.length < 5) state.orders.push(newOrder());
       state.nextOrder = state.time + 60 * MINUTE;
+      if (panel === ordersCard && !$("#sheet").hidden) ordersCard();
+    }
+    const t =document.getElementById("otimer");
+    if (t) {
+      const c = clock(Math.max(0, state.nextOrder - state.time));
+      if (t.textContent !== c) t.textContent = c;
     }
   }
   const canDo = (o) => Object.entries(o.items).every(([id, n]) => (state.barn[id] || 0) >= n);
   function ordersCard() {
+    const note = (o, i) =>
+      `<div class="note${o.done ? " done" : ""}" style="--tilt:${[-1.6, 1.2, -0.8, 1.8, -1.2][i % 5]}deg"><i class="pin"></i>${Object.entries(o.items)
+        .map(([id, n]) => `<div class="want"><b>${CROPS[id].name} ×${n}</b><small>у вас ${state.barn[id] || 0}</small></div>`)
+        .join("")}<div class="pay">${goldTag(o.gold)}</div>${
+        o.done ? `<span class="stamp">Выполнено</span>` : `<button class="buy" data-do="order" data-arg="${i}" ${canDo(o) ? "" : "disabled"}>Выполнить</button>`
+      }</div>`;
     show(
-      `<h3>📋 Доска заказов</h3><p>Отдайте бойцов из амбара — получите золото. Новый заказ раз в час, всего до пяти. Брать заказы не обязательно.</p>${state.orders
-        .map(
-          (o, i) =>
-            `<div class="row"><div class="what"><b>${Object.entries(o.items)
-              .map(([id, n]) => `${CROPS[id].name} ×${n} <small>(у вас ${state.barn[id] || 0})</small>`)
-              .join(", ")}</b><small>+${o.xp} опыта</small></div><button class="buy" data-do="order" data-arg="${i}" ${canDo(o) ? "" : "disabled"}>${goldTag(o.gold)}</button></div>`,
-        )
-        .join("")}<p class="soon">Следующий заказ через ${clock(Math.max(0, state.nextOrder - state.time))}.</p>`,
+      `<h3>📋 Доска заказов</h3><p>Отдайте бойцов из амбара — получите золото. Брать заказы не обязательно.</p>
+      <div class="board">${state.orders.map(note).join("")}</div>
+      <p class="otime">Новое объявление через <b id="otimer">${clock(Math.max(0, state.nextOrder - state.time))}</b></p>`,
     );
   }
 
@@ -2086,10 +2245,11 @@
     if (what === "close") return close();
     if (what === "order") {
       const o = state.orders[+arg];
-      if (!o || !canDo(o)) return say("Не хватает бойцов в амбаре.");
+      if (!o || o.done || !canDo(o)) return say("Не хватает бойцов в амбаре.");
       for (const [id, n] of Object.entries(o.items)) state.barn[id] -= n;
       state.gold += o.gold;
-      state.orders.splice(+arg, 1);
+      // Stays pinned with the stamp till the next notice comes in its place.
+      o.done = true;
       gain(o.xp, "order");
       addGlory(30);
       say(`Заказ выполнен: +${o.gold} золота.`);
@@ -2114,6 +2274,7 @@
       save();
       return show_(labCard);
     }
+    if (what === "btab") return show_(() => bazaarCard(arg));
     if (what === "gnome") {
       const price = gnomePrice(arg);
       if (state.gold < price) return say("Не хватает золота.");
@@ -2164,7 +2325,7 @@
     ["Грядки", ["bed"]],
     ["Жилище", ["home-1", "home-2", "home-3", "home-4", "home-5"]],
     ["Постройки", ["laboratory", "greenhouse", "order-board", "armory", "market-tent", "well", "trade-stall"]],
-    ["Лагерь", ["palisade", "palisade-corner", "gate", "banner-stand", "banner", "dummy", "spear-rack", "shield-rack"]],
+    ["Лагерь", ["palisade", "palisade-corner", "gate", "banner-stand", "banner", "spear-rack", "shield-rack"]],
     ["Декор", ["scarecrow", "crates-barrels", "barrels", "hay-sacks", "rocks-big", "rocks-small", "rock-moss", "bush", "bush-berries", "bush-white", "bush-yellow", "fern", "fern2", "stump", "logs"]],
   ];
   function renderDrawer() {
@@ -2365,11 +2526,55 @@
     $("#place").hidden = true;
   }
 
+  // ---------- Fertilizers: dragged from the bottom panel onto a growing bed ----------
+  // A finger on a fertilizer takes one; carried over the field it lights the bed under it green (it takes it) or red;
+  // let go over a green one — it is given. With none left a tap opens the Bazaar at the fertilizers.
+  let fertDrag = null;
+  const fertGhost = document.createElement("div");
+  fertGhost.className = "fghost";
+  fertGhost.hidden = true;
+  document.body.append(fertGhost);
+  $("#ferts").addEventListener("pointerdown", (e) => {
+    const btn = e.target.closest("[data-fert]");
+    if (!btn) return;
+    e.preventDefault();
+    const kind = btn.dataset.fert;
+    if (!(state.items[kind] > 0)) return open(() => bazaarCard("fert")), say(`Нет: ${FERTS[kind].name.toLowerCase()}. Купите на Базаре.`);
+    hideMenu();
+    fertDrag = { kind, id: e.pointerId, x0: e.clientX, y0: e.clientY, bed: null };
+    fertGhost.textContent = FERTS[kind].emoji;
+  });
+  addEventListener("pointermove", (e) => {
+    if (!fertDrag || e.pointerId !== fertDrag.id) return;
+    fertGhost.hidden = false;
+    fertGhost.style.left = e.clientX + "px";
+    fertGhost.style.top = e.clientY + "px";
+    const r = canvas.getBoundingClientRect();
+    fertDrag.bed = bedUnder(e.clientX - r.left, e.clientY - r.top) || null;
+  });
+  const fertUp = (e, cancelled) => {
+    if (!fertDrag || e.pointerId !== fertDrag.id) return;
+    const { kind, bed, x0, y0 } = fertDrag;
+    fertDrag = null;
+    fertGhost.hidden = true;
+    if (cancelled) return;
+    if (!bed) return Math.hypot(e.clientX - x0, e.clientY - y0) < 10 && say(`${FERTS[kind].name}: перетащите на растущую грядку.`);
+    if (!canFert(bed, kind)) return say(!bed.crop || ripe(bed) ? "Удобрение — только на растущую грядку." : "Эта грядка уже удобрена так.");
+    fertilize(bed, kind);
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
+    floaters.push({ b: bed, text: FERTS[kind].emoji, t0: performance.now() });
+    save();
+    say(kind === "yield" ? `Удобрено: урожай +${bed.boost}.` : "Удобрено: растёт вдвое быстрее.");
+  };
+  addEventListener("pointerup", (e) => fertUp(e, false));
+  addEventListener("pointercancel", (e) => fertUp(e, true));
+
   // ---------- The bottom buttons and the top ----------
   $("#shopBtn").onclick = () => toggleDrawer();
   $("#barnBtn").onclick = () => open(barnCard);
   $("#bazaarBtn").onclick = () => open(bazaarCard);
-  $("#gchip").onclick = () => open(gloryCard);
+  // The gardener's glory: its table on the app's «Слава» screen (the dwelling and hero card stay in gloryCard).
+  $("#gchip").onclick = () => (save(), (window.top.location.href = "/glory?tab=garden"));
   $("#speed").onclick = () => {
     tick();
     state.speed = state.speed === 1 ? 60 : 1;
@@ -2432,7 +2637,7 @@
     showTop("#xpBar", "width", `${Math.round((1000 * state.xp) / needFor(state.level)) / 10}%`);
     renderArmy();
     showTop("#speed", "text", state.speed === 1 ? "×1" : "×60");
-    showTop("#gchip", "text", `🌾 ${Math.floor(state.glory.total)} · ${titleOf(G_TITLES, state.glory.total)}${homeAllowed() > homeStanding() ? " 🏠!" : ""}`);
+    showTop("#gchip", "text", `🌾 ${Math.floor(state.glory.total)} · ${titleOf(G_TITLES, state.glory.total)}`);
     $("#speed").classList.toggle("on", state.speed !== 1);
     const h = hint();
     if ($("#hint").textContent !== h) $("#hint").textContent = h;

@@ -1,0 +1,39 @@
+<ion-content fullscreen class="dashboard-page">
+  <div class="dashboard-viewport" [style.--dashboard-scale]="dashboardScale">
+    <main class="dashboard-shell">
+      <gb-dashboard-header
+        [playerName]="header.playerName"
+        [avatarCode]="header.avatarCode"
+        [coins]="header.coins"
+        [gems]="header.gems"
+        [xpCurrent]="header.xpCurrent"
+        [xpTarget]="header.xpTarget"
+        [xpTitle]="header.xpTitle"
+      ></gb-dashboard-header>
+
+      <section class="dashboard-content" aria-label="Основные блоки страницы">
+        <gb-dashboard-garden-card
+          [title]="gardenCard.title"
+          [iconSrc]="gardenCard.iconSrc"
+          [summaryText]="gardenCard.summaryText"
+          [plots]="gardenCard.plots"
+        ></gb-dashboard-garden-card>
+
+        <gb-dashboard-team-card
+          [title]="teamCard.title"
+          [iconSrc]="teamCard.iconSrc"
+          [summaryText]="teamCard.summaryText"
+          [members]="teamCard.members"
+        ></gb-dashboard-team-card>
+
+        <gb-dashboard-cards
+          [tournamentCard]="tournamentCard"
+          [rewardsCard]="rewardsCard"
+          [orderGold]="orderGold"
+        ></gb-dashboard-cards>
+
+        <gb-dashboard-nav-panel></gb-dashboard-nav-panel>
+      </section>
+    </main>
+  </div>
+</ion-content>

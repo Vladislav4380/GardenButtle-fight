@@ -1,0 +1,21 @@
+<nav class="dashboard-nav-panel" aria-label="Основная навигация">
+  <button class="dashboard-nav-item" type="button" routerLink="/main" routerLinkActive="active">
+    <img src="assets/ui/hud/hud-nav-home.png" alt="">
+    <span>ГЛАВНАЯ</span>
+  </button>
+
+  <button class="dashboard-nav-item" type="button" routerLink="/garden" routerLinkActive="active">
+    <img src="assets/ui/hud/hud-nav-garden.png" alt="">
+    <span>ОГОРОД</span>
+  </button>
+
+  <button class="dashboard-nav-item" type="button" routerLink="/duels/tft-6x6" [queryParams]="{ from: 'garden' }" routerLinkActive="active">
+    <img src="assets/ui/hud/hud-battle-swords.png" alt="">
+    <span>БОЙ</span>
+  </button>
+
+  <button class="dashboard-nav-item" type="button" routerLink="/glory" routerLinkActive="active">
+    <img src="assets/ui/hud/hud-trophy.png" alt="">
+    <span>СЛАВА</span>
+  </button>
+</nav>

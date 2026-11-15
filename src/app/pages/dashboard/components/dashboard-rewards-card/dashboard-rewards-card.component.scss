@@ -1,0 +1,258 @@
+:host {
+  display: block;
+  flex: 1 1 56%;
+  min-width: 0;
+  font-family: var(--dashboard-body-font, 'Nunito', 'Noto Sans', 'Trebuchet MS', Arial, Helvetica, sans-serif);
+}
+
+.dashboard-card,
+.dashboard-card * {
+  box-sizing: border-box;
+}
+
+.dashboard-card {
+  position: relative;
+  min-width: 0;
+  height: clamp(196px, 46vw, 202px);
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    url('/assets/ui/dashboard/bg-dashboard.png') center / 100% 100% no-repeat,
+    linear-gradient(180deg, rgba(111, 62, 18, .22), rgba(18, 10, 3, .2)),
+    repeating-linear-gradient(90deg, #3b210b 0 14px, #2a1708 15px 30px);
+  box-shadow:
+    inset 0 0 0 2px rgba(17, 8, 2, .72),
+    inset 0 0 0 4px rgba(238, 169, 61, .22),
+    0 3px 0 rgba(16, 8, 2, .82);
+  color: #ffe5a8;
+}
+
+.rewards-card {
+  display: flex;
+  flex-direction: column;
+  padding: 40px 8px 2px;
+  background:
+    linear-gradient(180deg, rgba(88, 45, 13, .28), rgba(18, 8, 3, .9)),
+    radial-gradient(circle at 50% 18%, rgba(108, 61, 24, .3), transparent 58%),
+    #160b04;
+}
+
+.card-title {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(31, 12, 2, .86);
+  border-radius: 4px;
+  background:
+    url('/assets/ui/dashboard/bg-dashboard.png') center / 100% 100% no-repeat,
+    linear-gradient(180deg, rgba(255, 216, 132, .2), transparent 34%),
+    linear-gradient(90deg, rgba(65, 28, 7, .2) 0 2px, transparent 2px 18px),
+    linear-gradient(180deg, #7a3f12 0%, #5a2a08 54%, #351604 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 224, 145, .25),
+    inset 0 -2px 0 rgba(35, 12, 2, .58),
+    0 2px 0 rgba(34, 13, 3, .82),
+    0 4px 7px rgba(0, 0, 0, .3);
+  color: #ffe89d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(42, 17, 4, .72);
+  white-space: nowrap;
+}
+
+.title-icon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.rewards-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 4px 8px;
+  border: 1px solid rgba(23, 10, 3, .62);
+  border-radius: 8px;
+  background: rgba(33, 19, 7, .46);
+}
+
+.reward-caption,
+.chest-label {
+  color: #ffe8a6;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(43, 18, 5, .72);
+}
+
+.reward-caption {
+  margin-top: 2px;
+}
+
+.reward-list {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 4px;
+  height: 44px;
+}
+
+.reward-item {
+  flex: 1 1 0;
+  max-width: 50px;
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  border: 1px solid rgba(91, 51, 18, .9);
+  border-radius: 7px;
+  background: rgba(22, 14, 7, .76);
+  color: #fff0bf;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(27, 12, 3, .72);
+}
+
+.reward-item span {
+  margin-top: -7px;
+}
+
+.reward-icon {
+  flex: 0 0 auto;
+  display: block;
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0 rgba(18, 8, 2, .72));
+}
+
+.game-button {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--button-border);
+  border-radius: 13px;
+  color: #fffbe2;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(82, 38, 0, .7);
+  white-space: nowrap;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 180, .45),
+    inset 0 -1px 0 var(--button-inner-shadow),
+    0 3px 0 var(--button-bottom-shadow),
+    0 5px 6px rgba(0, 0, 0, .35);
+}
+
+.game-button:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, .32),
+    inset 0 -2px 0 var(--button-active-inner-shadow),
+    0 1px 0 var(--button-bottom-shadow),
+    0 3px 5px rgba(0, 0, 0, .35);
+}
+
+.claim-button {
+  --button-border: #743202;
+  --button-inner-shadow: rgba(78, 32, 0, .72);
+  --button-active-inner-shadow: rgba(91, 38, 0, .64);
+  --button-bottom-shadow: #5e2a01;
+
+  flex: 0 0 35px;
+  width: 100%;
+  height: 35px;
+  min-height: 35px;
+  margin-top: 5px;
+  background:
+    linear-gradient(180deg, #d99718, #d99718 48%, #ae5d05, #ae5d05);
+}
+
+.chest-label {
+  text-align: left;
+}
+
+.chest-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 38px;
+  margin-top: auto;
+}
+
+.chest-progress {
+  flex: 0 1 160px;
+  min-width: 0;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.progress-bar {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 48px;
+  height: 22px;
+  overflow: hidden;
+  border: 2px solid #3f210d;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(18, 10, 4, .96), rgba(0, 0, 0, .94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 228, 132, .18),
+    inset 0 -2px 0 rgba(0, 0, 0, .45),
+    0 1px 2px rgba(0, 0, 0, .45);
+}
+
+.progress-fill {
+  display: block;
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  bottom: 2px;
+  z-index: 1;
+  width: 0;
+  border-radius: 7px 3px 3px 7px;
+  background: linear-gradient(to bottom, #8fd02b 0%, #2f7f10 100%);
+}
+
+.progress-value {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #fffce8;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(22, 9, 2, .85);
+}
+
+.chest-image {
+  flex: 0 0 clamp(48px, 30%, 64px);
+  width: clamp(48px, 30%, 64px);
+  height: clamp(38px, 10.5vw, 48px);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 0 rgba(18, 8, 2, .8));
+}

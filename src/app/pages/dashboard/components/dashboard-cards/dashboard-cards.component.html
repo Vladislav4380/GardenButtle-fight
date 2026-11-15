@@ -1,0 +1,16 @@
+<section class="dashboard-cards" aria-label="Турнир и награды">
+  <gb-dashboard-tournament-card
+    [leagueName]="tournamentCard.leagueName"
+    [playerPlace]="tournamentCard.playerPlace"
+    [participantsCount]="tournamentCard.participantsCount"
+  ></gb-dashboard-tournament-card>
+
+  <gb-dashboard-rewards-card
+    [coins]="rewardsCard.coins"
+    [gems]="rewardsCard.gems"
+    [cards]="rewardsCard.cards"
+    [orderGold]="orderGold"
+    [chestProgressCurrent]="rewardsCard.chestProgressCurrent"
+    [chestProgressTarget]="rewardsCard.chestProgressTarget"
+  ></gb-dashboard-rewards-card>
+</section>

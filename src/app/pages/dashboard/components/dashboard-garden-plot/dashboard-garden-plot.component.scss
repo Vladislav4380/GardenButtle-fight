@@ -1,0 +1,158 @@
+:host {
+  display: block;
+  flex: 0 0 calc((100% - 12px) / 4);
+  min-width: 76px;
+  height: 100%;
+  scroll-snap-align: start;
+  font-family: var(--dashboard-body-font, 'Nunito', 'Noto Sans', 'Trebuchet MS', Arial, Helvetica, sans-serif);
+}
+
+.garden-plot,
+.garden-plot * {
+  box-sizing: border-box;
+}
+
+.garden-plot {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid #7a4318;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, .55),
+    inset 0 0 0 2px #2b1608,
+    inset 0 0 0 4px rgba(255, 220, 119, .36);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.garden-plot:active {
+  transform: translateY(1px);
+}
+
+.garden-plot:focus-visible {
+  outline: 2px solid #fff6a8;
+  outline-offset: 2px;
+}
+
+.crop {
+  position: absolute;
+  z-index: 2;
+  /* The fighters keep their own proportions (no stretching), stand on the bottom just over the status bar, and are
+     all drawn at one scale (the width is set from the picture's own width when it loads). */
+  inset: auto;
+  left: 50%;
+  bottom: 20px;
+  width: 92%;
+  height: auto;
+  max-height: calc(100% - 26px);
+  object-fit: contain;
+  object-position: center bottom;
+  translate: -50% 0;
+  transform: none;
+  transform-origin: center;
+}
+
+.crop-locked {
+  filter: blur(.8px) brightness(.7) saturate(.85) !important;
+  transform: scale(1.02);
+}
+
+.plot-status {
+  isolation: isolate;
+  position: absolute;
+  z-index: 3;
+  left: 1px;
+  right: 1px;
+  bottom: 5px;
+  display: grid;
+  align-items: center;
+  width: auto;
+  height: 22px;
+  padding-left: 8px;
+  padding-right: 36px;
+  overflow: hidden;
+  border: 1px solid #3f210d;
+  border-radius: 10px;
+  background: #000;
+  color: #fffde4;
+  font-size: clamp(10px, 2.98vw, 12px);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(22, 9, 2, .85);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plot-status::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 8px;
+  background: linear-gradient(to bottom, #8fd02b 0%, #2f7f10 100%);
+}
+
+.plot-action-icon {
+  position: absolute;
+  z-index: 4;
+  right: -9px;
+  bottom: -7px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 500;
+  object-fit: contain;
+}
+
+.locked-overlay {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  align-items: center;
+  padding: 22px 4px 10px;
+  background: rgba(0, 0, 0, .16);
+  pointer-events: none;
+}
+
+.lock-icon {
+  display: block;
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .58));
+}
+
+.locked-level {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 20px;
+  padding: 0 4px;
+  border: 1px solid rgba(30, 13, 4, .82);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, .62);
+  color: #fff4c8;
+  font-size: clamp(10px, 2.75vw, 11px);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .72);
+  white-space: nowrap;
+}

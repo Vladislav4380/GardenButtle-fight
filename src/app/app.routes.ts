@@ -1,7 +1,14 @@
 import { Routes } from '@angular/router';
 export const routes: Routes = [
- // The site opens on the 6×6 battle; the list of all battles lives at /catalog.
- { path: '', pathMatch: 'full', redirectTo: 'duels/tft-6x6' },
+ // The game opens on the splash: then the welcome and the keeper on the first entry, the main screen after. The
+ // list of all test scenes (for development) lives at /catalog.
+ { path: '', pathMatch: 'full', redirectTo: 'splash' },
+ { path: 'splash', loadComponent: () => import('./pages/start/splash.page').then(m => m.SplashPage) },
+ { path: 'welcome', loadComponent: () => import('./pages/start/welcome.page').then(m => m.WelcomePage) },
+ { path: 'keeper', loadComponent: () => import('./pages/start/keeper.page').then(m => m.KeeperPage) },
+ // The main screen: the first version's dashboard filled with this game's things.
+ { path: 'main', loadComponent: () => import('./pages/dashboard/dashboard.page').then(m => m.DashboardPage) },
+ { path: 'glory', loadComponent: () => import('./pages/start/glory.page').then(m => m.GloryPage) },
  { path: 'catalog', loadComponent: () => import('./pages/home.page').then(m => m.HomePage) },
  { path: 'garden', data: { scene: 'garden' }, loadComponent: () => import('./pages/canvas-scene.page').then(m => m.CanvasScenePage) },
  { path: 'duels/:id', loadComponent: () => import('./pages/canvas-scene.page').then(m => m.CanvasScenePage) },
