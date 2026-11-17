@@ -1651,8 +1651,19 @@
     menu.innerHTML = html;
     menu.hidden = false;
     const r = menu.getBoundingClientRect(),
-      x = Math.max(8, Math.min(W - r.width - 8, sx - r.width / 2)),
-      y = sy - r.height - 40 < 70 ? sy + 40 : sy - r.height - 40;
+      clampX = (v) => Math.max(8, Math.min(W - r.width - 8, v)),
+      clampY = (v) => Math.max(8, Math.min(H - r.height - 8, v));
+    let x, y;
+    // Above the finger, or below it — as long as it then fits whole without covering the place tapped.
+    const above = sy - r.height - 40,
+      below = sy + 40;
+    if (above >= 8) (x = clampX(sx - r.width / 2)), (y = above);
+    else if (below + r.height <= H - 8) (x = clampX(sx - r.width / 2)), (y = below);
+    else {
+      // A short field (a phone held sideways): beside the finger, on the side with more room, kept whole.
+      x = sx > W / 2 ? clampX(sx - 40 - r.width) : clampX(sx + 40);
+      y = clampY(sy - r.height / 2);
+    }
     menu.style.left = x + "px";
     menu.style.top = y + "px";
   }
