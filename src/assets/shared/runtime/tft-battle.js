@@ -1846,7 +1846,7 @@ function initPage() {
       words = (c) => (HERO_TAGS[c] || []).map((id) => ONE[id]).join(" · ");
     const head = `<div class="pk-head"><b>${
       swapping() ? `Раунд ${match.round} из ${MATCH_ROUNDS} · замен осталось ${Math.max(0, left)} из ${MATCH_SWAPS}` : `Отряд ${chosen.length}/${TEAM_SIZE}`
-    }</b><span class="pk-links"><a class="pk-glory" href="/glory?tab=battle" target="_top">⚔ ${battleGlory()} · ${battleTitle(battleGlory())}</a><a class="pk-q pk-garden" href="/garden" target="_top">🌱 Огород</a><button class="pk-q" data-help>? Правила</button></span></div>`;
+    }</b><span class="pk-links"><a class="pk-q pk-home" href="/main" target="_top">← Главная</a><a class="pk-glory" href="/glory?tab=battle" target="_top">⚔ ${battleGlory()} · ${battleTitle(battleGlory())}</a><a class="pk-q pk-garden" href="/garden" target="_top">🌱 Огород</a><button class="pk-q" data-help>? Правила</button></span></div>`;
     // The squad: a tap anywhere on a hero takes it out (the ✕ in its corner only says so); a locked one opens its
     // details instead.
     const squad = Array.from({ length: TEAM_SIZE }, (_, i) => {

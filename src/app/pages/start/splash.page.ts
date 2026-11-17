@@ -31,7 +31,7 @@ import { loadProfile } from '../../data/player';
         linear-gradient(90deg,rgba(0,0,0,.18),transparent 18%,transparent 82%,rgba(0,0,0,.18)),
         linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.08) 58%,rgba(0,0,0,.7))}
     .splash-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-      width:min(100vw,430px);height:100%;margin:0 auto;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);box-sizing:border-box}
+      width:min(100vw,430px);height:100%;margin:0 auto;padding:var(--safe-top,0px) 0 var(--safe-bottom,0px);box-sizing:border-box}
     .loading-block{width:min(84%,340px);margin-bottom:clamp(28px,5vh,48px);text-align:center}
     .loading-text{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;font-size:clamp(17px,4.6vw,21px);white-space:nowrap;font-weight:800;letter-spacing:.01em;text-shadow:0 3px 8px rgba(0,0,0,.82)}
     .loading-icon{display:block;width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.62))}

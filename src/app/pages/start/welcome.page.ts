@@ -24,8 +24,8 @@ import { Router } from '@angular/router';
     .card h2{margin:0;font:900 16px system-ui;color:var(--gold)}.card p{margin:2px 0 0;font:500 14px/1.3 system-ui;color:var(--parch)}
     .gb-btn{margin-top:6px}
     /* Sideways: the poster with the name on the left, the three cards and the button on the right, scrolling if need be. */
-    @media (orientation:landscape) and (max-height:520px){.start{background-position:left top}.start::before{background:linear-gradient(90deg,#0000 30%,#0b0805e6 52%)}
-      .gb-art{left:0;transform:none}.gb-body{margin-left:calc(var(--visible-h,100dvh) * 720 / 1279);padding:12px 16px;overflow-y:auto}.sp{flex:0}
+    @media (orientation:landscape) and (max-height:760px){.start{background-position:left top}.start::before{background:linear-gradient(90deg,#0000 30%,#0b0805e6 52%)}
+      .gb-art{left:0;transform:none}.gb-body{margin-left:calc(var(--visible-h,100dvh) * 720 / 1279);padding:calc(var(--safe-top,0px) + 12px) max(16px,var(--safe-right,0px)) max(12px,var(--safe-bottom,0px)) 16px;overflow-y:auto}.sp{flex:0}
       .card{margin-bottom:6px;padding:6px 10px 6px 6px}.card img{width:48px;height:48px}}`],
 })
 export class WelcomePage {

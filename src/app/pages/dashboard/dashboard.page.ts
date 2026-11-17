@@ -114,11 +114,17 @@ export class DashboardPage implements OnInit, OnDestroy {
   @HostListener('window:orientationchange')
   updateDashboardScale(): void {
     const viewport = window.visualViewport;
-    const width = viewport?.width ?? window.innerWidth;
-    const height = viewport?.height ?? window.innerHeight;
+    // The phone's dead zones and Telegram's buttons (the page's --safe-* lengths) are not the design's to use.
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;visibility:hidden;width:calc(var(--safe-left,0px) + var(--safe-right,0px));height:calc(var(--safe-top,0px) + var(--safe-bottom,0px))';
+    document.body.appendChild(probe);
+    const safeW = probe.offsetWidth, safeH = probe.offsetHeight;
+    probe.remove();
+    const width = (viewport?.width ?? window.innerWidth) - safeW;
+    const height = (viewport?.height ?? window.innerHeight) - safeH;
     // Sideways the cards stand in two columns (see the styles): a wide, low design.
-    const side = width > height && height <= 520,
+    const side = width > height && height <= 760,
       scale = side ? Math.min(width / 786, height / 440) : Math.min(width / this.designWidth, height / this.designHeight);
-    this.dashboardScale = Number(Math.max(0.75, Math.min(scale, 1.15)).toFixed(4));
+    this.dashboardScale = Number(Math.max(0.6, Math.min(scale, 1.15)).toFixed(4));
   }
 }
