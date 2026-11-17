@@ -55,12 +55,15 @@
   // racks, dummies, plants…) can be picked up and moved at will.
   const KINDS = {
     bed: { name: "Грядка", pic: "bed-empty", foot: [172, 150], price: 50, fixed: true },
-    armory: { name: "Амбар", pic: "armory", foot: [150, 130], price: 200, unique: true, fixed: true, opens: "barn" },
+    // The barracks (the armory's picture): fighters are made here from the harvest and wait for battle, no limit.
+    armory: { name: "Казарма", pic: "armory", foot: [150, 130], price: 200, unique: true, fixed: true, opens: "barracks" },
+    // The barn: what was grown (the harvest), by crop.
+    barn: { name: "Амбар", pic: "barn", size: [290, 290], foot: [125, 95], price: 200, unique: true, fixed: true, opens: "barn" },
     "market-tent": { name: "Базар", pic: "market-tent", foot: [140, 110], price: 150, unique: true, fixed: true, opens: "bazaar" },
-    well: { name: "Колодец", pic: "well", foot: [80, 70], price: 100, fixed: true },
+    well: { name: "Колодец", pic: "well", foot: [80, 70], price: 100, fixed: true, level: 2 },
     // Studies new crops (their seeds then come to the bazaar); from garden level 3. The study itself is still to come.
     laboratory: { name: "Лаборатория", pic: "laboratory", foot: [165, 110], price: 500, unique: true, fixed: true, level: 3, opens: "lab" },
-    "trade-stall": { name: "Прилавок", pic: "trade-stall", foot: [105, 80], price: 120, fixed: true },
+    "trade-stall": { name: "Прилавок", pic: "trade-stall", foot: [105, 80], price: 120, fixed: true, level: 3 },
     palisade: { name: "Частокол", pic: "palisade", foot: [135, 30], price: 10 },
     "palisade-corner": { name: "Угол частокола", pic: "palisade-corner", foot: [65, 50], price: 10 },
     gate: { name: "Ворота", pic: "gate", foot: [115, 30], price: 30 },
@@ -85,14 +88,14 @@
     // The scarecrow (the training dummy's picture): birds do not land on beds near it.
     scarecrow: { name: "Чучело", pic: "dummy", foot: [25, 18], price: 15 },
     // No pictures yet either: drawn by code as a coloured board with a mark and a name.
-    "order-board": { name: "Доска заказов", emoji: "📋", box: "#7a5530", foot: [70, 30], price: 30, unique: true, size: [150, 150], opens: "orders" },
+    "order-board": { name: "Доска заказов", emoji: "📋", box: "#7a5530", foot: [70, 30], price: 30, unique: true, size: [150, 150], opens: "orders", level: 2 },
     // The gardener's dwelling, better with the gardener's glory: one on the plot, a new one replaces the old.
     "home-1": { name: "Палатка", emoji: "⛺", box: "#8a6d3b", foot: [90, 60], price: 0, dwelling: 1, size: [190, 160] },
     "home-2": { name: "Шалаш", emoji: "🛖", box: "#6f5a2e", foot: [100, 70], price: 0, dwelling: 2, size: [210, 180] },
     "home-3": { name: "Бревенчатый дом", emoji: "🏠", box: "#7a4a24", foot: [120, 80], price: 0, dwelling: 3, size: [240, 200] },
     "home-4": { name: "Каменный дом", emoji: "🏡", box: "#6b6b70", foot: [130, 90], price: 0, dwelling: 4, size: [260, 220] },
     "home-5": { name: "Замок", emoji: "🏰", box: "#5a5f7a", foot: [150, 110], price: 0, dwelling: 5, size: [300, 260] },
-    greenhouse: { name: "Теплица", emoji: "🌱", box: "#5f8f8a", foot: [130, 100], price: 800, fixed: true, max: 2, size: [280, 220] },
+    greenhouse: { name: "Теплица", emoji: "🌱", box: "#5f8f8a", foot: [130, 100], price: 800, fixed: true, max: 2, size: [280, 220], level: 4 },
   };
   // All prices are in tens of gold (decided 14.11.2026: the economy ×10, so earnings show in hundreds and thousands).
   for (const k of Object.values(KINDS)) if (k.price) k.price *= 10;
@@ -107,24 +110,21 @@
   // objects: [{ kind, x, y, flip?, crop?, at? }], x, y the middle of the bottom in world pixels.
   // time: game time in ms, which runs `speed` times faster than real time (×60 for the test) and also runs while the
   // page is closed; real: the real time it was last brought up to date.
+  // A new garden (decided 15.11.2026): six empty beds, one seed of each of the six starting crops in the keeper's
+  // chest, an empty barracks; of the buildings only the barn, the barracks and the bazaar (the rest open with levels).
+  // The keeper leads: sow → gather → into the barracks → to battle; the first sowing ripens in a minute or two.
   function fresh() {
     const objects = [],
-      ids = STARTERS,
-      stage = [1.2, 0.8, 0.3, 1.1, null, 0.6, 0.9, null];
-    // Eight beds, two columns of four, with paths between them, most of them growing, two waiting for seed.
-    for (let k = 0; k < 8; k++) {
-      const id = ids[k % ids.length],
-        grown = stage[k];
-      objects.push({ kind: "bed", x: BEDS_X + (k % 2) * 410, y: BEDS_Y + Math.floor(k / 2) * 190, crop: grown == null ? null : id, at: grown == null ? 0 : -grown * CROPS[id].grow * MINUTE });
-    }
+      ids = STARTERS;
+    for (let k = 0; k < 6; k++) objects.push({ kind: "bed", x: BEDS_X + (k % 2) * 410, y: BEDS_Y + Math.floor(k / 2) * 190, crop: null, at: 0 });
     // The camp round them; the player moves all of it as he likes.
     // The buildings stand in a row under the palisade at the top; the beds begin below them, by the top left corner,
     // and the player spreads them right and down as he likes.
     for (const [kind, x, y, flip] of [
       ["armory", -1500, -1560],
       ["banner-stand", -1220, -1600],
+      ["barn", -900, -1560],
       ["market-tent", -480, -1560],
-      ["well", -110, -1580],
       ["spear-rack", -1780, -1300],
       ["shield-rack", -1770, -1050],
       ["scarecrow", -1790, -820],
@@ -132,7 +132,7 @@
       ["hay-sacks", -720, -1050],
     ])
       objects.push({ kind, x, y, flip: !!flip });
-    return { scale: 10, gold: START_GOLD, seeds: Object.fromEntries(ids.map((id) => [id, START_SEEDS])), barn: Object.fromEntries(ids.map((id) => [id, START_STOCK])), objects, time: 0, real: Date.now(), speed: 1, xp: 0, level: 1, quests: [] };
+    return { scale: 10, gold: START_GOLD, seeds: Object.fromEntries(ids.map((id) => [id, 1])), barn: {}, objects, time: 0, real: Date.now(), speed: 1, xp: 0, level: 1, quests: [], tut: 1, newbie: true };
   }
   let state;
   try {
@@ -153,6 +153,14 @@
     for (const o of state.objects) if (o.kind === "bed" && o.crop && !CROPS[o.crop]) (o.crop = null), (o.at = 0);
     state.barn ||= {};
     for (const id of Object.keys(CROPS)) state.barn[id] ??= 0;
+    // Since 15.11.2026 the harvest is not fighters: `crops` is the barn (what was grown), `load` the barracks' baskets
+    // (harvest put in towards the next fighter of each crop); `barn` stays the fighters (in the barracks).
+    state.crops ||= {};
+    state.load ||= {};
+    // Beds (15.11.2026): six to start; one free every two levels; any more bought, each dearer than the last.
+    state.bedsBought ??= Math.max(0, (state.objects || []).filter((o) => o.kind === "bed").length - 6);
+    state.freeBeds ??= 0;
+    for (const id of Object.keys(CROPS)) (state.crops[id] ??= 0), (state.load[id] ??= 0);
     for (const id of Object.keys(state.barn)) if (!CROPS[id]) delete state.barn[id];
     // Seeds came in with the bazaar (14.11.2026): an older save gets the starting ones.
     state.seeds ||= Object.fromEntries(STARTERS.map((id) => [id, START_SEEDS]));
@@ -160,7 +168,7 @@
     state.items ||= { yield: 0, grow: 0 };
     state.lab ||= { opened: [], research: null, make: null };
     state.orders ||= [];
-    if (!state.objects.some((o) => o.kind === "order-board")) {
+    if ((!state.newbie || state.level >= 2) && !state.objects.some((o) => o.kind === "order-board")) {
       const barn = state.objects.find((o) => o.kind === "armory");
       state.objects.push({ kind: "order-board", x: barn ? barn.x + 300 : -1200, y: barn ? barn.y + 10 : -1550 });
     }
@@ -188,9 +196,12 @@
       localStorage.setItem("garden-barn", JSON.stringify(state.barn));
     } catch {}
   }
-  const left = (bed) => CROPS[bed.crop].grow * MINUTE - (state.time - bed.at);
+  // The newcomer's first sowing ripens quickly (a minute and a quarter), so the first battle is minutes away.
+  const QUICK = 75000;
+  const growMs = (bed) => (bed.quick ? QUICK : CROPS[bed.crop].grow * MINUTE);
+  const left = (bed) => growMs(bed) - (state.time - bed.at);
   const ripe = (bed) => bed.crop && left(bed) <= 0;
-  const growth = (b) => (state.time - b.at) / (CROPS[b.crop].grow * MINUTE);
+  const growth = (b) => (state.time - b.at) / growMs(b);
   // Fertilizers (sold by the game at the bazaar), one portion a bed a sowing each:
   //   for the harvest — the bed gives CROPS[crop].boost more fighters;
   //   for growth — the bed grows twice as fast for the rest of its time.
@@ -1180,6 +1191,25 @@
     ].sort((a, b) => a.y - b.y);
     for (const it of list) it.draw();
     drawPests(now);
+    // Name plates under the core buildings, so it is plain which is the barracks, the barn and the bazaar.
+    for (const o of state.objects) {
+      if (!["armory", "barn", "market-tent"].includes(o.kind) || o === ghost?.moving) continue;
+      const t = KINDS[o.kind].name;
+      g.font = "800 30px system-ui";
+      const w = g.measureText(t).width + 28,
+        y = o.y + 26;
+      g.fillStyle = "#2b2013e6";
+      g.strokeStyle = "#c8a24a";
+      g.lineWidth = 3;
+      g.beginPath();
+      g.roundRect(o.x - w / 2, y - 22, w, 44, 12);
+      g.fill();
+      g.stroke();
+      g.fillStyle = "#ffd56b";
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillText(t, o.x, y + 1);
+    }
     // A fertilizer carried by the finger: the bed under it in green (it takes it) or red (it does not).
     if (fertDrag?.bed) drawObject(fertDrag.bed, now, 1, canFert(fertDrag.bed, fertDrag.kind) ? "110,235,90" : "255,60,45", "box");
     // A bed or building offered for razing: ringed in red, so it is plain which one is meant.
@@ -1194,7 +1224,7 @@
       if (k >= 1) endPlacing();
     }
     if (ghost) {
-      const ok = fits(ghost.moving || ghost, ghost.x, ghost.y) && (ghost.moving || state.gold >= KINDS[ghost.kind].price),
+      const ok = fits(ghost.moving || ghost, ghost.x, ghost.y) && (ghost.moving || state.gold >= priceOf(ghost.kind)),
         held = ghost.moving ? { ...ghost.moving, x: ghost.x, y: ghost.y } : ghost,
         glow = ok ? "110,235,90" : "255,60,45";
       drawObject(held, now, 0.9, glow);
@@ -1249,7 +1279,8 @@
   const SCARE = 500; // birds keep this far from a scarecrow
   const scared = (b) => state.objects.some((o) => o.kind === "scarecrow" && Math.hypot(o.x - b.x, o.y - b.y) < SCARE);
   function spawnPest() {
-    if (state.pests.length >= 3) return;
+    // No pests while the keeper is still showing the newcomer round.
+    if (state.tut || state.pests.length >= 3) return;
     const free = beds().filter((b) => b.crop && !ripe(b) && !pestOn(b));
     if (!free.length) return;
     const b = free[Math.floor(Math.random() * free.length)],
@@ -1436,6 +1467,7 @@
     state.seeds[id]--;
     b.crop = id;
     b.at = state.time;
+    b.quick = !!state.tut;
     // A greenhouse near the bed: it grows 1.2 times faster.
     if (state.objects.some((o) => o.kind === "greenhouse" && Math.hypot(o.x - b.x, o.y - b.y) < GREEN_R)) b.at -= CROPS[id].grow * MINUTE * (1 - 1 / 1.2);
     b.wet = false;
@@ -1451,8 +1483,9 @@
     const twin = Math.random() < 0.05,
       n = CROPS[b.crop].yield + (b.boost || 0) + (twin ? 1 : 0);
     gloryHarvest(b.crop, n);
-    if (twin) say(`Мутация! С грядки на одного бойца больше: ${CROPS[b.crop].name.toLowerCase()} +1.`);
-    state.barn[b.crop] = (state.barn[b.crop] || 0) + n;
+    if (twin) say(`Мутация! Урожай больше: ${CROPS[b.crop].name.toLowerCase()} +1.`);
+    // Into the barn as harvest; fighters are made of it in the barracks.
+    state.crops[b.crop] = (state.crops[b.crop] || 0) + n;
     floaters.push({ b, text: `+${n}`, t0: performance.now() });
     const [sx, sy] = toScreen(b.x, b.y - 80);
     for (let i = 0; i < n; i++) flyers.push({ crop: b.crop, x: sx + i * 14, y: sy, t0: performance.now() + i * 120 });
@@ -1642,7 +1675,7 @@
     );
   }
   function sickleMenu(sx, sy) {
-    showMenu(sx, sy, `<p>Нажмите на корзину — бойцы с этой грядки уйдут в амбар. Или ведите её пальцем по готовым грядкам, чтобы собрать сразу несколько</p><div class="seeds"><button class="seed sickle" data-sickle="1"><img class="face" src="/assets/garden/icon-basket.png" alt=""></button></div>`);
+    showMenu(sx, sy, `<p>Нажмите на корзину — урожай с этой грядки уйдёт в амбар. Или ведите её пальцем по готовым грядкам, чтобы собрать сразу несколько</p><div class="seeds"><button class="seed sickle" data-sickle="1"><img class="face" src="/assets/garden/icon-basket.png" alt=""></button></div>`);
   }
   function growingTip(sx, sy, b) {
     const pest = pestOn(b);
@@ -1831,6 +1864,7 @@
       opens = o && KINDS[o.kind].opens;
     if (opens === "shop") return toggleDrawer(true);
     if (opens === "barn") return open(barnCard);
+    if (opens === "barracks") return open(barracksCard);
     if (opens === "bazaar") return open(bazaarCard);
     if (opens === "lab") return open(labCard);
     if (opens === "orders") return open(ordersCard);
@@ -1840,13 +1874,14 @@
   // or a building is not moved — «Снести» (half its price back). Selling and razing ask once more: the first tap turns
   // the button into «Точно?», the second does it. A tap anywhere else closes the menu and nothing happens.
   let holdObj = null;
+  const CORE = ["armory", "barn", "market-tent"];
   const backPrice = (o) => Math.floor((KINDS[o.kind].price || 0) / 2);
   function pickUp(o) {
     pressAt = null;
     if (pointers.size !== 1) return;
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
     const k = KINDS[o.kind];
-    if (o.kind === "bed" && o.crop) return say("На грядке растут бойцы: соберите их, потом грядку можно снести.");
+    if (o.kind === "bed" && o.crop) return say("На грядке растёт урожай: соберите его, потом грядку можно снести.");
     holdObj = o;
     const btn = (id, icon, text) => `<button data-hold="${id}"><i>${icon}</i><small>${text}</small></button>`,
       [sx, sy] = toScreen(o.x, o.y - KINDS[o.kind].foot[1]);
@@ -1854,7 +1889,9 @@
       sx,
       sy,
       `<div class="hold">${
-        k.fixed
+        CORE.includes(o.kind)
+          ? `<p>${k.name} — основная постройка: её нельзя снести.</p>`
+          : k.fixed
           ? btn("raze", "🔨", `Снести · +${backPrice(o)}`)
           : btn("move", "✋", "Передвинуть") + (k.unique ? "" : btn("sell", "💰", `Продать · +${backPrice(o)}`))
       }</div>`,
@@ -1904,17 +1941,59 @@
 
   // ---------- Level, tasks, the army ----------
   // Experience for sowing and gathering; each level asks for more and pays some gold.
+  // Experience for everything done in the garden (sowing, gathering, fighters made, orders); each level gives gold,
+  // every second one a free bed, and opens buildings (decided 15.11.2026, as in Family Farm). The level never falls.
   const needFor = (level) => 40 + level * 30;
   function gain(xp, what, crop) {
     state.xp += xp;
     while (state.xp >= needFor(state.level)) {
       state.xp -= needFor(state.level);
       state.level++;
-      state.gold += 500;
-      say(`Уровень огорода ${state.level}! +500 золота`);
+      levelUp(state.level);
     }
     for (const q of state.quests) if (!q.done && q.what === what && q.crop === crop) (q.have = Math.min(q.need, q.have + (what === "harvest" ? CROPS[crop].yield : 1))), (q.done = q.have >= q.need);
     renderQuests();
+  }
+  function levelUp(level) {
+    state.gold += 500;
+    const gifts = ["+500 золота"];
+    if (level % 2 === 1) (state.freeBeds = (state.freeBeds || 0) + 1), gifts.push("+1 грядка бесплатно (в «Стройке»)");
+    const opened = Object.entries(KINDS)
+      .filter(([, k]) => k.level === level)
+      .map(([, k]) => k.name);
+    // The order board is put up by itself when it opens (it is the first thing of level 2).
+    if (level >= 2 && !state.objects.some((o) => o.kind === "order-board")) {
+      const a = state.objects.find((o) => o.kind === "armory") || { x: -1500, y: -1560 };
+      for (const [dx, dy] of [[300, 10], [300, 200], [-300, 200], [600, 250], [900, 250]])
+        if (fits({ kind: "order-board" }, a.x + dx, a.y + dy)) {
+          state.objects.push({ kind: "order-board", x: a.x + dx, y: a.y + dy });
+          break;
+        }
+    }
+    renderDrawer();
+    window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success");
+    // After whatever window the action itself redraws, so the level's card is the one left open.
+    setTimeout(() => open(() =>
+      show(
+        `<h3>⭐ Уровень огорода ${level}!</h3><p>Подарок: ${gifts.join(", ")}.</p>${
+          opened.length ? `<p>Открыто: <b>${opened.join(", ")}</b>.</p>` : ""
+        }${nextOpen(level)}`,
+      ),
+    ), 60);
+  }
+  // What the next levels open, for the level card.
+  function nextOpen(level) {
+    const next = Object.values(KINDS).filter((k) => k.level > level);
+    if (!next.length) return "";
+    const at = Math.min(...next.map((k) => k.level));
+    return `<p class="soon">С ${at} уровня: ${next.filter((k) => k.level === at).map((k) => k.name).join(", ")}.</p>`;
+  }
+  // What a bed costs now: free while a level's gift lasts, else 500 and 100 more for each bed bought before.
+  const priceOf = (kind) => (kind === "bed" ? (state.freeBeds > 0 ? 0 : 500 + 100 * (state.bedsBought || 0)) : KINDS[kind].price);
+  function paidFor(kind) {
+    if (kind !== "bed") return;
+    if (state.freeBeds > 0) state.freeBeds--;
+    else state.bedsBought = (state.bedsBought || 0) + 1;
   }
   // Three tasks at a time: sow or gather so much of a crop, for gold. A finished one is taken by a tap.
   function newQuest() {
@@ -1952,7 +2031,8 @@
           }),
       );
   }
-  // The army: every fighter in the barn; a squad of six can go to battle.
+  // The army: every fighter in the barracks; a squad of six can go to battle. A tap on it opens the barracks.
+  $(".army").onclick = () => open(barracksCard);
   function renderArmy() {
     const n = Object.values(state.barn).reduce((a, b) => a + b, 0);
     const t = n >= 6 ? `Армия: ${n}` : `Армия: ${n}/6`;
@@ -1968,9 +2048,9 @@
   // With fewer than six in the barn there is no squad: the battle is not opened.
   $("#fight").addEventListener("click", (e) => {
     const n = Object.values(state.barn).reduce((a, b) => a + b, 0);
-    if (n >= 6) return save();
+    if (n >= 6) return (state.tut = 0), save();
     e.preventDefault();
-    say(`Для боя нужно 6 бойцов, в амбаре ${n}. Вырастите ещё на грядках.`);
+    say(`Для боя нужно 6 бойцов, в казарме ${n}. Соберите урожай и закиньте его в Казарму.`);
   });
 
   // ---------- Panels ----------
@@ -2014,12 +2094,38 @@
       <h4>Декор</h4>${["crates-barrels", "hay-sacks", "rocks-big", "rocks-small", "rock-moss", "bush", "bush-berries", "bush-white", "bush-yellow", "fern", "fern2", "stump", "logs"].map(row).join("")}`,
     );
   }
+  // The barn: the harvest by crop. Fighters are made of it in the barracks; orders take it too.
   function barnCard() {
     show(
-      `<h3><img src="/assets/garden/icon-barn.png" alt="">Амбар</h3><p>Собранные бойцы. Сколько бойцов вида в амбаре — столько можно взять в отряд. Пал в двух раундах из трёх — погиб. Сажают семена с Базара.</p>
+      `<h3><img src="/assets/garden/icon-barn.png" alt="">Амбар</h3><p>Здесь лежит собранный урожай. Из него в Казарме делают бойцов; его же просят заказы на доске.</p>
       ${Object.keys(CROPS)
-        .filter((id) => opened(id) || state.barn[id] > 0)
-        .map((id) => `<div class="row">${faceImg(id)}<div class="what"><b>${CROPS[id].name}</b><small>${CROPS[id].words} · растёт ${clock(CROPS[id].grow * MINUTE)}</small></div><span class="n">${state.barn[id] || 0}</span></div>`)
+        .filter((id) => opened(id) || state.crops[id] > 0)
+        .map((id) => `<div class="row">${faceImg(id)}<div class="what"><b>${CROPS[id].name}</b><small>растёт ${clock(CROPS[id].grow * MINUTE)} · на бойца ${fighterCost(id)}</small></div><span class="n">${state.crops[id] || 0}</span></div>`)
+        .join("")}
+      <button class="tobazaar" data-do="tobarracks">⚔ В Казарму — делать бойцов</button>`,
+    );
+  }
+  // The barracks' window: harvest is put in by crop; each full basket (the threshold) becomes a fighter, the extra
+  // stays in the basket for the next; what is in a basket can be taken back to the barn. Fighters wait here for
+  // battle, as many as there are.
+  const fighterCost = (id) => CROPS[id].yield;
+  function barracksCard() {
+    const row = (id) => {
+      const have = state.crops[id] || 0,
+        put = state.load[id] || 0,
+        need = fighterCost(id);
+      return `<div class="row brow">${faceImg(id)}<div class="what"><b>${CROPS[id].name}</b>
+        <small>бойцов ${state.barn[id] || 0} · в амбаре ${have}</small><i class="basket"><i style="width:${Math.min(100, (put / need) * 100)}%"></i><em>${put} / ${need}</em></i></div>
+        <div class="bbtns"><button class="buy" data-do="load" data-arg="${id}:1" ${have ? "" : "disabled"}>+1</button><button class="buy" data-do="load" data-arg="${id}:all" ${have ? "" : "disabled"}>Всё</button>${
+          put ? `<button class="back mini" data-do="unload" data-arg="${id}">↩</button>` : ""
+        }</div></div>`;
+    };
+    const army = Object.values(state.barn).reduce((a, b) => a + b, 0);
+    show(
+      `<h3><img src="/assets/garden/obj/armory.png" alt="">Казарма</h3><p>Закиньте урожай из амбара — когда корзина полна, выходит боец; лишнее идёт на следующего, недогруженное можно вернуть (↩). Бойцов в казарме сколько угодно, в бой берут отсюда. Сейчас: ${army}.</p>
+      ${Object.keys(CROPS)
+        .filter((id) => opened(id) || state.crops[id] > 0 || state.barn[id] > 0 || state.load[id] > 0)
+        .map(row)
         .join("")}`,
     );
   }
@@ -2031,8 +2137,19 @@
     ["seed", "Семена"],
     ["fert", "Удобрения"],
     ["gnome", "Гномы"],
-    ["players", "От игроков"],
+    ["fighters", "Бойцы"],
+    ["sell", "Скупщик"],
+    ["players", "Игроки"],
   ];
+  // Prices of the game's own trade (decided 17.11.2026): every way pays. One unit of harvest costs about its seed's
+  // share (seed ÷ yield, ~50 on Vlad's scale); the game buys it at ~1.6 of that (~80); a fighter is worth ~2.7 per
+  // unit put into it in battle (~135) — the battle stays the best way (decided 17.11.2026): the merchant takes a
+  // fighter at only ~1.7 per unit, a little over the bare harvest; the game sells one at ~2.8 (~140) — dearer than growing it. Between players the
+  // seller sets the price (needs the server).
+  const unitCost = (id) => CROPS[id].seed / CROPS[id].yield;
+  const sellCropPrice = (id) => Math.round(unitCost(id) * 1.6);
+  const sellFighterPrice = (id) => Math.round(unitCost(id) * fighterCost(id) * 1.7);
+  const buyFighterPrice = (id) => Math.round(unitCost(id) * fighterCost(id) * 2.8);
   function bazaarCard(tab) {
     if (typeof tab === "string") bazaarTab = tab;
     const seedRow = (id) =>
@@ -2048,7 +2165,7 @@
             ? Object.entries(FERTS)
         .map(
           ([k, f]) =>
-            `<div class="row"><i class="emo">${f.emoji}</i><div class="what"><b>${f.name}</b><small>${k === "yield" ? "одна порция на грядку: больше бойцов (прибавка — на карточке семени)" : "одна порция на грядку: растёт вдвое быстрее"} · у вас ${state.items[k] || 0}</small></div>
+            `<div class="row"><i class="emo">${f.emoji}</i><div class="what"><b>${f.name}</b><small>${k === "yield" ? "одна порция на грядку: урожай больше (прибавка — на карточке семени)" : "одна порция на грядку: растёт вдвое быстрее"} · у вас ${state.items[k] || 0}</small></div>
         <button class="buy" data-do="fert" data-arg="${k}" ${state.gold < f.price ? "disabled" : ""}>${goldTag(f.price)}</button></div>`,
         )
         .join("")
@@ -2061,7 +2178,33 @@
         <button class="buy" data-do="gnome" data-arg="${role}" ${state.gold < gnomePrice(role) ? "disabled" : ""}>${goldTag(gnomePrice(role))}</button></div>`,
         )
         .join("")
-              : `<p class="soon">Здесь будут семена новых культур и готовые бойцы от других игроков. Появится, когда заработает сервер.</p>`
+              : bazaarTab === "fighters"
+                ? `<p>Готовые бойцы от Базара — сразу в Казарму. Дороже, чем вырастить самому.</p>` +
+                  STARTERS.map(
+                    (id) =>
+                      `<div class="row">${faceImg(id)}<div class="what"><b>${CROPS[id].name}</b><small>${CROPS[id].words} · в казарме ${state.barn[id] || 0}</small></div>
+        <button class="buy" data-do="buyf" data-arg="${id}" ${state.gold < buyFighterPrice(id) ? "disabled" : ""}>${goldTag(buyFighterPrice(id))}</button></div>`,
+                  ).join("")
+                : bazaarTab === "sell"
+                  ? `<p>Скупщик Базара берёт сразу, по своей твёрдой цене. Хотите дороже — выставьте товар другим игрокам во вкладке «Игроки», цену там ставите вы.</p><h4>Урожай</h4>` +
+                    Object.keys(CROPS)
+                      .filter((id) => state.crops[id] > 0 || STARTERS.includes(id))
+                      .map(
+                        (id) =>
+                          `<div class="row">${faceImg(id)}<div class="what"><b>${CROPS[id].name}</b><small>в амбаре ${state.crops[id] || 0} · за штуку ${sellCropPrice(id)}</small></div>
+        <div class="bbtns"><button class="buy" data-do="sellc" data-arg="${id}:1" ${state.crops[id] > 0 ? "" : "disabled"}>+${sellCropPrice(id)}</button><button class="buy" data-do="sellc" data-arg="${id}:all" ${state.crops[id] > 0 ? "" : "disabled"}>Всё</button></div></div>`,
+                      )
+                      .join("") +
+                    `<h4>Бойцы</h4>` +
+                    Object.keys(CROPS)
+                      .filter((id) => state.barn[id] > 0)
+                      .map(
+                        (id) =>
+                          `<div class="row">${faceImg(id)}<div class="what"><b>${CROPS[id].name}</b><small>в казарме ${state.barn[id]}</small></div>
+        <button class="buy" data-do="sellf" data-arg="${id}">+${sellFighterPrice(id)}</button></div>`,
+                      )
+                      .join("")
+                  : `<p class="soon">Здесь вы выставляете урожай и бойцов другим игрокам по своей цене — хоть 800: купят или нет, решают они. Появится, когда заработает сервер.</p>`
       }`,
     );
   }
@@ -2171,16 +2314,17 @@
       if (t.textContent !== c) t.textContent = c;
     }
   }
-  const canDo = (o) => Object.entries(o.items).every(([id, n]) => (state.barn[id] || 0) >= n);
+  // Orders ask for harvest from the barn (not fighters).
+  const canDo = (o) => Object.entries(o.items).every(([id, n]) => (state.crops[id] || 0) >= n);
   function ordersCard() {
     const note = (o, i) =>
       `<div class="note${o.done ? " done" : ""}" style="--tilt:${[-1.6, 1.2, -0.8, 1.8, -1.2][i % 5]}deg"><i class="pin"></i>${Object.entries(o.items)
-        .map(([id, n]) => `<div class="want"><b>${CROPS[id].name} ×${n}</b><small>у вас ${state.barn[id] || 0}</small></div>`)
+        .map(([id, n]) => `<div class="want"><b>${CROPS[id].name} ×${n}</b><small>в амбаре ${state.crops[id] || 0}</small></div>`)
         .join("")}<div class="pay">${goldTag(o.gold)}</div>${
         o.done ? `<span class="stamp">Выполнено</span>` : `<button class="buy" data-do="order" data-arg="${i}" ${canDo(o) ? "" : "disabled"}>Выполнить</button>`
       }</div>`;
     show(
-      `<h3>📋 Доска заказов</h3><p>Отдайте бойцов из амбара — получите золото. Брать заказы не обязательно.</p>
+      `<h3>📋 Доска заказов</h3><p>Отдайте урожай из амбара — получите золото. Брать заказы не обязательно.</p>
       <div class="board">${state.orders.map(note).join("")}</div>
       <p class="otime">Новое объявление через <b id="otimer">${clock(Math.max(0, state.nextOrder - state.time))}</b></p>`,
     );
@@ -2241,12 +2385,13 @@
       }`,
     );
   }
+  let confirmSellf = false;
   function act(what, arg) {
     if (what === "close") return close();
     if (what === "order") {
       const o = state.orders[+arg];
-      if (!o || o.done || !canDo(o)) return say("Не хватает бойцов в амбаре.");
-      for (const [id, n] of Object.entries(o.items)) state.barn[id] -= n;
+      if (!o || o.done || !canDo(o)) return say("Не хватает урожая в амбаре.");
+      for (const [id, n] of Object.entries(o.items)) state.crops[id] -= n;
       state.gold += o.gold;
       // Stays pinned with the stamp till the next notice comes in its place.
       o.done = true;
@@ -2275,6 +2420,58 @@
       return show_(labCard);
     }
     if (what === "btab") return show_(() => bazaarCard(arg));
+    if (what === "tobarracks") return open(barracksCard);
+    if (what === "buyf") {
+      const p = buyFighterPrice(arg);
+      if (state.gold < p) return say("Не хватает золота.");
+      state.gold -= p;
+      state.barn[arg] = (state.barn[arg] || 0) + 1;
+      say(`Куплен боец: ${CROPS[arg].name.toLowerCase()} — он в Казарме.`);
+      save();
+      return show_(bazaarCard);
+    }
+    if (what === "sellc") {
+      const [id, n] = arg.split(":"),
+        m = n === "all" ? state.crops[id] || 0 : Math.min(1, state.crops[id] || 0);
+      if (!m) return;
+      state.crops[id] -= m;
+      state.gold += m * sellCropPrice(id);
+      say(`Продано: ${CROPS[id].name.toLowerCase()} ×${m} · +${m * sellCropPrice(id)}`);
+      save();
+      return show_(bazaarCard);
+    }
+    if (what === "sellf") {
+      if (!(state.barn[arg] > 0)) return;
+      if (Object.values(state.barn).reduce((a, b) => a + b, 0) <= 6 && !confirmSellf) {
+        confirmSellf = true;
+        return say("После продажи в отряде будет меньше шести. Нажмите ещё раз, чтобы продать.");
+      }
+      confirmSellf = false;
+      state.barn[arg]--;
+      state.gold += sellFighterPrice(arg);
+      say(`Продан боец: ${CROPS[arg].name.toLowerCase()} · +${sellFighterPrice(arg)}`);
+      save();
+      return show_(bazaarCard);
+    }
+    if (what === "load") {
+      const [id, n] = arg.split(":"),
+        m = n === "all" ? state.crops[id] || 0 : Math.min(1, state.crops[id] || 0);
+      if (!m) return say("В амбаре нет такого урожая.");
+      state.crops[id] -= m;
+      state.load[id] = (state.load[id] || 0) + m;
+      let made = 0;
+      while (state.load[id] >= fighterCost(id)) (state.load[id] -= fighterCost(id)), (state.barn[id] = (state.barn[id] || 0) + 1), made++;
+      if (made) gain(5 * made, "fighter", id);
+      if (made) window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium"), say(`Готово: ${CROPS[id].name.toLowerCase()} — бойцов +${made}.`);
+      save();
+      return show_(barracksCard);
+    }
+    if (what === "unload") {
+      state.crops[arg] = (state.crops[arg] || 0) + (state.load[arg] || 0);
+      state.load[arg] = 0;
+      save();
+      return show_(barracksCard);
+    }
     if (what === "gnome") {
       const price = gnomePrice(arg);
       if (state.gold < price) return say("Не хватает золота.");
@@ -2324,7 +2521,7 @@
   const SHELVES = [
     ["Грядки", ["bed"]],
     ["Жилище", ["home-1", "home-2", "home-3", "home-4", "home-5"]],
-    ["Постройки", ["laboratory", "greenhouse", "order-board", "armory", "market-tent", "well", "trade-stall"]],
+    ["Постройки", ["order-board", "well", "laboratory", "trade-stall", "greenhouse"]],
     ["Лагерь", ["palisade", "palisade-corner", "gate", "banner-stand", "banner", "spear-rack", "shield-rack"]],
     ["Декор", ["scarecrow", "crates-barrels", "barrels", "hay-sacks", "rocks-big", "rocks-small", "rock-moss", "bush", "bush-berries", "bush-white", "bush-yellow", "fern", "fern2", "stump", "logs"]],
   ];
@@ -2340,7 +2537,8 @@
           .map((kind) => {
             const k = KINDS[kind],
               locked = k.level > state.level;
-            return `<div class="item${state.gold < k.price || locked ? " poor" : ""}" data-kind="${kind}">${k.emoji ? `<i class="emo">${k.emoji}</i>` : `<img src="/assets/garden/obj/${k.pic}.png" alt="">`}<span>${k.name}${locked ? `<br>с ${k.level} уровня` : ""}</span><b>${k.price}</b></div>`;
+            const price = priceOf(kind);
+            return `<div class="item${state.gold < price || locked ? " poor" : ""}" data-kind="${kind}">${k.emoji ? `<i class="emo">${k.emoji}</i>` : `<img src="/assets/garden/obj/${k.pic}.png" alt="">`}<span>${k.name}${locked ? `<br>с ${k.level} уровня` : ""}</span><b>${price || "даром"}</b></div>`;
           })
           .join(""),
     ).join("");
@@ -2379,7 +2577,7 @@
       const kind = maybe.kind;
       maybe = null;
       if (KINDS[kind].level > state.level) return say(`${KINDS[kind].name} откроется с ${KINDS[kind].level} уровня огорода.`);
-      if (state.gold < KINDS[kind].price) return say(`Не хватает золота: ${KINDS[kind].name.toLowerCase()} стоит ${KINDS[kind].price}.`);
+      if (state.gold < priceOf(kind)) return say(`Не хватает золота: ${KINDS[kind].name.toLowerCase()} стоит ${priceOf(kind)}.`);
       carry = { id: e.pointerId, kind };
       ghost = { kind, x: 0, y: 0, fromDrawer: true };
       // The drawer folds away while the object is carried, so the whole field is free to put it on; let go at the
@@ -2409,7 +2607,10 @@
       ghost = null;
       return say("Здесь тесно: вокруг нужен проход. Перетащите в другое место.");
     }
-    state.gold -= k.price;
+    const price = priceOf(ghost.kind);
+    if (state.gold < price) return (ghost = null), say("Не хватает золота.");
+    state.gold -= price;
+    paidFor(ghost.kind);
     const o = { kind: ghost.kind, x: ghost.x, y: ghost.y };
     if (o.kind === "bed") Object.assign(o, { crop: null, at: 0 });
     // A new dwelling: the old one is gone.
@@ -2419,7 +2620,7 @@
     save();
     renderDrawer();
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("medium");
-    say(`Поставлено: ${k.name.toLowerCase()} · −${k.price}`);
+    say(`Поставлено: ${k.name.toLowerCase()}${price ? ` · −${price}` : " · даром"}`);
   });
 
   // ---------- Placing and moving ----------
@@ -2439,12 +2640,12 @@
       mode === "raze"
         ? btn("keep", "no", "Оставить") + btn("raze", "no del", `Снести · вернётся ${Math.floor((k.price || 0) / 2)}`)
         : mode === "new"
-        ? btn("cancel", "no", "✕ Не покупать") + btn("ok", "ok", `✓ Купить и поставить · ${k.price}`)
+        ? btn("cancel", "no", "✕ Не покупать") + btn("ok", "ok", `✓ Купить и поставить · ${priceOf(ghost.kind) || "даром"}`)
         : mode === "move"
           ? btn("cancel", "no", "↩ Вернуть на место") + (sellable ? btn("sell", "no del", `Продать за ${Math.floor((k.price || 0) / 2)}`) : "") + btn("ok", "ok", "✓ Поставить сюда")
-          : btn("done", "no", "Готово") + btn("more", "ok", `+ Ещё одну · ${k.price}`);
+          : btn("done", "no", "Готово") + btn("more", "ok", `+ Ещё одну · ${priceOf(lastPlaced.kind) || "даром"}`);
     box.querySelectorAll("[data-p]").forEach((b) => (b.onclick = () => placeAct(b.dataset.p)));
-    if (mode === "more") box.querySelector('[data-p="more"]').disabled = state.gold < k.price;
+    if (mode === "more") box.querySelector('[data-p="more"]').disabled = state.gold < priceOf(lastPlaced.kind);
     $("#bottom").hidden = true;
     box.hidden = false;
   }
@@ -2504,9 +2705,10 @@
       return endPlacing();
     }
     const k = KINDS[ghost.kind];
-    if (state.gold < k.price) return say("Не хватает золота.");
+    if (state.gold < priceOf(ghost.kind)) return say("Не хватает золота.");
     if (!fits(ghost, ghost.x, ghost.y)) return say("Здесь тесно: вокруг нужен проход.");
-    state.gold -= k.price;
+    state.gold -= priceOf(ghost.kind);
+    paidFor(ghost.kind);
     const o = { kind: ghost.kind, x: ghost.x, y: ghost.y };
     if (o.kind === "bed") Object.assign(o, { crop: null, at: 0 });
     state.objects.push(o);
@@ -2601,9 +2803,52 @@
     // Long enough to be read: about 60 ms a letter, never under 2.5 s.
     sayUntil = performance.now() + Math.max(2500, text.length * 60);
   }
+  // ---------- The keeper leads the newcomer ----------
+  // tut: 1 sow the six seeds · 2 wait for them · 3 gather · 4 into the barracks · 5 to battle · 0 done.
+  // Each step moves on by itself when its work is done; the step's words stand at the top, a hand points at the place.
+  const TUT = {
+    1: "Хранитель: посади семена — нажми на пустую грядку и выбери семя",
+    2: "Хранитель: растёт! Первый урожай созреет за минуту-другую",
+    3: "Хранитель: созрело — нажми на грядку и на корзину",
+    4: "Хранитель: отнеси урожай в Казарму — нажми на неё и «Всё»",
+    5: "Хранитель: отряд готов! Жми «⚔ В бой»",
+  };
+  function stepTut() {
+    if (!state.tut) return;
+    const bs = beds(),
+      army = Object.values(state.barn).reduce((a, b) => a + b, 0),
+      harvest = Object.values(state.crops).reduce((a, b) => a + b, 0) + Object.values(state.load).reduce((a, b) => a + b, 0),
+      seeds = STARTERS.reduce((a, id) => a + (state.seeds[id] || 0), 0);
+    let t = state.tut;
+    if (t === 1 && (!seeds || !bs.some((b) => !b.crop))) t = 2;
+    if (t === 2 && bs.some((b) => ripe(b))) t = 3;
+    if (t === 3 && !bs.some((b) => ripe(b)) && harvest) t = 4;
+    if (t <= 4 && army >= 6) t = 5;
+    if (t !== state.tut) (state.tut = t), save();
+    $("#fight").classList.toggle("tut", t === 5);
+  }
+  // Where the hand points: an empty bed, a ripe one, the barracks.
+  function tutTarget() {
+    const t = state.tut;
+    if (t === 1) return beds().find((b) => !b.crop);
+    if (t === 3) return beds().find((b) => ripe(b));
+    if (t === 4) return state.objects.find((o) => o.kind === "armory");
+    return null;
+  }
+  function drawTut(now) {
+    const o = state.tut && $("#sheet").hidden && menu.hidden && tutTarget();
+    if (!o) return;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const [x, y] = toScreen(o.x, o.y - (o.kind === "bed" ? 150 : 330));
+    g.font = "44px system-ui";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText("👇", x, y + Math.sin(now / 180) * 8);
+  }
   function hint() {
     if (performance.now() < sayUntil) return sayText;
-    if (ghost) return ghost.moving ? `Перетащите: ${KINDS[ghost.kind].name.toLowerCase()}` : `Поставьте: ${KINDS[ghost.kind].name.toLowerCase()} · ${KINDS[ghost.kind].price} золота`;
+    if (state.tut && TUT[state.tut]) return TUT[state.tut];
+    if (ghost) return ghost.moving ? `Перетащите: ${KINDS[ghost.kind].name.toLowerCase()}` : `Поставьте: ${KINDS[ghost.kind].name.toLowerCase()} · ${priceOf(ghost.kind) || "даром"}`;
     return "";
   }
 
@@ -2646,6 +2891,8 @@
     drawMs = drawMs * 0.9 + (performance.now() - t0) * 0.1;
     drawButterflies(now);
     drawBadges(now);
+    stepTut();
+    drawTut(now);
     drawFloaters(now);
     drawFlyers(now);
   }
@@ -2672,11 +2919,39 @@
   addEventListener("pagehide", save);
   // In Telegram on Android the page is often only hidden, never unloaded: save then too.
   document.addEventListener("visibilitychange", () => document.hidden && save());
+  // The core buildings (the barracks, the barn, the bazaar) are always in the garden, ready from the start: they are
+  // not bought and not razed. A garden without one (an older save, or one razed before this rule) gets it back on the
+  // first free spot near the others.
+  for (const kind of CORE) {
+    if (state.objects.some((o) => o.kind === kind)) continue;
+    const a = state.objects.find((o) => CORE.includes(o.kind)) || { x: -1500, y: -1560 };
+    const spots = [[0, 0], [600, 0], [900, 0], [-600, 0], [-300, 300], [600, 280], [300, 300], [0, 330], [1200, 300], [-300, 600], [600, 600], [0, 650]];
+    for (const [dx, dy] of spots)
+      if (fits({ kind }, a.x + dx, a.y + dy)) {
+        state.objects.push({ kind, x: a.x + dx, y: a.y + dy });
+        break;
+      }
+    save();
+  }
   tick();
   fit();
   clampCam();
   renderQuests();
-  if (awaySummary) {
+  if (state.tut === 1) {
+    const KEEPER = { young_gardener: "young-gardener", forest_druid: "forest-druid", harvest_guardian: "harvest-guardian", season_traveler: "season-traveler" };
+    let p = null;
+    try {
+      p = JSON.parse(localStorage.getItem("player-v1"));
+    } catch {}
+    const face = KEEPER[p?.keeper] || "young-gardener";
+    open(() =>
+      show(
+        `<div class="keeper"><img src="/assets/ui/avatars/${face}-preview.webp" alt=""><div><h3>Добро пожаловать в огород${p?.name ? `, ${p.name}` : ""}!</h3>
+        <p>Вот мой сундук: в нём по семени каждой из шести культур. Посади их — первый урожай созреет быстро. Урожай отнесём в Казарму: из него выйдут бойцы, и сразу в бой!</p>
+        <p class="seedsline">${STARTERS.map((id) => faceImg(id)).join("")}</p></div></div>`,
+      ),
+    );
+  } else if (awaySummary) {
     const a = awaySummary,
       hours = a.away >= 60 ? `${Math.floor(a.away / 60)} ч ${Math.round(a.away % 60)} мин` : `${Math.round(a.away)} мин`,
       line = (n, text) => (n ? `<li>${text}</li>` : "");

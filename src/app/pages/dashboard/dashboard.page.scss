@@ -451,3 +451,26 @@
   object-fit: contain;
   pointer-events: none;
 }
+
+/* A phone turned sideways: the same cards in two columns (the keeper, the garden and the menu on the left; the army,
+   the glory and the orders on the right), the whole shell scaled to the screen's height. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .dashboard-shell {
+    width: 780px;
+    height: 440px;
+    flex: 0 0 780px;
+    display: grid;
+    grid-template-columns: 390px 390px;
+    grid-template-rows: 133px 64px 162px 76px;
+    column-gap: 6px;
+    padding-top: 0;
+  }
+  .dashboard-content {
+    display: contents;
+  }
+  gb-dashboard-header { grid-column: 1; grid-row: 1; }
+  :host ::ng-deep gb-dashboard-garden-card > .garden-block { grid-column: 1; grid-row: 2 / 4; }
+  :host ::ng-deep gb-dashboard-team-card > .garden-block { grid-column: 2; grid-row: 1 / 3; align-self: start; }
+  gb-dashboard-cards { grid-column: 2; grid-row: 3 / 5; align-self: start; }
+  gb-dashboard-nav-panel { grid-column: 1; grid-row: 4; }
+}

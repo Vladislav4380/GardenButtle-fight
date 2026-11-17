@@ -1872,7 +1872,7 @@ function initPage() {
     const note = pickNote
       ? `<p class="pk-note warn">${pickNote}</p>`
       : short > 0
-        ? `<p class="pk-note warn">В амбаре не хватает бойцов: вырастите ещё ${short} в огороде. <a href="/garden" target="_top">← В огород</a></p>`
+        ? `<p class="pk-note warn">В казарме не хватает бойцов: нужно ещё ${short} — соберите урожай и закиньте его в Казарму. <a href="/garden" target="_top">← В огород</a></p>`
       : pickFilter
         ? `<p class="pk-note">${groupNote(pickFilter, t)} Ниже — только эта группа; нажмите ещё раз, чтобы показать всех.</p>`
         : `<p class="pk-note">Бонус группы включается, когда в отряде 2 разных героя этой группы. Нажмите на группу — узнаете, что она даёт.</p>`;
@@ -1885,7 +1885,7 @@ function initPage() {
           // A hero may be taken more than once; another copy adds nothing to the groups.
           ribbon = copies ? `<em class="rb in">в отряде${copies > 1 ? " ×" + copies : ""}</em>` : g.length ? `<em class="rb gain">+ ${g.map((id) => TRAITS[id].name).join(", ")}</em>` : "",
           // From the garden: how many of this hero are still in the barn, not yet taken.
-          stock = GARDEN_BARN ? `<i class="pk-stock${copies >= inBarn(c) ? " out" : ""}">в амбаре ${inBarn(c) - copies}</i>` : "";
+          stock = GARDEN_BARN ? `<i class="pk-stock${copies >= inBarn(c) ? " out" : ""}">в казарме ${inBarn(c) - copies}</i>` : "";
         return `<div class="pk-tile${copies ? " in" : g.length ? " gain" : full ? "" : " dull"}" data-add="${c}">${ribbon}${stock}<img src="${portraitUrl(c)}" alt=""><b>${TFT_NAMES[c]}</b><small>${words(c)}</small><button class="pk-i" data-info="${c}" aria-label="подробнее">i</button></div>`;
       })
       .join("");
@@ -1941,7 +1941,7 @@ function initPage() {
     on("[data-add]", (b) => {
       const c = b.dataset.add;
       if (full) pickNote = "Отряд полон — уберите героя кнопкой ✕ сверху.";
-      else if (draft.filter((x) => x === c).length >= inBarn(c)) pickNote = `${TFT_NAMES[c]}: все из амбара уже в отряде. Вырастите ещё в огороде.`;
+      else if (draft.filter((x) => x === c).length >= inBarn(c)) pickNote = `${TFT_NAMES[c]}: все из казармы уже в отряде. Сделайте ещё в Казарме из урожая.`;
       else (draft[draft.findIndex((x) => !x)] = c), (pickInfo = null);
     });
     $("#pickGo").onclick = () => {
@@ -2039,7 +2039,7 @@ function initPage() {
         glory = 10 + (match.wins[0] > match.wins[1] ? 20 : 0);
       gardenSettle(lost, gold);
       addBattleGlory(glory);
-      losses = (lost.length ? `Погибли: ${listNames(lost)}` : "Погибших нет — все вернулись в амбар") + (GARDEN_BARN ? `\n+${gold} золота` : "") + `\n+${glory} боевой славы · ${battleTitle(battleGlory())}`;
+      losses = (lost.length ? `Погибли: ${listNames(lost)}` : "Погибших нет — все вернулись в казарму") + (GARDEN_BARN ? `\n+${gold} золота` : "") + `\n+${glory} боевой славы · ${battleTitle(battleGlory())}`;
     } else {
       const hurt = woundedOf(),
         gone = lostOf();

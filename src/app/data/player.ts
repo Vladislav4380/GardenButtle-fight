@@ -152,13 +152,14 @@ export function summary(): Summary {
   const g: any = read(GARDEN_KEY);
   const battlePoints = +(localStorage.getItem('glory-battle') || 0);
   if (!g) {
-    const barn = { tomato: 3, carrot: 3, potato: 3, peach: 3, onion: 3, corn: 3 };
-    return { hasGarden: false, gold: 3000, army: 18, ripe: 0, growing: 0, dry: 0, pests: 0, orders: 0, ordersReady: 0, nextRipeMin: null, beds: [], barn, orderGold: [], garden: glory(G_TITLES, 0), battle: glory(B_TITLES, battlePoints) };
+    // A new player's barracks is empty: the first fighters come from the first harvest.
+    const barn = {};
+    return { hasGarden: false, gold: 3000, army: 0, ripe: 0, growing: 0, dry: 0, pests: 0, orders: 0, ordersReady: 0, nextRipeMin: null, beds: [], barn, orderGold: [], garden: glory(G_TITLES, 0), battle: glory(B_TITLES, battlePoints) };
   }
   // The garden's clock runs on while it is closed: its time now.
   const now = (g.time || 0) + Math.max(0, Date.now() - (g.real || Date.now())) * (g.speed || 1);
   const beds = (g.objects || []).filter((o: any) => o.kind === 'bed' && o.crop);
-  const left = (b: any) => (GROW[b.crop] || 30) * 60000 - (now - b.at);
+  const left = (b: any) => (b.quick ? 75000 : (GROW[b.crop] || 30) * 60000) - (now - b.at);
   const growingBeds = beds.filter((b: any) => left(b) > 0);
   const barn: Record<string, number> = g.barn || {};
   const canDo = (o: any) => Object.entries(o.items || {}).every(([id, n]) => (barn[id] || 0) >= (n as number));

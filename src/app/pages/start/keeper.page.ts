@@ -32,7 +32,13 @@ import { KEEPERS, Keeper, loadProfile, saveProfile, telegramName } from '../../d
     .about img{height:100%;max-height:260px;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:2px solid var(--bronze)}
     .about h2{margin:0;font:900 18px system-ui;color:var(--gold)}.about p{margin:6px 0 0;font:500 14px/1.35 system-ui}
     .name{display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:10px;font:800 14px system-ui;color:var(--gold)}
-    .name input{flex:1;min-width:0;height:36px;border-radius:10px;border:1px solid var(--bronze);background:#0006;color:var(--parch);font:600 16px system-ui;padding:0 10px}`],
+    .name input{flex:1;min-width:0;height:36px;border-radius:10px;border:1px solid var(--bronze);background:#0006;color:var(--parch);font:600 16px system-ui;padding:0 10px}
+    /* Sideways: the four keepers on the left, the chosen one, the name and the button on the right. */
+    @media (orientation:landscape) and (max-height:520px){.gb-body{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr auto auto;column-gap:16px;padding-top:30px;overflow-y:auto}
+      .gb-title{grid-column:1;grid-row:1;font-size:22px;margin:0}.gb-sub{grid-column:1;grid-row:2;margin:2px 0 0}
+      .grid{grid-column:1;grid-row:3/6;align-self:start;margin:8px 0 0}
+      .about{grid-column:2;grid-row:1/4;margin-bottom:8px}.about img{max-height:160px}
+      .name{grid-column:2;grid-row:4;margin-bottom:8px}.gb-btn{grid-column:2;grid-row:5}}`],
 })
 export class KeeperPage {
   private readonly router = inject(Router);

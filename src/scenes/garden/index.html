@@ -41,6 +41,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;backgr
 .seed.none{opacity:.4}.item .emo{font-size:46px;font-style:normal;line-height:62px}.tip .stop{color:#ff8a7a;font-style:normal}.wet{margin:6px 0 0;color:#9fd8ff;font:700 13px system-ui;text-align:center}.seed.sickle{width:76px}.seed.sickle .face{width:60px;height:60px}
 .tip{display:flex;align-items:center;gap:8px;text-align:left!important;font-size:15px!important;color:#edf7ec!important}.tip .face{width:44px;height:46px;object-fit:contain}
 .row.soon{opacity:.5}
+.brow{flex-wrap:wrap}.brow .what{min-width:140px}.basket{position:relative;display:block;height:18px;margin-top:4px;border-radius:9px;background:#0b1710;box-shadow:inset 0 0 0 1px #8a6a2a88;overflow:hidden;font-style:normal}.basket>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(#9bd96b,#4f9a2a)}.basket em{position:relative;display:block;text-align:center;font:800 12px/18px system-ui;font-style:normal;color:#fff}
+.bbtns{display:flex;gap:6px}.bbtns .buy{min-width:52px;height:40px}.back.mini{width:auto;min-width:40px;height:40px;padding:0 10px;margin:0}
+.army{cursor:pointer}
+.keeper{display:flex;gap:12px;align-items:flex-start}.keeper>img{width:96px;height:auto;border-radius:14px;flex:none}.keeper h3{font-size:20px}
+.seedsline{display:flex;flex-wrap:wrap;gap:4px}.seedsline img.face{width:44px;height:46px;object-fit:contain}
+#fight.tut{animation:tutpulse 1s ease-in-out infinite}@keyframes tutpulse{50%{transform:scale(1.12);box-shadow:0 0 0 4px #ffd56b88}}
 .board{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;padding:16px 12px;border-radius:14px;border:3px solid #b07a3a;box-shadow:inset 0 0 0 2px #3b1f0c,inset 0 0 0 4px #e0b06a55,0 4px 10px #0008;background:repeating-linear-gradient(90deg,#00000014 0 2px,transparent 2px 46px),linear-gradient(#8a5a2e,#6b4220 50%,#5a3518)}
 .note{position:relative;display:flex;flex-direction:column;gap:2px;padding:16px 10px 10px;border-radius:3px;background:linear-gradient(#f6e7c4,#e8d3a4);color:#3a2410;box-shadow:0 3px 6px #0007;transform:rotate(var(--tilt))}
 .note .pin{position:absolute;top:5px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#e9e3d0,#8a7a5a 55%,#3a3020);box-shadow:0 2px 2px #0006}
@@ -50,7 +56,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;backgr
 .note.done>*:not(.stamp):not(.pin){opacity:.45}
 .note .stamp{position:absolute;left:50%;top:52%;padding:2px 8px;border:3px solid #b3261e;border-radius:6px;color:#b3261e;font:900 17px system-ui;text-transform:uppercase;letter-spacing:1px;transform:translate(-50%,-50%) rotate(-14deg);background:#f6e7c4cc}
 .otime{margin:10px 0 0;text-align:center;font:700 14px system-ui;color:#c3d4c6}.otime b{color:#ffd56b}
-.btabs{position:sticky;top:-16px;z-index:2;display:flex;gap:6px;margin:0 -16px 6px;padding:8px 16px;background:#132619}.btabs button{flex:1;min-width:0;height:38px;padding:0 4px;border-radius:12px;border:1px solid #8a6a2a;background:#3a2a10;color:#ffd56b;font:800 13px system-ui;white-space:nowrap}.btabs button.on{background:linear-gradient(#ffe794,#f0a531);color:#2a1a05;border-color:#b07a1a}
+.btabs{position:sticky;top:-16px;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 -16px 6px;padding:8px 16px;background:#132619}.btabs button{flex:1;min-width:0;height:38px;padding:0 4px;border-radius:12px;border:1px solid #8a6a2a;background:#3a2a10;color:#ffd56b;font:800 13px system-ui;white-space:nowrap}.btabs button.on{background:linear-gradient(#ffe794,#f0a531);color:#2a1a05;border-color:#b07a1a}
 .card h4{margin:14px 0 4px;font-size:15px;color:#ffd56b;text-transform:uppercase;letter-spacing:.04em}.del{color:#ffb0b0!important;border-color:#7a3a3a!important;background:#3a1717!important}
 /* Placing a bed: confirm or cancel. */
 .place{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:10px;padding:10px 12px max(12px,env(safe-area-inset-bottom));background:#0b1710e6}.place[hidden]{display:none}
@@ -104,7 +110,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;backgr
 .dock .place{position:static;padding:0;background:none}
 /* The tasks open over the top of the field, under the panel. */
 .stage .quests{position:absolute;top:8px;right:8px;z-index:4;max-width:min(320px,calc(100% - 16px))}
-.stage .hint{top:10px}
+.stage .hint{top:10px;max-width:calc(100% - 96px)}
 /* The drawer: slides out from the right edge; its tab stays in sight. */
 .drawer{position:absolute;top:0;bottom:0;right:0;z-index:4;width:132px;transform:translateX(100%);transition:transform .25s ease;background:linear-gradient(90deg,#2b2013f2,#1a130bf2);border-left:3px solid #8a6a2a;box-shadow:-6px 0 14px #0007}
 .drawer.open{transform:none}
@@ -115,6 +121,25 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;backgr
 .item img{width:96px;height:62px;object-fit:contain;pointer-events:none}.item span{font:700 11px system-ui;color:#edf7ec;text-align:center;line-height:1.15}
 .item b{position:absolute;top:3px;right:5px;font:900 12px system-ui;color:#ffd56b;text-shadow:0 1px 2px #000}.item.poor{opacity:.45}
 .big.pulse{animation:pulse .35s 2}
+/* ---- A phone held sideways: the panels become narrow columns at the left and the right, the field takes the whole
+   height between them (nothing of the interface ever lies over the field); windows fit the height and scroll inside. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app{flex-direction:row}
+  .hud{order:0;width:150px;height:100%;overflow-y:auto;border-bottom:0;border-right:3px solid #8a6a2a;padding:6px 8px 6px max(8px,env(safe-area-inset-left));gap:8px;justify-content:center}
+  .hud-row{flex-direction:column;align-items:stretch;gap:6px;white-space:normal}.hud-row .sp{display:none}
+  .hud .gold,.hud .lvl{height:34px;justify-content:flex-start}.hud .lvl i{width:auto;flex:1}
+  .hud .pill{height:32px}.hud .army,.hud .fight,.hud .gchip,.hud .qbtn{align-self:stretch;justify-content:center;text-align:center}
+  .hud .hud-row:first-child{display:grid;grid-template-columns:1fr 1fr;gap:6px}.hud .hud-row:first-child .gold,.hud .hud-row:first-child .lvl{grid-column:1/3}
+  .stage{order:1;flex:1;min-width:0}
+  .dock{order:2;width:118px;height:100%;border-top:0;border-left:3px solid #8a6a2a;padding:6px max(8px,env(safe-area-inset-right)) 6px 8px;display:flex;flex-direction:column;justify-content:center}
+  .dock .bottom{flex-direction:column;align-items:stretch;justify-content:space-around;gap:6px;height:100%}
+  .dock .big{width:100%;max-width:none;padding:2px 0 4px;font-size:13px}.dock .big img{width:40px;height:40px}
+  .ferts{flex-direction:row;justify-content:space-between;gap:4px}.ferts button{flex:1;padding:0 4px;font-size:16px;justify-content:center}
+  .dock .place{flex-direction:column;gap:6px}.dock .place button{flex:none;height:auto;min-height:44px;padding:6px 4px;font-size:13px}
+  .sheet{align-items:center}
+  .card{width:min(640px,92%);max-height:96%;border-radius:20px}
+  .stage .hint{font-size:13px;padding:5px 10px}
+}
 </style>
 <script>/* The height the browser really shows. */(function(){function f(){var v=window.visualViewport;document.documentElement.style.setProperty("--visible-h",Math.round(v?v.height:innerHeight)+"px")}f();addEventListener("resize",f);if(window.visualViewport)visualViewport.addEventListener("resize",f)})()</script>
 </head>

@@ -97,7 +97,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.teamCard = {
       title: 'АРМИЯ',
       iconSrc: 'assets/ui/hud/hud-battle-swords.png',
-      summaryText: `В амбаре ${s.army}`,
+      summaryText: `В казарме ${s.army}`,
       members:
         s.army >= 6 && top.length === 3
           ? top.map(([crop, n], i) => ({ id: crop, slot: i + 1, state: 'empty', imageUrl: warrior(crop, 3), statusText: `${NAMES[crop] || crop} ×${n}` }))
@@ -116,7 +116,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     const viewport = window.visualViewport;
     const width = viewport?.width ?? window.innerWidth;
     const height = viewport?.height ?? window.innerHeight;
-    const scale = Math.min(width / this.designWidth, height / this.designHeight);
+    // Sideways the cards stand in two columns (see the styles): a wide, low design.
+    const side = width > height && height <= 520,
+      scale = side ? Math.min(width / 786, height / 440) : Math.min(width / this.designWidth, height / this.designHeight);
     this.dashboardScale = Number(Math.max(0.75, Math.min(scale, 1.15)).toFixed(4));
   }
 }

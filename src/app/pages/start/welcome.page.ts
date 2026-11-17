@@ -22,13 +22,17 @@ import { Router } from '@angular/router';
   styles: [`.sp{flex:1}.start{background-size:auto 100%;background-position:center top}.lead{margin:0 0 10px;font-size:16px;font-weight:800}.card{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:8px 12px 8px 8px}
     .card img{width:64px;height:64px;object-fit:cover;border-radius:12px;border:2px solid var(--bronze)}
     .card h2{margin:0;font:900 16px system-ui;color:var(--gold)}.card p{margin:2px 0 0;font:500 14px/1.3 system-ui;color:var(--parch)}
-    .gb-btn{margin-top:6px}`],
+    .gb-btn{margin-top:6px}
+    /* Sideways: the poster with the name on the left, the three cards and the button on the right, scrolling if need be. */
+    @media (orientation:landscape) and (max-height:520px){.start{background-position:left top}.start::before{background:linear-gradient(90deg,#0000 30%,#0b0805e6 52%)}
+      .gb-art{left:0;transform:none}.gb-body{margin-left:calc(var(--visible-h,100dvh) * 720 / 1279);padding:12px 16px;overflow-y:auto}.sp{flex:0}
+      .card{margin-bottom:6px;padding:6px 10px 6px 6px}.card img{width:48px;height:48px}}`],
 })
 export class WelcomePage {
   private readonly router = inject(Router);
   readonly cards = [
     { image: 'assets/ui/welcome/grow.webp', title: 'Выращивай', text: 'Бойцы растут на грядках: посади семя — собери отряд.' },
-    { image: 'assets/ui/welcome/team.png', title: 'Собирай отряд', text: 'Шесть бойцов из своего амбара. Разные герои — сильнее бонусы.' },
+    { image: 'assets/ui/welcome/team.png', title: 'Собирай отряд', text: 'Шесть бойцов из своей казармы. Разные герои — сильнее бонусы.' },
     { image: 'assets/ui/welcome/battle.png', title: 'Сражайся', text: 'Бой честный: у всех одинаковые бойцы. Решают тактика и твой огород.' },
   ];
   start(): void {

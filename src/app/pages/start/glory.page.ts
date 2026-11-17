@@ -60,7 +60,11 @@ export const GARDEN: Row[] = [
     .table li:nth-child(odd){background:#0000002e}.table b{color:var(--muted);text-align:right}.table small{color:var(--muted);font-size:12px}
     .table em{font-style:normal;font-weight:900;color:var(--gold);text-align:right}.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .table li.me{background:linear-gradient(#ffe794,#f0a531);color:var(--ink)}.table li.me b,.table li.me small,.table li.me em{color:var(--ink)}
-    .note{margin:0 0 8px;text-align:center;font:600 12px system-ui;color:var(--muted)}`],
+    .note{margin:0 0 8px;text-align:center;font:600 12px system-ui;color:var(--muted)}
+    /* Sideways: the title, the tabs, the player's place and the back button on the left, the table on the right. */
+    @media (orientation:landscape) and (max-height:520px){.gb-body{display:grid;grid-template-columns:minmax(240px,40%) 1fr;grid-template-rows:auto auto auto auto 1fr auto;column-gap:14px;padding-top:30px}
+      .gb-title,.gb-sub,.tabs,.mine,.note,.gb-btn{grid-column:1}.gb-title{font-size:24px;margin:0}.tabs{margin:8px 0 6px}
+      .table{grid-column:2;grid-row:1/7;margin:0}.note{align-self:end}}`],
 })
 export class GloryPage {
   private readonly router = inject(Router);
